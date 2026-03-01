@@ -10,34 +10,32 @@ export const validatePuzzle = (grid, config) => {
   const errors = new Set();
   const messages = [];
 
-  // Logic for Win/Loss
   const winS = isExact(hWords, catA) && isExact(vWords, catB);
   const winF = isExact(hWords, catB) && isExact(vWords, catA);
 
   if (winS || winF) return { solved: true, errors: [], messages: [] };
 
-  // Logic for Partial Feedback
-  const check = (words, coords) => {
-    if (words.length === 0) return;
-    const matchesA = isSubset(words, catA);
-    const matchesB = isSubset(words, catB);
+  const checkGroup = (words, coords) => {
+    if (words.length !== coords.length) return;
 
-    if ((matchesA && words.length < catA.length) || (matchesB && words.length < catB.length)) {
-      messages.push({ type: 'incomplete', text: `${words.join(", ")} is incomplete.` });
-    } else if (words.length === coords.length) {
-      if (!isExact(words, catA) && !isExact(words, catB)) {
-        messages.push({ type: 'invalid', text: `${words.join(", ")} is not a group.` });
-        coords.forEach(c => errors.add(c));
-      }
+    const subsetA = isSubset(words, catA);
+    const subsetB = isSubset(words, catB);
+
+    if ((subsetA && words.length < catA.length) || (subsetB && words.length < catB.length)) {
+      messages.push(`${words.join(", ")} is incomplete.`);
+      coords.forEach(c => errors.add(c));
+    } else if (!isExact(words, catA) && !isExact(words, catB)) {
+      messages.push(`${words.join(", ")} is not a group.`);
+      coords.forEach(c => errors.add(c));
     }
   };
 
-  check(hWords, hCoords);
-  check(vWords, vCoords);
+  checkGroup(hWords, hCoords);
+  checkGroup(vWords, vCoords);
 
   const intersectWord = grid[intersection];
   if (intersectWord && !(catA.includes(intersectWord) && catB.includes(intersectWord))) {
-    messages.push({ type: 'crosspoint', text: `${intersectWord} is not at a crosspoint.` });
+    messages.push(`${intersectWord} is not at a crosspoint.`);
     errors.add(intersection);
   }
 

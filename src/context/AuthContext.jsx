@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 const AuthContext = createContext({
   session: null,
   user: null,
+  loading: true,
   signOut: () => { },
 });
 
@@ -13,17 +14,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      // 1. Check for existing session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-    // Listener for auth state changes (LOGIN, SIGN_OUT, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
+        setLoading(false);
+      } else {
+        // 2. Create anonymous session if none exists
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (!error) {
+          setSession(data.session);
+          setUser(data.user);
+        }
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // 3. Listener for subsequent auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
       setLoading(false);
     });
 
@@ -33,6 +48,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     session,
     user,
+    loading,
     signOut: () => supabase.auth.signOut(),
   };
 
