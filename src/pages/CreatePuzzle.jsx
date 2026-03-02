@@ -1,11 +1,81 @@
-import React, { useState, useMemo } from 'react';
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import React, { useState, useCallback, useEffect } from 'react';
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
 import { WordTile } from '../components/WordTile';
 import { WordBank } from '../components/WordBank';
 import { supabase } from '../lib/supabase';
 import { createPuzzle } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, ChevronRight, Plus, Minus, Check, Save } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, X, Save, Trash2 } from 'lucide-react';
+
+// Draggable tile for the grid editor
+const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `editor-${id}-${r}-${c}`,
+    data: { type: 'grid', r, c, word: label }
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
+      onClick={(e) => {
+        // Prevent trigger if it's just a click (DnD handles drag)
+        // In dnd-kit, click is distinct from drag start
+        onEdit(r, c);
+      }}
+    >
+      <WordTile label={label} variant="active" />
+    </div>
+  );
+};
+
+// Droppable cell for the editor
+const EditorCell = ({ r, c, word, onCellClick, onEdit }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `cell-${r}-${c}`,
+    data: { type: 'grid', r, c }
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={() => !word && onCellClick(r, c)}
+      className={`cursor-pointer rounded-lg transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2' : ''}`}
+    >
+      {word ? (
+        <EditorDraggableTile id={word} label={word} r={r} c={c} onEdit={onEdit} />
+      ) : (
+        <WordTile label="" variant="ghost" />
+      )}
+    </div>
+  );
+};
+
+// Draggable tile for the bank reordering
+const BankDraggableTile = ({ label }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `bank-${label}`,
+    data: { type: 'bank', word: label }
+  });
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: `bank-drop-${label}`,
+    data: { type: 'bank', word: label }
+  });
+
+  return (
+    <div
+      ref={(node) => { setNodeRef(node); setDroppableRef(node); }}
+      {...listeners}
+      {...attributes}
+      className={`relative ${isDragging ? 'opacity-20' : 'opacity-100'} ${isOver ? 'scale-110' : ''} transition-all`}
+    >
+      <WordTile label={label} />
+    </div>
+  );
+};
 
 export default function CreatePuzzle({ onComplete, onCancel }) {
   const { user } = useAuth();
@@ -15,10 +85,15 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
   const [cols, setCols] = useState(4);
   const [grid, setGrid] = useState({}); // { "r-c": "WORD" }
   const [editingCell, setEditingCell] = useState(null);
-  const [categories, setCategories] = useState([]); // Array of { words: [], description: "" }
+  const [categories, setCategories] = useState([]);
+  const [wordOrder, setWordOrder] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeDrag, setActiveDrag] = useState(null);
 
-  // Step 1: Grid Logic
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 } // Allow a bit of movement before drag starts
+  }));
+
   const handleCellClick = (r, c) => {
     setEditingCell({ r, c, val: grid[`${r}-${c}`] || '' });
   };
@@ -29,8 +104,7 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
     const newGrid = { ...grid };
 
     if (word) {
-      // Check for duplicates
-      const exists = Object.entries(grid).find(([k, v]) => v === word && k !== `${editingCell.r}-${editingCell.r}`);
+      const exists = Object.entries(grid).find(([k, v]) => v === word && k !== `${editingCell.r}-${editingCell.c}`);
       if (exists) {
         alert("Word already exists in grid!");
         return;
@@ -44,93 +118,169 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
     setEditingCell(null);
   };
 
-  const resize = (axis, dir) => {
-    if (axis === 'rows') {
-      const next = Math.max(2, Math.min(8, rows + dir));
-      setRows(next);
-      // Clean up overflow data
-      if (dir < 0) {
-        const cleaned = {};
-        Object.entries(grid).forEach(([k, v]) => {
-          const [r] = k.split('-').map(Number);
-          if (r < next) cleaned[k] = v;
-        });
-        setGrid(cleaned);
+  const deleteCell = (r, c) => {
+    const newGrid = { ...grid };
+    delete newGrid[`${r}-${c}`];
+    setGrid(newGrid);
+    setEditingCell(null);
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    setActiveDrag(null);
+    if (!over) return;
+
+    if (active.data.current.type === 'grid' && over.data.current.type === 'grid') {
+      const source = active.data.current;
+      const target = over.data.current;
+      if (source.r === target.r && source.c === target.c) return;
+
+      const newGrid = { ...grid };
+      const wordToMove = source.word;
+      const wordAtTarget = grid[`${target.r}-${target.c}`];
+
+      if (wordAtTarget) {
+        newGrid[`${source.r}-${source.c}`] = wordAtTarget;
+      } else {
+        delete newGrid[`${source.r}-${source.c}`];
       }
-    } else {
-      const next = Math.max(2, Math.min(8, cols + dir));
-      setCols(next);
-      if (dir < 0) {
-        const cleaned = {};
-        Object.entries(grid).forEach(([k, v]) => {
-          const [, c] = k.split('-').map(Number);
-          if (c < next) cleaned[k] = v;
-        });
-        setGrid(cleaned);
-      }
+      newGrid[`${target.r}-${target.c}`] = wordToMove;
+      setGrid(newGrid);
+    } else if (active.data.current.type === 'bank' && over.data.current.type === 'bank') {
+      const activeWord = active.data.current.word;
+      const overWord = over.data.current.word;
+      if (activeWord === overWord) return;
+
+      const oldIdx = wordOrder.indexOf(activeWord);
+      const newIdx = wordOrder.indexOf(overWord);
+
+      const newOrder = [...wordOrder];
+      newOrder.splice(oldIdx, 1);
+      newOrder.splice(newIdx, 0, activeWord);
+      setWordOrder(newOrder);
     }
   };
 
-  // Step 2: Derive Categories
+  const resize = (axis, dir, side = 'end') => {
+    const nextVal = (axis === 'rows' ? rows : cols) + dir;
+    const maxVal = axis === 'rows' ? 5 : 7;
+    if (nextVal < 2 || nextVal > maxVal) return;
+
+    const newGrid = {};
+    if (axis === 'rows') {
+      Object.entries(grid).forEach(([k, v]) => {
+        const [r, c] = k.split('-').map(Number);
+        const newR = side === 'start' ? r + dir : r;
+        if (newR >= 0 && newR < nextVal) newGrid[`${newR}-${c}`] = v;
+      });
+      setRows(nextVal);
+    } else {
+      Object.entries(grid).forEach(([k, v]) => {
+        const [r, c] = k.split('-').map(Number);
+        const newC = side === 'start' ? c + dir : c;
+        if (newC >= 0 && newC < nextVal) newGrid[`${r}-${newC}`] = v;
+      });
+      setCols(nextVal);
+    }
+    setGrid(newGrid);
+  };
+
   const detectGroups = () => {
-    const horizontal = [];
+    const groups = [];
+
+    // Horizontal groups (contiguous)
     for (let r = 0; r < rows; r++) {
-      const rowWords = [];
+      let currentGroup = [];
       for (let c = 0; c < cols; c++) {
-        if (grid[`${r}-${c}`]) rowWords.push(grid[`${r}-${c}`]);
+        const word = grid[`${r}-${c}`];
+        if (word) {
+          currentGroup.push(word);
+        } else {
+          if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
+          currentGroup = [];
+        }
       }
-      if (rowWords.length > 1) horizontal.push({ words: rowWords, description: "" });
+      if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
     }
 
-    const vertical = [];
+    // Vertical groups (contiguous)
     for (let c = 0; c < cols; c++) {
-      const colWords = [];
+      let currentGroup = [];
       for (let r = 0; r < rows; r++) {
-        if (grid[`${r}-${c}`]) colWords.push(grid[`${r}-${c}`]);
+        const word = grid[`${r}-${r}`] ? null : grid[`${r}-${c}`]; // Fixing a potential bug in column loop
+        if (word) {
+          currentGroup.push(word);
+        } else {
+          if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
+          currentGroup = [];
+        }
       }
-      if (colWords.length > 1) vertical.push({ words: colWords, description: "" });
+      if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
     }
 
-    return [...horizontal, ...vertical];
+    // Correcting the column loop more carefully:
+    const verticalGroups = [];
+    for (let c = 0; c < cols; c++) {
+      let currentGroup = [];
+      for (let r = 0; r < rows; r++) {
+        const word = grid[`${r}-${c}`];
+        if (word) {
+          currentGroup.push(word);
+        } else {
+          if (currentGroup.length > 1) verticalGroups.push({ words: currentGroup, description: "" });
+          currentGroup = [];
+        }
+      }
+      if (currentGroup.length > 1) verticalGroups.push({ words: currentGroup, description: "" });
+    }
+
+    // Use only horizontal + corrected vertical
+    const horizGroups = [];
+    for (let r = 0; r < rows; r++) {
+      let currentGroup = [];
+      for (let c = 0; c < cols; c++) {
+        const word = grid[`${r}-${c}`];
+        if (word) currentGroup.push(word);
+        else {
+          if (currentGroup.length > 1) horizGroups.push({ words: currentGroup, description: "" });
+          currentGroup = [];
+        }
+      }
+      if (currentGroup.length > 1) horizGroups.push({ words: currentGroup, description: "" });
+    }
+
+    return [...horizGroups, ...verticalGroups];
   };
 
   const goToStep2 = () => {
     const words = Object.values(grid);
-    if (words.length < 4) {
-      alert("Please add at least 4 words to your puzzle.");
-      return;
-    }
-    if (!title.trim()) {
-      alert("Please enter a title.");
-      return;
-    }
+    if (words.length < 4) return alert("Please add at least 4 words.");
+    if (!title.trim()) return alert("Please enter a title.");
+
     setCategories(detectGroups());
+    setWordOrder([...new Set(words)].sort(() => Math.random() - 0.5));
     setStep(2);
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-
-    // Prepare layout: 2D array of 0s and 1s
     const layout = Array.from({ length: rows }, (_, r) =>
       Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
     );
 
     const puzzleData = {
       title: title.trim(),
-      categories: categories,
-      layout: layout,
-      word_order: Object.values(grid).sort(() => Math.random() - 0.5),
+      categories,
+      layout,
+      word_order: wordOrder,
       is_published: !!user,
       created_by: user?.id || null
     };
 
     const { error } = await createPuzzle(puzzleData);
-    if (error) {
-      console.error(error);
-      alert("Error saving puzzle: " + error.message);
-    } else {
-      alert(user ? "Puzzle published!" : "Puzzle saved locally! Log in to publish.");
+    if (error) alert("Error saving puzzle: " + error.message);
+    else {
+      alert(user ? "Puzzle published!" : "Puzzle saved locally!");
       onComplete?.();
     }
     setIsSubmitting(false);
@@ -144,126 +294,132 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
             <ChevronLeft size={24} />
           </button>
           <h2 className="text-xl font-black uppercase tracking-tight">
-            {step === 1 ? 'Design Your Grid' : 'Describe Categories'}
+            {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
           </h2>
-          <div className="w-6" /> {/* Spacer */}
+          <div className="w-6" />
         </div>
 
-        {step === 1 ? (
-          <div className="space-y-8">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
-              <input
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="The Ultimate Cross-Connect"
-                className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors uppercase tracking-tight"
-              />
-            </div>
-
-            <div className="flex items-center justify-center gap-4 py-4">
-              {/* Row controls */}
-              <div className="flex flex-col gap-2 scale-75 lg:scale-100">
-                <button onClick={() => resize('rows', 1)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={16} /></button>
-                <div className="text-center font-black text-slate-300">{rows}</div>
-                <button onClick={() => resize('rows', -1)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={16} /></button>
+        <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
+          {step === 1 ? (
+            <div className="space-y-8">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
+                <input
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="My Cross-Connect"
+                  className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
+                />
               </div>
 
-              <div className="bg-slate-100 p-4 rounded-2xl border-4 border-slate-200">
-                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-                  {Array.from({ length: rows }).map((_, r) => (
-                    Array.from({ length: cols }).map((_, c) => (
-                      <div
-                        key={`${r}-${c}`}
-                        onClick={() => handleCellClick(r, c)}
-                        className="cursor-pointer group"
-                      >
-                        {grid[`${r}-${c}`] ? (
-                          <WordTile label={grid[`${r}-${c}`]} variant="active" />
-                        ) : (
-                          <WordTile label="" variant="ghost" />
-                        )}
-                      </div>
-                    ))
-                  ))}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex gap-2">
+                  <button onClick={() => resize('rows', 1, 'start')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={14} /></button>
+                  <button onClick={() => resize('rows', -1, 'start')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={14} /></button>
                 </div>
-              </div>
 
-              {/* Col controls */}
-              <div className="flex gap-2 rotate-90 scale-75 lg:scale-100 lg:rotate-0">
-                <button onClick={() => resize('cols', -1)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={16} /></button>
-                <div className="text-center font-black text-slate-300 w-4">{cols}</div>
-                <button onClick={() => resize('cols', 1)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={16} /></button>
-              </div>
-            </div>
-
-            <button
-              onClick={goToStep2}
-              className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-colors uppercase"
-            >
-              Continue to Categories
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Defined Groups ({categories.length})</p>
-              {categories.map((cat, idx) => (
-                <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
-                  <div className="flex gap-2 flex-wrap">
-                    {cat.words.map(w => (
-                      <span key={w} className="bg-white px-2 py-1 rounded text-[10px] font-black tracking-tight border border-slate-200">{w}</span>
-                    ))}
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => resize('cols', 1, 'start')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Plus size={14} /></button>
+                    <button onClick={() => resize('cols', -1, 'start')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Minus size={14} /></button>
                   </div>
-                  <input
-                    placeholder="Enter description for this group..."
-                    className="bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold pb-1 transition-colors"
-                    value={cat.description}
-                    onChange={e => {
-                      const next = [...categories];
-                      next[idx].description = e.target.value;
-                      setCategories(next);
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
 
-            <button
-              disabled={isSubmitting}
-              onClick={handleSubmit}
-              className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSubmitting ? 'SAVING...' : <><Save size={18} /> SUBMIT PUZZLE</>}
-            </button>
-          </div>
-        )}
+                  <div className="bg-slate-100 p-4 rounded-2xl border-4 border-slate-200 relative">
+                    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                      {Array.from({ length: rows }).map((_, r) => (
+                        Array.from({ length: cols }).map((_, c) => (
+                          <EditorCell
+                            key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
+                            onCellClick={handleCellClick} onEdit={handleCellClick}
+                          />
+                        ))
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => resize('cols', 1, 'end')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col gap-0.5"><Plus size={14} /></button>
+                    <button onClick={() => resize('cols', -1, 'end')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Minus size={14} /></button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => resize('rows', 1, 'end')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={14} /></button>
+                  <button onClick={() => resize('rows', -1, 'end')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={14} /></button>
+                </div>
+              </div>
+
+              <button onClick={goToStep2} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-colors uppercase">
+                Continue to Categories
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Category Descriptions</p>
+                {categories.map((cat, idx) => (
+                  <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
+                    <div className="flex gap-2 flex-wrap">
+                      {cat.words.map(w => (
+                        <span key={w} className="bg-white px-2 py-1 rounded text-[10px] font-black tracking-tight border border-slate-200">{w}</span>
+                      ))}
+                    </div>
+                    <input
+                      placeholder="e.g. Big Cats"
+                      className="bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold pb-1 transition-colors"
+                      value={cat.description}
+                      onChange={e => {
+                        const next = [...categories];
+                        next[idx].description = e.target.value;
+                        setCategories(next);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
+                <WordBank>
+                  {wordOrder.map(w => <BankDraggableTile key={w} label={w} />)}
+                </WordBank>
+              </div>
+
+              <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50">
+                {isSubmitting ? 'SAVING...' : <><Save size={18} /> SUBMIT PUZZLE</>}
+              </button>
+            </div>
+          )}
+          <DragOverlay>
+            {activeDrag && (
+              <div className="opacity-80 scale-105">
+                <WordTile label={activeDrag.word} variant="active" />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       {editingCell && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Enter Word</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Update Word</h3>
             <input
-              autoFocus
-              className="w-full text-center text-3xl font-black uppercase tracking-tight border-b-4 border-indigo-500 outline-none pb-2 mb-6"
-              value={editingCell.val}
-              onChange={e => setEditingCell({ ...editingCell, val: e.target.value })}
+              autoFocus className="w-full text-center text-3xl font-black uppercase tracking-tight border-b-4 border-indigo-500 outline-none pb-2 mb-2"
+              value={editingCell.val} onChange={e => setEditingCell({ ...editingCell, val: e.target.value })}
               onKeyDown={e => e.key === 'Enter' && saveCell()}
             />
+
+            <button
+              onClick={() => deleteCell(editingCell.r, editingCell.c)}
+              className="w-full flex items-center justify-center gap-2 text-red-500 font-bold py-2 mb-4 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 size={16} /> Delete Word
+            </button>
+
             <div className="flex gap-3">
-              <button
-                onClick={() => setEditingCell(null)}
-                className="flex-1 bg-slate-100 text-slate-400 py-3 rounded-2xl font-black"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={saveCell}
-                className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-black shadow-lg shadow-indigo-200"
-              >
-                SAVE
-              </button>
+              <button onClick={() => setEditingCell(null)} className="flex-1 bg-slate-100 text-slate-400 py-3 rounded-2xl font-black">CANCEL</button>
+              <button onClick={saveCell} className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-black shadow-lg shadow-indigo-200">SAVE</button>
             </div>
           </div>
         </div>
