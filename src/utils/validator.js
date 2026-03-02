@@ -15,13 +15,13 @@ export const validatePuzzle = (grid, puzzle) => {
   // Helper: check if a list of words matches ANY category exactly
   const findMatchingCategory = (words) => {
     return categories.find(cat =>
-      cat.length === words.length && words.every(w => cat.includes(w))
+      cat.words.length === words.length && words.every(w => cat.words.includes(w))
     );
   };
 
   // Helper: check if words are a subset of ANY category
   const isSubsetOfAny = (words) => {
-    return categories.some(cat => words.every(w => cat.includes(w)));
+    return categories.some(cat => words.every(w => cat.words.includes(w)));
   };
 
   // 2. Validate all groups (Rows and Columns)
@@ -48,7 +48,7 @@ export const validatePuzzle = (grid, puzzle) => {
     const word = grid[coord];
     if (word) {
       // A crosspoint word MUST belong to at least two categories
-      const matchingCats = categories.filter(cat => cat.includes(word));
+      const matchingCats = categories.filter(cat => cat.words.includes(word));
       if (matchingCats.length < 2) {
         messages.push(`${word} is not at a crosspoint.`);
         errors.add(coord);

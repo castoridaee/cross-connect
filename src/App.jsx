@@ -68,7 +68,7 @@ export default function App() {
   // Derive all words from the dynamic puzzle object
   const allWords = puzzle.word_order?.length > 0
     ? puzzle.word_order
-    : [...new Set(puzzle.categories.flat())];
+    : [...new Set(puzzle.categories.flatMap(cat => cat.words))];
 
   const bankWords = allWords.filter(w => !Object.values(grid).includes(w));
   const isGridFull = Object.values(grid).filter(Boolean).length === allWords.length;
