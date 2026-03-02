@@ -47,7 +47,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
 
           <div className="mb-10">
             <p className="text-black-400 font-bold">
-              {mode === 'login' ? 'Sign in to publish your puzzles.' : 'Create an account to publish your puzzles.'}
+              {mode === 'login' ? 'Sign in to publish your puzzles and track your stats.' : 'Create an account to publish your puzzles and track your stats.'}
             </p>
           </div>
 

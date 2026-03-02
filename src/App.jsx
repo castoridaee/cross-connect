@@ -21,13 +21,27 @@ function App() {
   async function loadPuzzles() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // 1. Get the total count of puzzles
+      const { count, error: countError } = await supabase
         .from('puzzles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .select('*', { count: 'exact', head: true });
 
-      if (data && data.length > 0) setPuzzle(data[0]);
+      if (countError) throw countError;
+
+      if (count > 0) {
+        // 2. Pick a random index
+        const randomIndex = Math.floor(Math.random() * count);
+
+        // 3. Fetch that specific puzzle
+        const { data, error: fetchError } = await supabase
+          .from('puzzles')
+          .select('*')
+          .range(randomIndex, randomIndex)
+          .single();
+
+        if (fetchError) throw fetchError;
+        setPuzzle(data);
+      }
     } catch (err) {
       console.error("Load Error:", err);
     } finally {
