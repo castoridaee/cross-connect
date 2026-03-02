@@ -1,44 +1,38 @@
-export const parseLayout = (layout) => {
-  const groups = [];
-  const intersections = [];
+export const getPuzzleStructure = (layout) => {
+  const hGroups = [];
+  const vGroups = [];
   const rows = layout.length;
   const cols = layout[0].length;
 
-  const hCoords = new Set();
-  const vCoords = new Set();
-
-  // Process horizontal contiguous cells
+  // Horizontal scan
   for (let r = 0; r < rows; r++) {
-    let currentGroup = [];
+    let current = [];
     for (let c = 0; c <= cols; c++) {
       if (c < cols && layout[r][c] === 1) {
-        currentGroup.push(`${r}-${c}`);
-        hCoords.add(`${r}-${c}`);
+        current.push(`${r}-${c}`);
       } else {
-        if (currentGroup.length > 1) groups.push(currentGroup);
-        currentGroup = [];
+        if (current.length > 1) hGroups.push(current);
+        current = [];
       }
     }
   }
 
-  // Process vertical contiguous cells
+  // Vertical scan
   for (let c = 0; c < cols; c++) {
-    let currentGroup = [];
+    let current = [];
     for (let r = 0; r <= rows; r++) {
       if (r < rows && layout[r][c] === 1) {
-        currentGroup.push(`${r}-${c}`);
-        vCoords.add(`${r}-${c}`);
+        current.push(`${r}-${c}`);
       } else {
-        if (currentGroup.length > 1) groups.push(currentGroup);
-        currentGroup = [];
+        if (current.length > 1) vGroups.push(current);
+        current = [];
       }
     }
   }
 
-  // Identify crosspoints (cells existing in both horizontal and vertical sets)
-  hCoords.forEach(coord => {
-    if (vCoords.has(coord)) intersections.push(coord);
-  });
+  // Identify Intersections
+  const hSet = new Set(hGroups.flat());
+  const intersections = vGroups.flat().filter(coord => hSet.has(coord));
 
-  return { groups, intersections };
+  return { hGroups, vGroups, intersections, allGroups: [...hGroups, ...vGroups] };
 };

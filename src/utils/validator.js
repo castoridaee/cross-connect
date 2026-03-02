@@ -1,43 +1,63 @@
-export const validatePuzzle = (grid, config) => {
-  const { hCoords, vCoords, catA, catB, intersection } = config;
+import { getPuzzleStructure } from './layoutParser';
 
-  const hWords = hCoords.map(c => grid[c]).filter(Boolean);
-  const vWords = vCoords.map(c => grid[c]).filter(Boolean);
-
-  const isSubset = (arr, cat) => arr.length > 0 && arr.every(w => cat.includes(w));
-  const isExact = (arr, cat) => arr.length === cat.length && isSubset(arr, cat);
+export const validatePuzzle = (grid, puzzle) => {
+  const { categories, layout } = puzzle;
+  const { hGroups, vGroups, intersections, allGroups } = getPuzzleStructure(layout);
 
   const errors = new Set();
   const messages = [];
 
-  const winS = isExact(hWords, catA) && isExact(vWords, catB);
-  const winF = isExact(hWords, catB) && isExact(vWords, catA);
+  // 1. Check for total completion
+  const filledCoords = Object.keys(grid).filter(k => grid[k]);
+  const totalActiveCells = layout.flat().filter(v => v === 1).length;
+  const isFullyFilled = filledCoords.length === totalActiveCells;
 
-  if (winS || winF) return { solved: true, errors: [], messages: [] };
-
-  const checkGroup = (words, coords) => {
-    if (words.length !== coords.length) return;
-
-    const subsetA = isSubset(words, catA);
-    const subsetB = isSubset(words, catB);
-
-    if ((subsetA && words.length < catA.length) || (subsetB && words.length < catB.length)) {
-      messages.push(`${words.join(", ")} is incomplete.`);
-      coords.forEach(c => errors.add(c));
-    } else if (!isExact(words, catA) && !isExact(words, catB)) {
-      messages.push(`${words.join(", ")} is not a group.`);
-      coords.forEach(c => errors.add(c));
-    }
+  // Helper: check if a list of words matches ANY category exactly
+  const findMatchingCategory = (words) => {
+    return categories.find(cat =>
+      cat.length === words.length && words.every(w => cat.includes(w))
+    );
   };
 
-  checkGroup(hWords, hCoords);
-  checkGroup(vWords, vCoords);
+  // Helper: check if words are a subset of ANY category
+  const isSubsetOfAny = (words) => {
+    return categories.some(cat => words.every(w => cat.includes(w)));
+  };
 
-  const intersectWord = grid[intersection];
-  if (intersectWord && !(catA.includes(intersectWord) && catB.includes(intersectWord))) {
-    messages.push(`${intersectWord} is not at a crosspoint.`);
-    errors.add(intersection);
-  }
+  // 2. Validate all groups (Rows and Columns)
+  allGroups.forEach(group => {
+    const wordsInGroup = group.map(coord => grid[coord]).filter(Boolean);
 
-  return { solved: false, errors: Array.from(errors), messages };
+    // Only validate if the group is physically full on the grid
+    if (wordsInGroup.length === group.length) {
+      const match = findMatchingCategory(wordsInGroup);
+
+      if (!match) {
+        if (isSubsetOfAny(wordsInGroup)) {
+          messages.push(`${wordsInGroup.join(", ")} is incomplete.`);
+        } else {
+          messages.push(`${wordsInGroup.join(", ")} is not a group.`);
+        }
+        group.forEach(coord => errors.add(coord));
+      }
+    }
+  });
+
+  // 3. Validate Intersections (Crosspoints)
+  intersections.forEach(coord => {
+    const word = grid[coord];
+    if (word) {
+      // A crosspoint word MUST belong to at least two categories
+      const matchingCats = categories.filter(cat => cat.includes(word));
+      if (matchingCats.length < 2) {
+        messages.push(`${word} is not at a crosspoint.`);
+        errors.add(coord);
+      }
+    }
+  });
+
+  // 4. Win Condition
+  const solved = isFullyFilled && errors.size === 0 && messages.length === 0;
+
+  return { solved, errors: Array.from(errors), messages };
 };

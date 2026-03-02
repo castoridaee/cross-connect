@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { validatePuzzle } from './utils/validator';
 import { DraggableTile } from './components/DraggableTile';
@@ -7,31 +7,71 @@ import { SuccessModal } from './components/SuccessModal';
 import { WordBank } from './components/WordBank';
 import { useAuth } from './context/AuthContext';
 import { recordPuzzleSolve } from './lib/puzzleService';
-
-const PUZZLE_DATA = {
-  id: "db79dbb9-bc71-44c9-8078-91fe8b8b5245",
-  words: ["LION", "LEOPARD", "CHEETAH", "DANZA", "HAWK", "TIGER"],
-  layout: [[0, 1, 0, 0], [1, 1, 1, 1], [0, 1, 0, 0]],
-  categories: [["TIGER", "LION", "LEOPARD", "CHEETAH"], ["TIGER", "DANZA", "HAWK"]]
-};
+import { supabase } from './lib/supabase';
 
 export default function App() {
-  const { user, loading } = useAuth();
+  // Destructure authLoading to match the guard clause below
+  const { user, loading: authLoading } = useAuth();
+  const [puzzle, setPuzzle] = useState(null);
   const [grid, setGrid] = useState({});
-  const [activeId, setActiveId] = useState(null);
   const [history, setHistory] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [state, setState] = useState({
     attempts: 0,
     moves: 0,
     solved: false,
     errors: [],
-    startTime: Date.now()
+    startTime: null
   });
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const bankWords = PUZZLE_DATA.words.filter(w => !Object.values(grid).includes(w));
-  const isGridFull = Object.values(grid).filter(Boolean).length === PUZZLE_DATA.words.length;
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPuzzle() {
+      const { data, error } = await supabase
+        .from('puzzles')
+        .select('*')
+        .eq('is_published', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("Supabase API Error:", error.message);
+        return;
+      }
+
+      if (data) {
+        setPuzzle(data);
+        setState(prev => ({ ...prev, startTime: Date.now() }));
+      }
+    }
+
+    loadPuzzle();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Combined guard clause for auth and puzzle data
+  if (authLoading || !puzzle) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-pulse font-black text-slate-300 tracking-widest uppercase">
+          {authLoading ? 'Initializing Session...' : 'Fetching Puzzle...'}
+        </div>
+      </div>
+    );
+  }
+
+  // Derive all words from the dynamic puzzle object
+  const allWords = puzzle.word_order?.length > 0
+    ? puzzle.word_order
+    : [...new Set(puzzle.categories.flat())];
+
+  const bankWords = allWords.filter(w => !Object.values(grid).includes(w));
+  const isGridFull = Object.values(grid).filter(Boolean).length === allWords.length;
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null);
@@ -54,26 +94,19 @@ export default function App() {
   };
 
   const onCheck = async () => {
-    const result = validatePuzzle(grid, PUZZLE_DATA);
+    const result = validatePuzzle(grid, puzzle);
     const currentAttempt = state.attempts + 1;
 
     if (result.solved) {
-      const endTime = Date.now();
-      const secondsElapsed = Math.floor((endTime - state.startTime) / 1000);
-
+      const seconds = Math.floor((Date.now() - state.startTime) / 1000);
       setState(s => ({ ...s, solved: true, attempts: currentAttempt }));
 
       if (user) {
-        try {
-          await recordPuzzleSolve(user.id, PUZZLE_DATA.id, {
-            attempts: currentAttempt,
-            moves: state.moves,
-            seconds: secondsElapsed
-          });
-          console.log("Analytics synced.");
-        } catch (err) {
-          console.error("Sync Error:", err.message);
-        }
+        await recordPuzzleSolve(user.id, puzzle.id, {
+          attempts: currentAttempt,
+          moves: state.moves,
+          seconds: seconds
+        });
       }
     } else {
       if (result.messages.length > 0) {
@@ -90,14 +123,6 @@ export default function App() {
     setActiveId(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-pulse font-black text-slate-300 tracking-widest">LOADING SESSION...</div>
-      </div>
-    );
-  }
-
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none">
@@ -106,13 +131,21 @@ export default function App() {
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Attempts: {state.attempts}</p>
         </header>
 
-        <section className="grid grid-rows-4 gap-2 mb-8">
-          {PUZZLE_DATA.layout.map((row, r) => (
+        <section className="grid gap-2 mb-8">
+          {/* FIXED: Changed PUZZLE_DATA.layout to puzzle.layout */}
+          {puzzle.layout.map((row, r) => (
             <div key={r} className="flex gap-2">
               {row.map((active, c) => active ? (
-                <GridDroppable key={`${r}-${c}`} id={`cell-${r}-${c}`} word={grid[`${r}-${c}`]}
-                  isError={state.errors.includes(`${r}-${c}`)} activeDrag={activeId === grid[`${r}-${c}`]} />
-              ) : <div key={`${r}-${c}`} className="w-16 h-16" />)}
+                <GridDroppable
+                  key={`${r}-${c}`}
+                  id={`cell-${r}-${c}`}
+                  word={grid[`${r}-${c}`]}
+                  isError={state.errors.includes(`${r}-${c}`)}
+                  activeDrag={activeId === grid[`${r}-${c}`]}
+                />
+              ) : (
+                <div key={`${r}-${c}`} className="w-16 h-16" />
+              ))}
             </div>
           ))}
         </section>
@@ -149,7 +182,11 @@ export default function App() {
         </section>
 
         <DragOverlay>
-          {activeId && <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">{activeId}</div>}
+          {activeId && (
+            <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">
+              {activeId}
+            </div>
+          )}
         </DragOverlay>
 
         {state.solved && <SuccessModal attempts={state.attempts} />}
