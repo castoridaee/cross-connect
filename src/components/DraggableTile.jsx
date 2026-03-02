@@ -12,6 +12,7 @@ export const DraggableTile = ({ id, label, inGrid, isError, isDraggingOverlay })
       {...listeners}
       {...attributes}
       className="cursor-grab active:cursor-grabbing"
+      style={{ touchAction: 'none' }}
     >
       <WordTile label={label} variant={variant} />
     </div>

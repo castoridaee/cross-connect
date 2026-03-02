@@ -20,6 +20,7 @@ const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
       {...listeners}
       {...attributes}
       className={`relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
+      style={{ touchAction: 'none' }}
       onClick={(e) => {
         // Prevent trigger if it's just a click (DnD handles drag)
         // In dnd-kit, click is distinct from drag start
@@ -71,6 +72,7 @@ const BankDraggableTile = ({ label }) => {
       {...listeners}
       {...attributes}
       className={`relative ${isDragging ? 'opacity-20' : 'opacity-100'} ${isOver ? 'scale-110' : ''} transition-all`}
+      style={{ touchAction: 'none' }}
     >
       <WordTile label={label} />
     </div>
@@ -163,7 +165,7 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
 
   const resize = (axis, dir, side = 'end') => {
     const nextVal = (axis === 'rows' ? rows : cols) + dir;
-    const maxVal = axis === 'rows' ? 5 : 7;
+    const maxVal = axis === 'rows' ? 7 : 5;
     if (nextVal < 2 || nextVal > maxVal) return;
 
     const newGrid = {};
@@ -253,9 +255,9 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
-        <div className="flex justify-between items-center mb-8">
+    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-2 sm:p-4">
+      <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-3 sm:p-5 border border-slate-100">
+        <div className="flex justify-between items-center mb-4">
           <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 transition-colors">
             <ChevronLeft size={24} />
           </button>
@@ -267,8 +269,8 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
 
         <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
           {step === 1 ? (
-            <div className="space-y-8">
-              <div className="flex flex-col gap-2">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
                 <input
                   value={title}
@@ -278,40 +280,35 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
                 />
               </div>
 
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex gap-2">
-                  <button onClick={() => resize('rows', 1, 'start')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={14} /></button>
-                  <button onClick={() => resize('rows', -1, 'start')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={14} /></button>
+              <div className="flex flex-col items-center gap-4">
+                <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
+                  <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                    {Array.from({ length: rows }).map((_, r) => (
+                      Array.from({ length: cols }).map((_, c) => (
+                        <EditorCell
+                          key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
+                          onCellClick={handleCellClick} onEdit={handleCellClick}
+                        />
+                      ))
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => resize('cols', 1, 'start')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Plus size={14} /></button>
-                    <button onClick={() => resize('cols', -1, 'start')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Minus size={14} /></button>
-                  </div>
-
-                  <div className="bg-slate-100 p-4 rounded-2xl border-4 border-slate-200 relative">
-                    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-                      {Array.from({ length: rows }).map((_, r) => (
-                        Array.from({ length: cols }).map((_, c) => (
-                          <EditorCell
-                            key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
-                            onCellClick={handleCellClick} onEdit={handleCellClick}
-                          />
-                        ))
-                      ))}
+                <div className="flex flex-wrap justify-center gap-6 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Height</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => resize('rows', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
+                      <button onClick={() => resize('rows', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => resize('cols', 1, 'end')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col gap-0.5"><Plus size={14} /></button>
-                    <button onClick={() => resize('cols', -1, 'end')} className="p-3 py-1 bg-slate-100 rounded-full hover:bg-slate-200 flex flex-col items-center gap-0.5"><Minus size={14} /></button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => resize('cols', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
+                      <button onClick={() => resize('cols', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button onClick={() => resize('rows', 1, 'end')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Plus size={14} /></button>
-                  <button onClick={() => resize('rows', -1, 'end')} className="p-1 px-3 bg-slate-100 rounded-full hover:bg-slate-200"><Minus size={14} /></button>
                 </div>
               </div>
 
@@ -320,19 +317,19 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
               </button>
             </div>
           ) : (
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Category Descriptions</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Descriptions</p>
                 {categories.map((cat, idx) => (
-                  <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
-                    <div className="flex gap-2 flex-wrap">
+                  <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <div className="flex gap-1.5 flex-wrap">
                       {cat.words.map(w => (
-                        <span key={w} className="bg-white px-2 py-1 rounded text-[10px] font-black tracking-tight border border-slate-200">{w}</span>
+                        <span key={w} className="bg-white px-1.5 py-0.5 rounded text-[9px] font-black tracking-tight border border-slate-200">{w}</span>
                       ))}
                     </div>
                     <input
                       placeholder="e.g. Big Cats"
-                      className="bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold pb-1 transition-colors"
+                      className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-xs font-bold pb-0.5 transition-colors"
                       value={cat.description}
                       onChange={e => {
                         const next = [...categories];
@@ -344,15 +341,15 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
                 ))}
               </div>
 
-              <div className="space-y-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
                 <WordBank>
                   {wordOrder.map(w => <BankDraggableTile key={w} label={w} />)}
                 </WordBank>
               </div>
 
-              <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50">
-                {isSubmitting ? 'SAVING...' : <><Save size={18} /> SUBMIT PUZZLE</>}
+              <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100 mt-2">
+                {isSubmitting ? 'SAVING...' : <><Save size={16} /> SUBMIT PUZZLE</>}
               </button>
             </div>
           )}
