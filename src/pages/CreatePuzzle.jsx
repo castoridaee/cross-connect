@@ -79,18 +79,19 @@ const BankDraggableTile = ({ label }) => {
   );
 };
 
-export default function CreatePuzzle({ onComplete, onCancel }) {
+export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequireAuth }) {
   const { user } = useAuth();
-  const [step, setStep] = useState(1);
-  const [title, setTitle] = useState('');
-  const [rows, setRows] = useState(4);
-  const [cols, setCols] = useState(4);
-  const [grid, setGrid] = useState({}); // { "r-c": "WORD" }
+  const [step, setStep] = useState(initialData?.step || 1);
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [rows, setRows] = useState(initialData?.rows || 4);
+  const [cols, setCols] = useState(initialData?.cols || 4);
+  const [grid, setGrid] = useState(initialData?.grid || {}); // { "r-c": "WORD" }
   const [editingCell, setEditingCell] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [wordOrder, setWordOrder] = useState([]);
+  const [categories, setCategories] = useState(initialData?.categories || []);
+  const [wordOrder, setWordOrder] = useState(initialData?.wordOrder || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDrag, setActiveDrag] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 } // Allow a bit of movement before drag starts
@@ -231,6 +232,11 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
   };
 
   const handleSubmit = async () => {
+    if (!user || user.is_anonymous) {
+      setShowAuthModal(true);
+      return;
+    }
+
     setIsSubmitting(true);
     const layout = Array.from({ length: rows }, (_, r) =>
       Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
@@ -241,17 +247,22 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
       categories,
       layout,
       word_order: wordOrder,
-      is_published: !!user,
-      created_by: user?.id || null
+      is_published: true,
+      created_by: user.id
     };
 
     const { error } = await createPuzzle(puzzleData);
     if (error) alert("Error saving puzzle: " + error.message);
     else {
-      alert(user ? "Puzzle published!" : "Puzzle saved locally!");
+      alert("Puzzle published!");
       onComplete?.();
     }
     setIsSubmitting(false);
+  };
+
+  const handleGoToAuth = () => {
+    const data = { step, title, rows, cols, grid, categories, wordOrder };
+    onRequireAuth(data);
   };
 
   return (
@@ -383,6 +394,34 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
             <div className="flex gap-3">
               <button onClick={() => setEditingCell(null)} className="flex-1 bg-slate-100 text-slate-400 py-3 rounded-2xl font-black">CANCEL</button>
               <button onClick={saveCell} className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-black shadow-lg shadow-indigo-200">SAVE</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Save size={32} />
+            </div>
+            <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Save Your Work</h3>
+            <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
+              Don't worry, your puzzle hasn't been lost! You just need to sign in or create an account to publish it.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleGoToAuth}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-slate-800 transition-all active:scale-95 uppercase"
+              >
+                Sign In to Save
+              </button>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="w-full text-slate-400 font-bold py-2 hover:text-slate-600 transition-colors"
+              >
+                Continue Editing
+              </button>
             </div>
           </div>
         </div>

@@ -35,20 +35,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
-        <button
-          onClick={onNavigateToCreate}
-          className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95"
-        >
-          <Plus size={16} /> Create
-        </button>
 
-        <header className="mb-10 text-center">
-          <h1 className="text-3xl font-black tracking-tighter uppercase">Cross Connect</h1>
-          <div className="flex flex-col items-center gap-1 mt-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{puzzle.title}</p>
-            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Attempts: {state.attempts}</p>
-          </div>
-        </header>
 
         <section className="grid gap-1 mb-8">
           {puzzle.layout.map((row, r) => (
