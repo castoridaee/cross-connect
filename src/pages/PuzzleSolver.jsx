@@ -37,22 +37,22 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
         <button
           onClick={onNavigateToCreate}
-          className="absolute top-6 right-6 bg-white border border-slate-200 text-slate-800 p-3 rounded-2xl shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+          className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95"
         >
-          <Plus size={16} /> New Puzzle
+          <Plus size={16} /> Create
         </button>
 
         <header className="mb-10 text-center">
-          <h1 className="text-3xl font-black tracking-tighter uppercase">Cross-Connect</h1>
+          <h1 className="text-3xl font-black tracking-tighter uppercase">Cross Connect</h1>
           <div className="flex flex-col items-center gap-1 mt-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{puzzle.title}</p>
             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Attempts: {state.attempts}</p>
           </div>
         </header>
 
-        <section className="grid gap-2 mb-8">
+        <section className="grid gap-1 mb-8">
           {puzzle.layout.map((row, r) => (
-            <div key={r} className="flex gap-2">
+            <div key={r} className="flex gap-1">
               {row.map((active, c) => active ? (
                 <GridDroppable
                   key={`${r}-${c}`}
@@ -80,20 +80,20 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
             {isGridFull ? 'SUBMIT' : 'CHECK'}
           </button>
 
-          <button
+          {/* <button
             onClick={onReset}
             className="w-full bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold tracking-widest transition-all active:scale-95 hover:bg-slate-300 select-none text-xs uppercase"
           >
             Reset Puzzle
-          </button>
+          </button> */}
         </div>
 
         <section className="w-full max-w-md flex flex-col gap-2">
           {history.map((entry) => (
             <div key={entry.attempt} className="p-3 border-l-4 shadow-sm border-red-500 bg-red-50 text-red-900">
-              <span className="text-[10px] font-black uppercase block mb-1">Attempt {entry.attempt} Mistakes</span>
+              <span className="text-[10px] font-black uppercase block mb-1">Attempt {entry.attempt} Notes</span>
               {entry.messages.map((msg, i) => (
-                <div key={i} className="text-xs font-bold">{msg}</div>
+                <div key={i} className="text-xs">{msg}</div>
               ))}
             </div>
           ))}

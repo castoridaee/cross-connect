@@ -2,9 +2,9 @@ import React from 'react';
 
 export const WordTile = ({ label, variant = 'default', size = 'md' }) => {
   const sizeClasses = {
-    sm: 'w-12 h-12 text-[7px]',
-    md: 'w-16 h-16 text-[9px]',
-    lg: 'w-20 h-20 text-[11px]'
+    sm: 'w-12 h-12 text-[9px]',
+    md: 'w-16 h-16 text-[11px]',
+    lg: 'w-20 h-20 text-[13px]'
   };
 
   const variants = {
@@ -15,7 +15,7 @@ export const WordTile = ({ label, variant = 'default', size = 'md' }) => {
   };
 
   return (
-    <div className={`${sizeClasses[size] || sizeClasses.md} flex items-center justify-center text-center p-1 rounded-md font-bold uppercase transition-all select-none ${variants[variant]}`}>
+    <div className={`${sizeClasses[size] || sizeClasses.md} flex items-center justify-center text-center p-1 rounded-md font-semibold uppercase transition-all select-none break-words leading-tight tracking-tight ${variants[variant]}`}>
       {label}
     </div>
   );

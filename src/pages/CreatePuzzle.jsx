@@ -275,14 +275,14 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="My Cross-Connect"
+                  placeholder="Title"
                   className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
                 />
               </div>
 
               <div className="flex flex-col items-center gap-4">
                 <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
-                  <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                  <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                     {Array.from({ length: rows }).map((_, r) => (
                       Array.from({ length: cols }).map((_, c) => (
                         <EditorCell
@@ -328,7 +328,7 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
                       ))}
                     </div>
                     <input
-                      placeholder="e.g. Big Cats"
+                      placeholder="Description"
                       className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-xs font-bold pb-0.5 transition-colors"
                       value={cat.description}
                       onChange={e => {
