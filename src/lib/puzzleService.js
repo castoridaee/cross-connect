@@ -27,3 +27,13 @@ export async function recordPuzzleSolve(userId, puzzleId, stats) {
 
   return { error: rpcError };
 }
+
+export async function createPuzzle(puzzleData) {
+  const { data, error } = await supabase
+    .from('puzzles')
+    .insert([puzzleData])
+    .select()
+    .single();
+
+  return { data, error };
+}

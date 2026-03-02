@@ -8,6 +8,8 @@ import { WordBank } from './components/WordBank';
 import { useAuth } from './context/AuthContext';
 import { recordPuzzleSolve } from './lib/puzzleService';
 import { supabase } from './lib/supabase';
+import CreatePuzzle from './pages/CreatePuzzle';
+import { Plus } from 'lucide-react';
 
 export default function App() {
   // Destructure authLoading to match the guard clause below
@@ -16,13 +18,7 @@ export default function App() {
   const [grid, setGrid] = useState({});
   const [history, setHistory] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [state, setState] = useState({
-    attempts: 0,
-    moves: 0,
-    solved: false,
-    errors: [],
-    startTime: null
-  });
+  const [view, setView] = useState('solve'); // 'solve' or 'create'
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -34,6 +30,7 @@ export default function App() {
         .from('puzzles')
         .select('*')
         .eq('is_published', true)
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -50,17 +47,34 @@ export default function App() {
       }
     }
 
-    loadPuzzle();
+    if (view === 'solve') loadPuzzle();
     return () => { isMounted = false; };
-  }, []);
+  }, [view]);
+
+  if (view === 'create') {
+    return (
+      <CreatePuzzle
+        onComplete={() => { setView('solve'); onReset(); }}
+        onCancel={() => setView('solve')}
+      />
+    );
+  }
 
   // Combined guard clause for auth and puzzle data
   if (authLoading || !puzzle) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 gap-6">
         <div className="animate-pulse font-black text-slate-300 tracking-widest uppercase">
           {authLoading ? 'Initializing Session...' : 'Fetching Puzzle...'}
         </div>
+        {!authLoading && !puzzle && (
+          <button
+            onClick={() => setView('create')}
+            className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest"
+          >
+            Create First Puzzle
+          </button>
+        )}
       </div>
     );
   }
@@ -125,14 +139,23 @@ export default function App() {
 
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none">
+      <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
+        <button
+          onClick={() => setView('create')}
+          className="absolute top-6 right-6 bg-white border border-slate-200 text-slate-800 p-3 rounded-2xl shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+        >
+          <Plus size={16} /> New Puzzle
+        </button>
+
         <header className="mb-10 text-center">
           <h1 className="text-3xl font-black tracking-tighter uppercase">Cross-Connected</h1>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Attempts: {state.attempts}</p>
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{puzzle.title}</p>
+            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Attempts: {state.attempts}</p>
+          </div>
         </header>
 
         <section className="grid gap-2 mb-8">
-          {/* FIXED: Changed PUZZLE_DATA.layout to puzzle.layout */}
           {puzzle.layout.map((row, r) => (
             <div key={r} className="flex gap-2">
               {row.map((active, c) => active ? (
@@ -183,7 +206,7 @@ export default function App() {
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">
+            <div className="w-16 h-16 bg-indigo-600 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">
               {activeId}
             </div>
           )}
