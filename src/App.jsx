@@ -19,6 +19,13 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [view, setView] = useState('solve'); // 'solve' or 'create'
+  const [state, setState] = useState({
+    attempts: 0,
+    moves: 0,
+    solved: false,
+    errors: [],
+    startTime: null
+  });
 
   const sensors = useSensors(useSensor(PointerSensor));
 

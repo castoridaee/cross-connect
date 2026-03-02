@@ -1,3 +1,4 @@
+import { useDraggable } from '@dnd-kit/core';
 import { WordTile } from './WordTile';
 
 export const DraggableTile = ({ id, label, inGrid, isError, isDraggingOverlay }) => {
