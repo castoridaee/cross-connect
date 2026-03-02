@@ -188,74 +188,40 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
   const detectGroups = () => {
     const groups = [];
 
-    // Horizontal groups (contiguous)
+    // Horizontal contiguous groups
     for (let r = 0; r < rows; r++) {
-      let currentGroup = [];
+      let current = [];
       for (let c = 0; c < cols; c++) {
         const word = grid[`${r}-${c}`];
-        if (word) {
-          currentGroup.push(word);
-        } else {
-          if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
-          currentGroup = [];
-        }
-      }
-      if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
-    }
-
-    // Vertical groups (contiguous)
-    for (let c = 0; c < cols; c++) {
-      let currentGroup = [];
-      for (let r = 0; r < rows; r++) {
-        const word = grid[`${r}-${r}`] ? null : grid[`${r}-${c}`]; // Fixing a potential bug in column loop
-        if (word) {
-          currentGroup.push(word);
-        } else {
-          if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
-          currentGroup = [];
-        }
-      }
-      if (currentGroup.length > 1) groups.push({ words: currentGroup, description: "" });
-    }
-
-    // Correcting the column loop more carefully:
-    const verticalGroups = [];
-    for (let c = 0; c < cols; c++) {
-      let currentGroup = [];
-      for (let r = 0; r < rows; r++) {
-        const word = grid[`${r}-${c}`];
-        if (word) {
-          currentGroup.push(word);
-        } else {
-          if (currentGroup.length > 1) verticalGroups.push({ words: currentGroup, description: "" });
-          currentGroup = [];
-        }
-      }
-      if (currentGroup.length > 1) verticalGroups.push({ words: currentGroup, description: "" });
-    }
-
-    // Use only horizontal + corrected vertical
-    const horizGroups = [];
-    for (let r = 0; r < rows; r++) {
-      let currentGroup = [];
-      for (let c = 0; c < cols; c++) {
-        const word = grid[`${r}-${c}`];
-        if (word) currentGroup.push(word);
+        if (word) current.push(word);
         else {
-          if (currentGroup.length > 1) horizGroups.push({ words: currentGroup, description: "" });
-          currentGroup = [];
+          if (current.length > 1) groups.push({ words: current, description: "" });
+          current = [];
         }
       }
-      if (currentGroup.length > 1) horizGroups.push({ words: currentGroup, description: "" });
+      if (current.length > 1) groups.push({ words: current, description: "" });
     }
 
-    return [...horizGroups, ...verticalGroups];
+    // Vertical contiguous groups
+    for (let c = 0; c < cols; c++) {
+      let current = [];
+      for (let r = 0; r < rows; r++) {
+        const word = grid[`${r}-${c}`];
+        if (word) current.push(word);
+        else {
+          if (current.length > 1) groups.push({ words: current, description: "" });
+          current = [];
+        }
+      }
+      if (current.length > 1) groups.push({ words: current, description: "" });
+    }
+
+    return groups;
   };
 
   const goToStep2 = () => {
     const words = Object.values(grid);
     if (words.length < 4) return alert("Please add at least 4 words.");
-    if (!title.trim()) return alert("Please enter a title.");
 
     setCategories(detectGroups());
     setWordOrder([...new Set(words)].sort(() => Math.random() - 0.5));
@@ -269,7 +235,7 @@ export default function CreatePuzzle({ onComplete, onCancel }) {
     );
 
     const puzzleData = {
-      title: title.trim(),
+      title: title.trim() || 'Untitled Puzzle',
       categories,
       layout,
       word_order: wordOrder,
