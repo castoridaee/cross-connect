@@ -8,41 +8,58 @@ const AuthContext = createContext({
   signOut: () => { },
 });
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      // 1. Check for existing session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+    let mounted = true;
 
-      if (currentSession) {
-        setSession(currentSession);
-        setUser(currentSession.user);
-        setLoading(false);
-      } else {
-        // 2. Create anonymous session if none exists
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (!error) {
-          setSession(data.session);
-          setUser(data.user);
+    async function initializeAuth() {
+      try {
+        // 1. Get current session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+
+        if (currentSession) {
+          if (mounted) {
+            setSession(currentSession);
+            setUser(currentSession.user);
+          }
+        } else {
+          // 2. Only sign in anonymously if no session exists
+          const { data, error: anonError } = await supabase.auth.signInAnonymously();
+          if (anonError) throw anonError;
+
+          if (mounted && data) {
+            setSession(data.session);
+            setUser(data.user);
+          }
         }
-        setLoading(false);
+      } catch (err) {
+        console.error("Auth Initialization Error:", err.message);
+      } finally {
+        if (mounted) setLoading(false);
       }
-    };
+    }
 
     initializeAuth();
 
-    // 3. Listener for subsequent auth state changes
+    // Listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
@@ -54,9 +71,19 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {!loading ? children : (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-pulse font-black text-slate-300">LOADING...</div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
