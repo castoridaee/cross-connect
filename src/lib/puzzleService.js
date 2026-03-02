@@ -1,12 +1,9 @@
 import { supabase } from './supabase';
 
-/**
- * Updates user progress and increments global puzzle stats.
- */
-export const recordPuzzleSolve = async (userId, puzzleId, stats) => {
+export async function recordPuzzleSolve(userId, puzzleId, stats) {
   const { attempts, moves, seconds } = stats;
 
-  // 1. Update/Upsert the user's personal progress
+  // 1. Save the individual user's performance
   const { error: progressError } = await supabase
     .from('user_progress')
     .upsert({
@@ -17,17 +14,16 @@ export const recordPuzzleSolve = async (userId, puzzleId, stats) => {
       move_count: moves,
       total_seconds_played: seconds,
       solved_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id, puzzle_id' });
 
   if (progressError) throw progressError;
 
-  // 2. Increment global puzzle aggregates (RPC call)
-  // We use an RPC (Remote Procedure Call) to ensure atomic increments in Postgres
-  const { error: statsError } = await supabase.rpc('increment_puzzle_stats', {
+  // 2. Update global puzzle averages via RPC
+  const { error: rpcError } = await supabase.rpc('increment_puzzle_stats', {
     p_id: puzzleId,
     p_attempts: attempts,
     p_seconds: seconds
   });
 
-  return { success: !statsError, error: statsError };
-};
+  return { error: rpcError };
+}

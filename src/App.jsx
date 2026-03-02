@@ -5,21 +5,21 @@ import { DraggableTile } from './components/DraggableTile';
 import { GridDroppable } from './components/GridDroppable';
 import { SuccessModal } from './components/SuccessModal';
 import { WordBank } from './components/WordBank';
+import { useAuth } from './context/AuthContext';
+import { recordPuzzleSolve } from './lib/puzzleService';
 
 const PUZZLE_DATA = {
+  id: "db79dbb9-bc71-44c9-8078-91fe8b8b5245",
   words: ["LION", "LEOPARD", "CHEETAH", "DANZA", "HAWK", "TIGER"],
-  layout: [[0, 1, 0, 0], [1, 1, 1, 1], [0, 1, 0, 0], [0, 0, 0, 0]],
-  intersection: "1-1",
-  hCoords: ["1-0", "1-1", "1-2", "1-3"],
-  vCoords: ["0-1", "1-1", "2-1"],
-  catA: ["TIGER", "LION", "LEOPARD", "CHEETAH"],
-  catB: ["TIGER", "DANZA", "HAWK"]
+  layout: [[0, 1, 0, 0], [1, 1, 1, 1], [0, 1, 0, 0]],
+  categories: [["TIGER", "LION", "LEOPARD", "CHEETAH"], ["TIGER", "DANZA", "HAWK"]]
 };
 
 export default function App() {
+  const { user, loading } = useAuth();
   const [grid, setGrid] = useState({});
-  const [activeId, setActiveId] = useState(null); // Fixed missing state
-  const [history, setHistory] = useState([]); // Fixed missing state
+  const [activeId, setActiveId] = useState(null);
+  const [history, setHistory] = useState([]);
   const [state, setState] = useState({
     attempts: 0,
     moves: 0,
@@ -28,7 +28,6 @@ export default function App() {
     startTime: Date.now()
   });
 
-  // Fixed missing sensor initialization
   const sensors = useSensors(useSensor(PointerSensor));
 
   const bankWords = PUZZLE_DATA.words.filter(w => !Object.values(grid).includes(w));
@@ -61,11 +60,22 @@ export default function App() {
     if (result.solved) {
       const endTime = Date.now();
       const secondsElapsed = Math.floor((endTime - state.startTime) / 1000);
+
       setState(s => ({ ...s, solved: true, attempts: currentAttempt }));
 
-      // Future: saveSolveStats(user.id, puzzle.id, { attempts: currentAttempt, seconds: secondsElapsed });
+      if (user) {
+        try {
+          await recordPuzzleSolve(user.id, PUZZLE_DATA.id, {
+            attempts: currentAttempt,
+            moves: state.moves,
+            seconds: secondsElapsed
+          });
+          console.log("Analytics synced.");
+        } catch (err) {
+          console.error("Sync Error:", err.message);
+        }
+      }
     } else {
-      // Add result messages to history in reverse order
       if (result.messages.length > 0) {
         setHistory(prev => [{ attempt: currentAttempt, messages: result.messages }, ...prev]);
       }
@@ -80,15 +90,19 @@ export default function App() {
     setActiveId(null);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-pulse font-black text-slate-300 tracking-widest">LOADING SESSION...</div>
+      </div>
+    );
+  }
+
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={e => setActiveId(e.active.id)}
-      onDragEnd={handleDragEnd}
-    >
+    <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none">
         <header className="mb-10 text-center">
-          <h1 className="text-3xl font-black tracking-tighter uppercase">Cross-Connect</h1>
+          <h1 className="text-3xl font-black tracking-tighter uppercase">Cross-Connected</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Attempts: {state.attempts}</p>
         </header>
 
@@ -96,13 +110,8 @@ export default function App() {
           {PUZZLE_DATA.layout.map((row, r) => (
             <div key={r} className="flex gap-2">
               {row.map((active, c) => active ? (
-                <GridDroppable
-                  key={`${r}-${c}`}
-                  id={`cell-${r}-${c}`}
-                  word={grid[`${r}-${c}`]}
-                  isError={state.errors.includes(`${r}-${c}`)}
-                  activeDrag={activeId === grid[`${r}-${c}`]}
-                />
+                <GridDroppable key={`${r}-${c}`} id={`cell-${r}-${c}`} word={grid[`${r}-${c}`]}
+                  isError={state.errors.includes(`${r}-${c}`)} activeDrag={activeId === grid[`${r}-${c}`]} />
               ) : <div key={`${r}-${c}`} className="w-16 h-16" />)}
             </div>
           ))}
@@ -128,7 +137,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* History Log */}
         <section className="w-full max-w-md flex flex-col gap-2">
           {history.map((entry) => (
             <div key={entry.attempt} className="p-3 border-l-4 shadow-sm border-red-500 bg-red-50 text-red-900">
@@ -141,11 +149,7 @@ export default function App() {
         </section>
 
         <DragOverlay>
-          {activeId && (
-            <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">
-              {activeId}
-            </div>
-          )}
+          {activeId && <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">{activeId}</div>}
         </DragOverlay>
 
         {state.solved && <SuccessModal attempts={state.attempts} />}
