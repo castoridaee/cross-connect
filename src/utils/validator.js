@@ -46,7 +46,7 @@ export const validatePuzzle = (grid, puzzle) => {
   // 3. Validate Intersections (Crosspoints)
   intersections.forEach(coord => {
     const word = grid[coord];
-    if (word) {
+    if (word && !errors.has(coord)) {
       // A crosspoint word MUST belong to at least two categories
       const matchingCats = categories.filter(cat => cat.words.includes(word));
       if (matchingCats.length < 2) {

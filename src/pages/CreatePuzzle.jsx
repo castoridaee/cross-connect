@@ -109,7 +109,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     if (word) {
       const exists = Object.entries(grid).find(([k, v]) => v === word && k !== `${editingCell.r}-${editingCell.c}`);
       if (exists) {
-        alert("Word already exists in grid!");
+        setEditingCell(prev => ({ ...prev, error: "Word already exists in grid!" }));
         return;
       }
       newGrid[`${editingCell.r}-${editingCell.c}`] = word;
@@ -222,9 +222,14 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     return groups;
   };
 
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+
   const goToStep2 = () => {
     const words = Object.values(grid);
-    if (words.length < 4) return alert("Please add at least 4 words.");
+    if (words.length < 3) {
+      setStatusMsg({ type: 'error', text: "Please add at least 3 words." });
+      return;
+    }
 
     setCategories(detectGroups());
     setWordOrder([...new Set(words)].sort(() => Math.random() - 0.5));
@@ -238,6 +243,8 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     }
 
     setIsSubmitting(true);
+    setStatusMsg({ type: '', text: '' });
+
     const layout = Array.from({ length: rows }, (_, r) =>
       Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
     );
@@ -252,12 +259,15 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     };
 
     const { error } = await createPuzzle(puzzleData);
-    if (error) alert("Error saving puzzle: " + error.message);
-    else {
-      alert("Puzzle published!");
-      onComplete?.();
+    if (error) {
+      setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
+      setIsSubmitting(false);
+    } else {
+      setStatusMsg({ type: 'success', text: "Puzzle published!" });
+      setTimeout(() => {
+        onComplete?.();
+      }, 1500);
     }
-    setIsSubmitting(false);
   };
 
   const handleGoToAuth = () => {
@@ -269,7 +279,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     <div className="flex flex-col items-center min-h-screen bg-slate-50 p-2 sm:p-4">
       <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-3 sm:p-5 border border-slate-100">
         <div className="flex justify-between items-center mb-4">
-          <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={() => step === 2 ? setStep(1) : onCancel()} className="text-slate-400 hover:text-slate-600 transition-colors">
             <ChevronLeft size={24} />
           </button>
           <h2 className="text-xl font-black uppercase tracking-tight">
@@ -277,6 +287,16 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
           </h2>
           <div className="w-6" />
         </div>
+
+        {statusMsg.text && (
+          <div className={`mb-6 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
+            }`}>
+            <span className="text-xs font-bold uppercase tracking-wide">{statusMsg.text}</span>
+            <button onClick={() => setStatusMsg({ type: '', text: '' })} className="text-slate-400 hover:text-slate-600">
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
         <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
           {step === 1 ? (
@@ -380,9 +400,15 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Update Word</h3>
             <input
               autoFocus className="w-full text-center text-3xl font-black uppercase tracking-tight border-b-4 border-indigo-500 outline-none pb-2 mb-2"
-              value={editingCell.val} onChange={e => setEditingCell({ ...editingCell, val: e.target.value })}
+              value={editingCell.val} onChange={e => setEditingCell({ ...editingCell, val: e.target.value, error: '' })}
               onKeyDown={e => e.key === 'Enter' && saveCell()}
             />
+
+            {editingCell.error && (
+              <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center mb-4 animate-in fade-in slide-in-from-top-1">
+                {editingCell.error}
+              </p>
+            )}
 
             <button
               onClick={() => deleteCell(editingCell.r, editingCell.c)}

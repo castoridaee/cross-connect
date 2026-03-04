@@ -94,7 +94,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
           )}
         </DragOverlay>
 
-        {state.solved && <SuccessModal attempts={state.attempts} />}
+        {state.solved && <SuccessModal attempts={state.attempts} categories={puzzle.categories} />}
       </div>
     </DndContext>
   );
