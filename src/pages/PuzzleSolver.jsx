@@ -10,7 +10,9 @@ import { Plus } from 'lucide-react';
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 }
+  }));
 
   const allWords = puzzle.word_order?.length > 0
     ? puzzle.word_order
@@ -37,23 +39,33 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
 
 
-        <section className="grid gap-1 mb-8">
-          {puzzle.layout.map((row, r) => (
-            <div key={r} className="flex gap-1">
-              {row.map((active, c) => active ? (
-                <GridDroppable
-                  key={`${r}-${c}`}
-                  id={`cell-${r}-${c}`}
-                  word={grid[`${r}-${c}`]}
-                  isError={state.errors.includes(`${r}-${c}`)}
-                  activeDrag={activeId === grid[`${r}-${c}`]}
-                />
-              ) : (
-                <div key={`${r}-${c}`} className="w-16 h-16" />
-              ))}
+        <div className="w-full relative px-4 mb-4">
+          {/* Visual cues for horizontal scrolling */}
+          <div className="absolute left-4 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
+          <div className="absolute right-4 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
+
+          <div className="overflow-x-auto pb-6 custom-scrollbar text-center">
+            <div className="inline-block min-w-max mx-auto">
+              <section className="grid gap-1">
+                {puzzle.layout.map((row, r) => (
+                  <div key={r} className="flex gap-1 justify-center">
+                    {row.map((active, c) => active ? (
+                      <GridDroppable
+                        key={`${r}-${c}`}
+                        id={`cell-${r}-${c}`}
+                        word={grid[`${r}-${c}`]}
+                        isError={state.errors.includes(`${r}-${c}`)}
+                        activeDrag={activeId === grid[`${r}-${c}`]}
+                      />
+                    ) : (
+                      <div key={`${r}-${c}`} className="w-16 h-16" />
+                    ))}
+                  </div>
+                ))}
+              </section>
             </div>
-          ))}
-        </section>
+          </div>
+        </div>
 
         <WordBank>
           {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}

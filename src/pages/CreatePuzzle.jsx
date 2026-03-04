@@ -20,7 +20,7 @@ const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
       {...listeners}
       {...attributes}
       className={`relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'manipulation' }}
       onClick={(e) => {
         // Prevent trigger if it's just a click (DnD handles drag)
         // In dnd-kit, click is distinct from drag start
@@ -72,7 +72,7 @@ const BankDraggableTile = ({ label }) => {
       {...listeners}
       {...attributes}
       className={`relative ${isDragging ? 'opacity-20' : 'opacity-100'} ${isOver ? 'scale-110' : ''} transition-all`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'manipulation' }}
     >
       <WordTile label={label} />
     </div>
@@ -330,16 +330,26 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
-                  <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-                    {Array.from({ length: rows }).map((_, r) => (
-                      Array.from({ length: cols }).map((_, c) => (
-                        <EditorCell
-                          key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
-                          onCellClick={handleCellClick} onEdit={handleCellClick}
-                        />
-                      ))
-                    ))}
+                <div className="w-full relative px-4 mb-4">
+                  {/* Visual cues for horizontal scrolling */}
+                  <div className="absolute left-4 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
+                  <div className="absolute right-4 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
+
+                  <div className="overflow-x-auto pb-4 custom-scrollbar">
+                    <div className="inline-block min-w-max mx-auto">
+                      <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
+                        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                          {Array.from({ length: rows }).map((_, r) => (
+                            Array.from({ length: cols }).map((_, c) => (
+                              <EditorCell
+                                key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
+                                onCellClick={handleCellClick} onEdit={handleCellClick}
+                              />
+                            ))
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
