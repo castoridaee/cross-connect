@@ -1,8 +1,8 @@
 import { Trophy, ThumbsUp, Share2 } from 'lucide-react';
 
-export const SuccessModal = ({ attempts, categories = [] }) => {
+export const SuccessModal = ({ attempts, hintsUsed, categories = [] }) => {
   const handleShare = () => {
-    const text = `Puzzle solved in ${attempts} attempts.`;
+    const text = `Puzzle solved in ${attempts} attempts with ${hintsUsed} hints.`;
     navigator.share ? navigator.share({ text }) : navigator.clipboard.writeText(text);
   };
 
@@ -15,7 +15,10 @@ export const SuccessModal = ({ attempts, categories = [] }) => {
       <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full animate-in fade-in zoom-in duration-300">
         <Trophy className="mx-auto text-yellow-500 mb-2" size={48} />
         <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">Solved!</h2>
-        <p className="text-slate-500 mt-1 mb-6 text-sm font-bold">Attempts: {attempts}</p>
+        <div className="flex justify-center gap-4 mt-1 mb-6">
+          <p className="text-slate-500 text-sm font-bold">Attempts: {attempts}</p>
+          <p className="text-slate-500 text-sm font-bold">Hints: {hintsUsed}</p>
+        </div>
 
         <div className="space-y-3 mb-8 text-left max-h-60 overflow-y-auto pr-2 custom-scrollbar">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Categories Revealed</p>

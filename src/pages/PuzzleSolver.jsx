@@ -8,7 +8,7 @@ import { SuccessModal } from '../components/SuccessModal';
 import { Plus } from 'lucide-react';
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
-  const { grid, history, state, handleMove, onCheck, onReset } = usePuzzleGame(puzzle, user);
+  const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -60,24 +60,47 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
         </WordBank>
 
         <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
-          <button
-            onClick={onCheck}
-            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 active:bg-slate-700 select-none"
-          >
-            {isGridFull ? 'SUBMIT' : 'CHECK'}
-          </button>
-
-          {/* <button
-            onClick={onReset}
-            className="w-full bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold tracking-widest transition-all active:scale-95 hover:bg-slate-300 select-none text-xs uppercase"
-          >
-            Reset Puzzle
-          </button> */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              disabled={state.solved || hints.length >= puzzle.categories.length * 2}
+              onClick={onHint}
+              className="bg-slate-200 text-slate-700 py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:grayscale uppercase text-xs"
+            >
+              Hint
+              {hints.length > 0 && ` (${hints.length}/${puzzle.categories.length * 2})`}
+            </button>
+            <button
+              onClick={onCheck}
+              className="bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 active:bg-slate-700 select-none uppercase text-xs"
+            >
+              {isGridFull ? 'SUBMIT' : 'CHECK'}
+            </button>
+          </div>
         </div>
 
-        <section className="w-full max-w-md flex flex-col gap-2">
+        <section className="w-full max-w-md flex flex-col gap-3">
+          {hints.length > 0 && (
+            <div className="p-4 rounded-2xl bg-indigo-50 border-l-4 border-indigo-500 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-2">Hints Revealed</span>
+              <div className="space-y-2">
+                {puzzle.categories.map((cat, idx) => {
+                  const level1 = hints.some(h => h.index === idx && h.level === 1);
+                  const level2 = hints.some(h => h.index === idx && h.level === 2);
+                  if (!level1) return null;
+
+                  return (
+                    <div key={idx} className="text-xs font-bold text-indigo-900">
+                      • {cat.description || 'Category'}
+                      {level2 && <span className="text-[10px] text-indigo-400 ml-1.5 uppercase tracking-tighter">({cat.words.length} words)</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {history.map((entry) => (
-            <div key={entry.attempt} className="p-3 border-l-4 shadow-sm border-red-500 bg-red-50 text-red-900">
+            <div key={entry.attempt} className="p-3 border-l-4 shadow-sm border-red-500 bg-red-50 text-red-900 animate-in fade-in duration-200">
               <span className="text-[10px] font-black uppercase block mb-1">Attempt {entry.attempt} Notes</span>
               {entry.messages.map((msg, i) => (
                 <div key={i} className="text-xs">{msg}</div>
@@ -94,7 +117,13 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
           )}
         </DragOverlay>
 
-        {state.solved && <SuccessModal attempts={state.attempts} categories={puzzle.categories} />}
+        {state.solved && (
+          <SuccessModal
+            attempts={state.attempts}
+            hintsUsed={hints.length}
+            categories={puzzle.categories}
+          />
+        )}
       </div>
     </DndContext>
   );

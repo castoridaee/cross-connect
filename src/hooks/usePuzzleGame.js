@@ -13,9 +13,12 @@ export const usePuzzleGame = (puzzle, user) => {
     startTime: Date.now()
   });
 
+  const [hints, setHints] = useState([]); // [{ index: categoryIndex, level: 1|2 }]
+
   const onReset = useCallback(() => {
     setGrid({});
     setHistory([]);
+    setHints([]);
     setState(s => ({
       ...s,
       attempts: 0,
@@ -41,6 +44,46 @@ export const usePuzzleGame = (puzzle, user) => {
     });
     setState(s => ({ ...s, moves: s.moves + 1, errors: [] }));
   }, [state.solved]);
+
+  const onHint = useCallback(() => {
+    if (state.solved || hints.length >= puzzle.categories.length * 2) return;
+
+    // 1. Identify which categories are currently "solved" on the board
+    // A category is solved if its words form a contiguous block matching its definition
+    const solvedIndices = puzzle.categories.map((cat, idx) => {
+      const hasOnBoard = Object.values(grid).filter(w => cat.words.includes(w)).length === cat.words.length;
+      if (!hasOnBoard) return false;
+
+      // Basic check: is there ANY contiguous group on the grid that matches this category's words?
+      // For simplicity, we'll check if if the category words exist in a single group
+      const matchingCat = puzzle.categories.find(c =>
+        c.words.length === cat.words.length && c.words.every(w => cat.words.includes(w))
+      );
+      return !!matchingCat;
+    }).map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
+
+    // 2. Prioritize Tier 1 (Names) then Tier 2 (Counts)
+    const tier1Given = hints.filter(h => h.level === 1).map(h => h.index);
+    const tier2Given = hints.filter(h => h.level === 2).map(h => h.index);
+
+    let level = 1;
+    let candidates = puzzle.categories.map((_, i) => i).filter(i => !tier1Given.includes(i));
+
+    if (candidates.length === 0) {
+      level = 2;
+      candidates = puzzle.categories.map((_, i) => i).filter(i => !tier2Given.includes(i));
+    }
+
+    if (candidates.length === 0) return;
+
+    // 3. Prioritize non-solved categories
+    const unsolvedCandidates = candidates.filter(i => !solvedIndices.includes(i));
+    const selectionSource = unsolvedCandidates.length > 0 ? unsolvedCandidates : candidates;
+
+    // 4. pick random
+    const randomIndex = selectionSource[Math.floor(Math.random() * selectionSource.length)];
+    setHints(prev => [...prev, { index: randomIndex, level }]);
+  }, [grid, hints, puzzle, state.solved]);
 
   const onCheck = useCallback(async () => {
     const result = validatePuzzle(grid, puzzle);
@@ -68,9 +111,11 @@ export const usePuzzleGame = (puzzle, user) => {
   return {
     grid,
     history,
+    hints,
     state,
     handleMove,
     onCheck,
+    onHint,
     onReset
   };
 };
