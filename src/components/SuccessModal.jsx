@@ -20,18 +20,22 @@ export const SuccessModal = ({ attempts, hintsUsed, categories = [] }) => {
           <p className="text-slate-500 text-sm font-bold">Hints: {hintsUsed}</p>
         </div>
 
-        <div className="space-y-3 mb-8 text-left max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Categories Revealed</p>
-          {categories.map((cat, i) => (
-            <div key={i} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <p className="text-xs font-black uppercase text-indigo-600 mb-1">{cat.description || 'Contiguous Group'}</p>
-              <div className="flex flex-wrap gap-1">
-                {cat.words.map(w => (
-                  <span key={w} className="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 uppercase tracking-tighter">{w}</span>
-                ))}
+        <div className="relative mb-8">
+          <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar text-left">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Categories Revealed</p>
+            {categories.map((cat, i) => (
+              <div key={i} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="text-xs font-black uppercase text-indigo-600 mb-1">{cat.description || 'Contiguous Group'}</p>
+                <div className="flex flex-wrap gap-1">
+                  {cat.words.map(w => (
+                    <span key={w} className="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 uppercase tracking-tighter">{w}</span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Subtle fade indicator for scrolling */}
+          <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-4">

@@ -224,6 +224,18 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
 
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
 
+  // Auto-clear error messages when user fixes the issue
+  useEffect(() => {
+    if (statusMsg.type === 'error' && step === 1) {
+      const words = Object.values(grid);
+      const detected = detectGroups();
+
+      if (words.length >= 3 && detected.length >= 2) {
+        setStatusMsg({ type: '', text: '' });
+      }
+    }
+  }, [grid, step, statusMsg.type]);
+
   const goToStep2 = () => {
     const words = Object.values(grid);
     if (words.length < 3) {
@@ -231,7 +243,13 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       return;
     }
 
-    setCategories(detectGroups());
+    const detected = detectGroups();
+    if (detected.length < 2) {
+      setStatusMsg({ type: 'error', text: "Puzzle must have at least 2 categories (contiguous word groups)." });
+      return;
+    }
+
+    setCategories(detected);
     setWordOrder([...new Set(words)].sort(() => Math.random() - 0.5));
     setStep(2);
   };
