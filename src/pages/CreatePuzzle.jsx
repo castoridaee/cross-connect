@@ -20,7 +20,7 @@ const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
       {...listeners}
       {...attributes}
       className={`relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
-      style={{ touchAction: 'manipulation' }}
+      style={{ touchAction: 'none' }}
       onClick={(e) => {
         // Prevent trigger if it's just a click (DnD handles drag)
         // In dnd-kit, click is distinct from drag start
@@ -72,7 +72,7 @@ const BankDraggableTile = ({ label }) => {
       {...listeners}
       {...attributes}
       className={`relative ${isDragging ? 'opacity-20' : 'opacity-100'} ${isOver ? 'scale-110' : ''} transition-all`}
-      style={{ touchAction: 'manipulation' }}
+      style={{ touchAction: 'none' }}
     >
       <WordTile label={label} />
     </div>
@@ -94,7 +94,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 8 } // Allow a bit of movement before drag starts
+    activationConstraint: { distance: 3 } // Responsive grab
   }));
 
   const handleCellClick = (r, c) => {
@@ -230,11 +230,14 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       const words = Object.values(grid);
       const detected = detectGroups();
 
-      if (words.length >= 3 && detected.length >= 2) {
+      const isWordError = statusMsg.text.includes("3 words");
+      const isCatError = statusMsg.text.includes("2 categories");
+
+      if ((isWordError && words.length >= 3) || (isCatError && detected.length >= 2)) {
         setStatusMsg({ type: '', text: '' });
       }
     }
-  }, [grid, step, statusMsg.type]);
+  }, [grid, step, statusMsg.type, statusMsg.text]);
 
   const goToStep2 = () => {
     const words = Object.values(grid);
@@ -297,9 +300,13 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     <div className="flex flex-col items-center min-h-screen bg-slate-50 p-2 sm:p-4">
       <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-3 sm:p-5 border border-slate-100">
         <div className="flex justify-between items-center mb-4">
-          <button onClick={() => step === 2 ? setStep(1) : onCancel()} className="text-slate-400 hover:text-slate-600 transition-colors">
-            <ChevronLeft size={24} />
-          </button>
+          {step === 2 ? (
+            <button onClick={() => setStep(1)} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <ChevronLeft size={24} />
+            </button>
+          ) : (
+            <div className="w-6" />
+          )}
           <h2 className="text-xl font-black uppercase tracking-tight">
             {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
           </h2>
@@ -335,7 +342,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
                   <div className="absolute left-4 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
                   <div className="absolute right-4 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
 
-                  <div className="overflow-x-auto pb-4 custom-scrollbar">
+                  <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
                     <div className="inline-block min-w-max mx-auto">
                       <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
                         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>

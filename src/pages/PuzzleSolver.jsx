@@ -11,7 +11,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
   const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 8 }
+    activationConstraint: { distance: 3 }
   }));
 
   const allWords = puzzle.word_order?.length > 0
