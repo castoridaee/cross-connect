@@ -19,7 +19,10 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
     try {
       if (mode === 'signup') {
         if (!nickname.trim()) throw new Error("Nickname is required");
-        const { error: signUpError } = await signUp(email, password, { nickname });
+        const { error: signUpError } = await signUp(email, password, {
+          nickname,
+          locale: navigator.language || 'en-US'
+        });
         if (signUpError) throw signUpError;
       } else {
         const { error: signInError } = await signIn(email, password);

@@ -276,7 +276,8 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       layout,
       word_order: wordOrder,
       is_published: true,
-      created_by: user.id
+      created_by: user.id,
+      locale: navigator.language || 'en-US'
     };
 
     const { error } = await createPuzzle(puzzleData);
