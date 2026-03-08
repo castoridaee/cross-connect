@@ -132,7 +132,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     setHints(newHints);
     setState(newState);
     lastSavedState.current = JSON.stringify({ grid: newGrid, attempts: newState.attempts, moves: newState.moves, hints: newHints, history: newHistory });
-  }, [puzzle.id, initialProgress?.id]); // Use IDs as key for syncing
+  }, [puzzle.id, initialProgress?.id, initialProgress?.updated_at]); // Support refreshing same puzzle
 
   const onReset = useCallback(() => {
     setGrid({});

@@ -18,21 +18,38 @@ function App() {
   const [progress, setProgress] = useState(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     // 1. Check for URL parameters
     const params = new URLSearchParams(window.location.search);
     const puzzleId = params.get('p');
     const profileId = params.get('a');
 
-    if (puzzleId) {
-      loadSpecificPuzzle(puzzleId);
+    if (view === 'solve') {
+      if (puzzleId) {
+        loadSpecificPuzzle(puzzleId);
+      } else if (!puzzle) {
+        loadPuzzles();
+      } else {
+        // Refresh progress for the current puzzle we are resuming
+        refreshCurrentProgress(puzzle.id);
+      }
     } else if (profileId) {
       setAuthorId(profileId);
       setView('author');
       window.history.replaceState({}, document.title, "/");
-    } else if (view === 'solve' && !puzzle && !authLoading) {
-      loadPuzzles();
     }
-  }, [view, user?.id, puzzle, authLoading]);
+  }, [view, user?.id, authLoading]);
+
+  async function refreshCurrentProgress(puzzleId) {
+    if (!user) return;
+    try {
+      const { data } = await getPuzzleProgress(user.id, puzzleId);
+      if (data) setProgress(data);
+    } catch (err) {
+      console.error("Failed to refresh progress:", err);
+    }
+  }
 
   async function loadSpecificPuzzle(id) {
     setLoading(true);
