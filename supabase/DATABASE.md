@@ -31,17 +31,19 @@ Public user profiles linked to Supabase Auth users.
 - `locale` (text): The user's preferred browser locale.
 
 ### `user_progress`
-Tracks user performance on specific puzzles.
+Tracks user performance and "Skip" status on specific puzzles.
 - `id` (uuid, primary key).
-- `user_id` (uuid, references `auth.users`).
-- `puzzle_id` (uuid, references `puzzles`).
-- `status` (text): Current state (e.g., `in_progress`, `solved`).
-- `grid_state` (jsonb): The current state of the grid.
+- `user_id` (uuid, references `auth.users`): Links to the player.
+- `puzzle_id` (uuid, references `puzzles`): Links to the puzzle.
+- `status` (text): State of the puzzle for this user (`in_progress`, `solved`, `skipped`).
+- `grid_state` (jsonb): The current state of the grid for resuming.
 - `attempts` (int4): Number of check/submit attempts.
 - `move_count` (int4): Number of moves made.
-- `started_at` (timestamp with time zone): When the user started playing the puzzle.
-- `solved_at` (timestamp with time zone): When the user solved the puzzle.
+- `started_at` (timestamp): When the user started the puzzle.
+- `solved_at` (timestamp): When the user solved the puzzle.
+- `updated_at` (timestamp): Last time any interaction occurred.
 - `total_seconds_played` (int4): Time taken to solve.
+- **Unique Constraint:** `(user_id, puzzle_id)` ensures one record per player-puzzle pair.
 
 ## Row Level Security (RLS)
 
@@ -54,7 +56,19 @@ Tracks user performance on specific puzzles.
 - **Anyone** can view all public profiles for author mapping.
 - **Users** can only insert/update their own profile.
 
-## Key Relationships
-- `puzzles.created_by` joins with `profiles.id` to display author nicknames. 
-  - **Note:** Because the `puzzles` table contains multiple UUID columns (`author_id` and `created_by`), all Supabase joins must explicitly specify the relationship using the `profiles!created_by(...)` syntax to avoid ambiguity.
-- `user_progress` links users to puzzles they have interacted with.
+## Syncing Local Documentation with Remote
+The best way to sync your remote Supabase schema back to this project is using the **Supabase CLI**.
+
+1. **Initialize Supabase locally (if not done):**
+   ```bash
+   npx supabase init
+   ```
+2. **Link to your remote project:**
+   ```bash
+   npx supabase link --project-ref <your-project-id>
+   ```
+3. **Pull remote changes into local migrations:**
+   ```bash
+   npx supabase db pull
+   ```
+This will generate new migration files in `supabase/migrations` that match your actual remote state.

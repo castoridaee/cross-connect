@@ -5,11 +5,11 @@ import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
-import { Plus, Share2, Check } from 'lucide-react';
+import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick }) {
+export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
@@ -55,13 +55,22 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             {puzzle.title || 'Untitled Puzzle'}
           </h1>
           
-          <button 
-            onClick={handleShare}
-            className="absolute -right-2 top-0 p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
-            title="Share Puzzle"
-          >
-            {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
-          </button>
+          <div className="absolute -right-2 top-0 flex items-center gap-1">
+            <button 
+              onClick={onSkip}
+              className="p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
+              title="Skip Puzzle"
+            >
+              <SkipForward size={18} />
+            </button>
+            <button 
+              onClick={handleShare}
+              className="p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
+              title="Share Puzzle"
+            >
+              {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
+            </button>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
             {puzzle.created_by ? (

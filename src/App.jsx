@@ -6,7 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
-import { getPuzzle } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip } from './lib/puzzleService';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -37,7 +37,7 @@ function App() {
     setLoading(true);
     try {
       let { data, error } = await getPuzzle(id);
-      
+
       if (error) {
         console.warn("Specific fetch with join failed, retrying without join...", error);
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -45,11 +45,11 @@ function App() {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (fallbackError) throw fallbackError;
         data = fallbackData;
       }
-      
+
       if (data) {
         setPuzzle(data);
         setView('solve');
@@ -66,13 +66,30 @@ function App() {
     }
   }
 
-    async function loadPuzzles() {
+  async function loadPuzzles() {
     setLoading(true);
     try {
-      // 1. Get the total count of puzzles
-      const { count, error: countError } = await supabase
+      // 1. Get skipped puzzle IDs for current user
+      let skippedIds = [];
+      if (user) {
+        const { data: skippedData } = await supabase
+          .from('user_progress')
+          .select('puzzle_id')
+          .eq('user_id', user.id)
+          .eq('status', 'skipped');
+        skippedIds = skippedData?.map(s => s.puzzle_id).filter(id => id) || [];
+      }
+
+      // 2. Get the total count of puzzles (excluding skipped)
+      let countQuery = supabase
         .from('puzzles')
         .select('*', { count: 'exact', head: true });
+
+      if (skippedIds.length > 0) {
+        countQuery = countQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+      }
+
+      const { count, error: countError } = await countQuery;
 
       if (countError) {
         console.error("Count Error:", countError);
@@ -82,25 +99,35 @@ function App() {
       console.log("Found puzzles count:", count);
 
       if (count > 0) {
-        // 2. Pick a random index
+        // 3. Pick a random index
         const randomIndex = Math.floor(Math.random() * count);
 
-        // 3. Fetch that specific puzzle with author nickname (using explicit join)
-        let { data, error: fetchError } = await supabase
+        // 4. Fetch that specific puzzle with author nickname
+        let fetchQuery = supabase
           .from('puzzles')
           .select('*, author:profiles!created_by(nickname)')
-          .range(randomIndex, randomIndex)
-          .single();
+          .range(randomIndex, randomIndex);
+
+        if (skippedIds.length > 0) {
+          fetchQuery = fetchQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+        }
+
+        let { data, error: fetchError } = await fetchQuery.single();
 
         if (fetchError) {
           console.warn("Fetch with join failed, retrying without join...", fetchError);
           // Fallback: Fetch without join
-          const { data: fallbackData, error: fallbackError } = await supabase
+          let fallbackQuery = supabase
             .from('puzzles')
             .select('*')
-            .range(randomIndex, randomIndex)
-            .single();
-          
+            .range(randomIndex, randomIndex);
+
+          if (skippedIds.length > 0) {
+            fallbackQuery = fallbackQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+          }
+
+          const { data: fallbackData, error: fallbackError } = await fallbackQuery.single();
+
           if (fallbackError) throw fallbackError;
           data = fallbackData;
         }
@@ -113,6 +140,22 @@ function App() {
       setLoading(false);
     }
   }
+
+  const handleSkip = async () => {
+    if (!puzzle || !user) {
+      console.warn("Skip failed: No puzzle or user", { puzzle, user });
+      return;
+    }
+    setLoading(true);
+    console.log("Recording skip for puzzle:", puzzle.id, "user:", user.id);
+    const { error } = await recordPuzzleSkip(user.id, puzzle.id);
+    if (error) {
+      console.error("Failed to record skip in DB:", error);
+    } else {
+      console.log("Skip recorded successfully");
+    }
+    loadPuzzles();
+  };
 
   const handleAuthComplete = () => {
     if (pendingData) {
@@ -163,8 +206,8 @@ function App() {
                   {user.is_anonymous ? 'Playing as' : 'Logged in as'}
                 </span>
                 <span className="text-xs font-bold">
-                  {user.is_anonymous 
-                    ? generateAnonymousName(user.id) 
+                  {user.is_anonymous
+                    ? generateAnonymousName(user.id)
                     : (user.user_metadata?.nickname || user.email?.split('@')[0])}
                 </span>
               </div>
@@ -210,11 +253,12 @@ function App() {
                 setAuthorId(id);
                 setView('author');
               }}
+              onSkip={handleSkip}
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
               <p className="font-bold text-slate-400">No puzzles found.</p>
-              <button onClick={() => setView('create')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200">Create First Puzzle</button>
+              <button onClick={() => setView('create')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200">Create a Puzzle</button>
             </div>
           )
         ) : view === 'author' ? (

@@ -72,3 +72,15 @@ export async function getPuzzle(id) {
     .single();
   return { data, error };
 }
+
+export async function recordPuzzleSkip(userId, puzzleId) {
+  const { error } = await supabase
+    .from('user_progress')
+    .upsert({
+      user_id: userId,
+      puzzle_id: puzzleId,
+      status: 'skipped',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, puzzle_id' });
+  return { error };
+}
