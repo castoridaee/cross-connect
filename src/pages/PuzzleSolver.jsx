@@ -22,6 +22,14 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
       setShowSuccess(true);
     }
   }, [state.solved]);
+
+  // Robust Safety Net: Ensure play is recorded whenever we have a user and puzzle
+  React.useEffect(() => {
+    if (user && puzzle) {
+      console.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
+      import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
+    }
+  }, [user?.id, puzzle?.id]);
   
   const handleShare = () => {
     const text = generateShareText(puzzle);

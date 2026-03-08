@@ -18,15 +18,7 @@ export async function recordPuzzleSolve(userId, puzzleId, stats) {
 
   if (progressError) throw progressError;
 
-  // 2. Update global puzzle averages via RPC
-  const { error: rpcError } = await supabase.rpc('increment_puzzle_stats', {
-    p_id: puzzleId,
-    p_attempts: attempts,
-    p_seconds: seconds,
-    p_moves: moves
-  });
-
-  return { error: rpcError };
+  return { error: null };
 }
 
 export async function createPuzzle(puzzleData) {
@@ -109,6 +101,10 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
       guess_history: progress.history || [],
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
+  
+  if (error) console.error(`[savePuzzleProgress] DB Error:`, error.message);
+  else console.log(`[savePuzzleProgress] Auto-saved progress for ${puzzleId}`);
+  
   return { error };
 }
 
@@ -142,24 +138,31 @@ export async function recordPuzzleEngagement(puzzleId, userId, metric) {
 }
 
 export async function recordPuzzlePlay(userId, puzzleId) {
-  if (!userId || !puzzleId) return { error: 'Missing IDs' };
-  
-  // 1. Check if user already has progress for this puzzle
-  const { data: existing } = await getPuzzleProgress(userId, puzzleId);
-  
-  if (!existing) {
-    // 2. Initialize progress (Trigger will handle global play_count automatically)
-    const { error: progressError } = await supabase
-      .from('user_progress')
-      .insert({
-        user_id: userId,
-        puzzle_id: puzzleId
-      });
-      
-    return { error: progressError };
+  if (!userId || !puzzleId) {
+    console.warn(`[recordPuzzlePlay] Missing IDs: userId=${userId}, puzzleId=${puzzleId}`);
+    return { error: 'Missing IDs' };
   }
   
-  return { data: existing, error: null };
+  console.log(`[recordPuzzlePlay] Start: user=${userId}, puzzle=${puzzleId}`);
+  
+  // 1. Upsert to ensure the row exists. This will trigger the global play_count increment.
+  const { data, error } = await supabase
+    .from('user_progress')
+    .upsert({
+      user_id: userId,
+      puzzle_id: puzzleId,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, puzzle_id' })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`[recordPuzzlePlay] DB Error:`, error.message, error.details);
+  } else {
+    console.log(`[recordPuzzlePlay] Success: Row ${data.id} is present. Status: ${data.status}`);
+  }
+  
+  return { data, error };
 }
 
 export async function togglePuzzleLike(puzzleId, userId) {
