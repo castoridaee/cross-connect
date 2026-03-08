@@ -177,7 +177,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-indigo-600 text-white flex items-center justify-center font-bold border-2 border-black shadow-2xl rotate-2 text-[9px] uppercase">
+            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center font-bold border-2 border-black shadow-2xl rotate-2 text-[11px] uppercase">
               {activeId}
             </div>
           )}

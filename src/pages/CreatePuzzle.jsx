@@ -150,7 +150,15 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const handleDragEnd = (event) => {
     const { active, over } = event;
     setActiveDrag(null);
-    if (!over) return;
+    if (!over) {
+      if (active.data.current.type === 'grid') {
+        const source = active.data.current;
+        const newGrid = { ...grid };
+        delete newGrid[`${source.r}-${source.c}`];
+        setGrid(newGrid);
+      }
+      return;
+    }
 
     if (active.data.current.type === 'grid' && over.data.current.type === 'grid') {
       const source = active.data.current;
@@ -384,7 +392,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
 
                   <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
                     <div className="inline-block min-w-max mx-auto">
-                      <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
+                      <div className="relative">
                         <div className="grid gap-0 border-t-2 border-l-2 border-black relative" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                           {Array.from({ length: rows }).map((_, r) => (
                             Array.from({ length: cols }).map((_, c) => (
