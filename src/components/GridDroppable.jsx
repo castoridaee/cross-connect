@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { DraggableTile } from './DraggableTile';
 import { WordTile } from './WordTile';
 
-export const GridDroppable = ({ id, word, isError, activeDrag }) => {
+export const GridDroppable = ({ id, word, isError, activeDrag, isFlashing }) => {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -10,7 +10,7 @@ export const GridDroppable = ({ id, word, isError, activeDrag }) => {
       {word && !activeDrag ? (
         <DraggableTile id={word} label={word} inGrid isError={isError} />
       ) : (
-        <WordTile label="" variant="ghost" inGrid={true} />
+        <WordTile label="" variant={isFlashing ? "error" : "ghost"} inGrid={true} />
       )}
     </div>
   );

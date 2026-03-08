@@ -10,7 +10,7 @@ import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress }) {
-  const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user, initialProgress);
+  const { grid, history, hints, state, isFlashing, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -56,14 +56,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
+      <div className="flex flex-col items-center min-h-screen bg-slate-50 px-6 pb-6 pt-0 select-none relative">
         {/* Puzzle Metadata Header */}
-        <div className="w-full max-w-md mb-8 text-center relative">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1 uppercase">
-            {puzzle.title || 'Untitled Puzzle'}
-          </h1>
-          
-          <div className="absolute -right-2 top-0 flex items-center gap-1">
+        <div className="w-full max-w-md mb-6 text-center relative">
+          <div className="flex justify-end gap-3 mb-2">
             <button 
               onClick={onSkip}
               className="p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
@@ -79,6 +75,11 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
               {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
             </button>
           </div>
+
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1">
+            {puzzle.title || 'Untitled Puzzle'}
+          </h1>
+          
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
             {puzzle.created_by ? (
@@ -110,6 +111,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                         word={grid[`${r}-${c}`]}
                         isError={state.errors.includes(`${r}-${c}`)}
                         activeDrag={activeId === grid[`${r}-${c}`]}
+                        isFlashing={isFlashing && !grid[`${r}-${c}`]}
                       />
                     ) : (
                       <div key={`${r}-${c}`} className="w-16 h-16 bg-slate-900 border-r-2 border-b-2 border-black" />
@@ -130,7 +132,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             <button
               disabled={state.solved || hints.length >= puzzle.categories.length * 2}
               onClick={onHint}
-              className="bg-slate-200 text-slate-700 py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:grayscale uppercase text-xs"
+              className="bg-slate-200 text-slate-700 py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:grayscale uppercase text-xs flex items-center justify-center gap-2"
             >
               Hint
               {hints.length > 0 && ` (${hints.length}/${puzzle.categories.length * 2})`}

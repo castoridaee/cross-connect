@@ -7,6 +7,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   const [grid, setGrid] = useState(initialProgress?.grid_state || {});
   const [history, setHistory] = useState(initialProgress?.guess_history || []);
   const [hints, setHints] = useState(initialProgress?.hints_revealed || []); 
+  const [isFlashing, setIsFlashing] = useState(false);
   
   const [state, setState] = useState({
     attempts: initialProgress?.attempts || 0,
@@ -196,6 +197,16 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   }, [grid, hints, puzzle, state.solved]);
 
   const onCheck = useCallback(async () => {
+    // Check if any active layout cells are empty
+    const isEmptyAny = puzzle.layout.some((row, r) => 
+      row.some((active, c) => active && !grid[`${r}-${c}`])
+    );
+
+    if (isEmptyAny) {
+      setIsFlashing(true);
+      setTimeout(() => setIsFlashing(false), 500);
+    }
+
     const result = validatePuzzle(grid, puzzle);
     const currentAttempt = state.attempts + 1;
 
@@ -222,6 +233,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     history,
     hints,
     state,
+    isFlashing,
     handleMove,
     onCheck,
     onHint,

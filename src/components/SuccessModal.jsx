@@ -63,7 +63,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
         </button>
 
         <button onClick={onNext} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs shadow-xl shadow-slate-200">
-          Next Puzzle
+          Another Puzzle
         </button>
       </div>
     </div>
