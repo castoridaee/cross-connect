@@ -109,8 +109,13 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     if (hasContent && !isSubmitting) {
       setIsSaving(true);
       const timer = setTimeout(async () => {
+        const defaultTitle = new Date().toLocaleString([], { 
+          month: 'short', day: 'numeric', year: 'numeric', 
+          hour: '2-digit', minute: '2-digit' 
+        });
+        
         const payload = {
-          title: title.trim() || 'Untitled Puzzle',
+          title: title.trim() || defaultTitle,
           grid_data: grid,
           layout: Array.from({ length: rows }, (_, r) =>
             Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
@@ -137,7 +142,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       }, 2000); // 2s debounce
       return () => clearTimeout(timer);
     }
-  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId]);
+  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId, isSubmitting]);
 
   // Auto-claim puzzle if user just logged in and we have a pending publishedId
   useEffect(() => {
@@ -349,8 +354,13 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
     );
 
+    const defaultTitle = new Date().toLocaleString([], { 
+      month: 'short', day: 'numeric', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit' 
+    });
+
     const puzzleData = {
-      title: title.trim() || 'Untitled Puzzle',
+      title: title.trim() || defaultTitle,
       categories,
       layout,
       word_order: wordOrder,
@@ -360,8 +370,14 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       locale: navigator.language || 'en-US'
     };
 
-    // Validation: Description cannot contain words from category (len >= 3)
+    // Validation: Mandatory descriptions and no words from category (len >= 3)
     for (const cat of categories) {
+      if (!cat.description.trim()) {
+        setStatusMsg({ type: 'error', text: "All category descriptions are mandatory" });
+        setIsSubmitting(false);
+        return;
+      }
+
       const desc = cat.description.toLowerCase();
       for (const word of cat.words) {
         if (word.length >= 3) {
@@ -396,7 +412,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
           showClaim: true
         });
       } else {
-        setStatusMsg({ type: 'success', text: editingId ? "Changes saved!" : "Puzzle published!" });
+        setStatusMsg({ type: 'success', text: "Puzzle published!" });
         setTimeout(() => {
           onComplete?.();
         }, 1500);

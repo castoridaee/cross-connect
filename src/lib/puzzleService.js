@@ -36,11 +36,25 @@ export async function createPuzzle(puzzleData) {
 }
 
 export async function updatePuzzle(id, data) {
-  const { error } = await supabase
+  const { data: updatedData, error } = await supabase
     .from('puzzles')
     .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data: updatedData, error };
+}
+
+export async function deletePuzzle(id) {
+  const { error } = await supabase
+    .from('puzzles')
+    .delete()
     .eq('id', id);
   return { error };
+}
+
+export async function unpublishPuzzle(id) {
+  return await updatePuzzle(id, { is_published: false });
 }
 
 export async function getPuzzlesByAuthor(authorId) {
