@@ -2,7 +2,7 @@ import { Trophy, ThumbsUp, Share2, Check } from 'lucide-react';
 import React, { useState } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [] }) => {
+export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext }) => {
   const [showCopied, setShowCopied] = useState(false);
 
   const handleShare = () => {
@@ -45,7 +45,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [] }) =
           <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <button onClick={handleShare} className="bg-slate-100 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 text-xs transition-colors">
             {showCopied ? (
               <><Check size={16} className="text-green-500" /> Copied</>
@@ -58,7 +58,11 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [] }) =
           </button>
         </div>
 
-        <button onClick={() => window.location.reload()} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs shadow-xl shadow-slate-200">
+        <button onClick={onAdmire} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] mb-4">
+          Admire Puzzle
+        </button>
+
+        <button onClick={onNext} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs shadow-xl shadow-slate-200">
           Next Puzzle
         </button>
       </div>

@@ -1,32 +1,150 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { validatePuzzle } from '../utils/validator';
-import { recordPuzzleSolve } from '../lib/puzzleService';
+import { recordPuzzleSolve, savePuzzleProgress } from '../lib/puzzleService';
 
-export const usePuzzleGame = (puzzle, user) => {
-  const [grid, setGrid] = useState({});
-  const [history, setHistory] = useState([]);
+export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
+  // 1. Initialize state from saved progress if available
+  const [grid, setGrid] = useState(initialProgress?.grid_state || {});
+  const [history, setHistory] = useState(initialProgress?.guess_history || []);
+  const [hints, setHints] = useState(initialProgress?.hints_revealed || []); 
+  
   const [state, setState] = useState({
-    attempts: 0,
-    moves: 0,
-    solved: false,
+    attempts: initialProgress?.attempts || 0,
+    moves: initialProgress?.move_count || 0,
+    solved: initialProgress?.status === 'solved',
     errors: [],
-    startTime: Date.now()
+    seconds: initialProgress?.total_seconds_played || 0
   });
 
-  const [hints, setHints] = useState([]); // [{ index: categoryIndex, level: 1|2 }]
+  // Timer logic - only run if not solved
+  useEffect(() => {
+    if (state.solved) return;
+
+    let timer;
+    const updateTimer = () => {
+      // Only increment if the tab is visible
+      if (document.visibilityState === 'visible') {
+        setState(s => ({ ...s, seconds: s.seconds + 1 }));
+      }
+    };
+
+    timer = setInterval(updateTimer, 1000);
+
+    // Also listen for visibility changes to pause/resume more accurately if needed
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        clearInterval(timer);
+      } else {
+        timer = setInterval(updateTimer, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [state.solved]);
+
+  // Auto-save logic for interactions (grid, moves, attempts, hints, history)
+  const lastSavedState = useRef(JSON.stringify({ grid, attempts: state.attempts, moves: state.moves, hints, history }));
+  useEffect(() => {
+    if (!user || state.solved) return;
+
+    const currentInteractionState = JSON.stringify({ grid, attempts: state.attempts, moves: state.moves, hints, history });
+    if (currentInteractionState === lastSavedState.current) return;
+
+    const interactionTimer = setTimeout(async () => {
+      console.log("Auto-saving interaction progress (with hints/history)...");
+      await savePuzzleProgress(user.id, puzzle.id, {
+        grid,
+        attempts: state.attempts,
+        moves: state.moves,
+        seconds: state.seconds,
+        hints,
+        history
+      });
+      lastSavedState.current = currentInteractionState;
+    }, 2000); // 2 second debounce for typing/dragging
+
+    return () => clearTimeout(interactionTimer);
+  }, [grid, state.attempts, state.moves, hints, history, user, puzzle.id, state.solved]);
+
+  // Periodic heartbeat save for the timer (every 15 seconds)
+  useEffect(() => {
+    if (!user || state.solved) return;
+
+    const heartbeatTimer = setInterval(async () => {
+      console.log("Heartbeat: Saving play time...");
+      await savePuzzleProgress(user.id, puzzle.id, {
+        grid,
+        attempts: state.attempts,
+        moves: state.moves,
+        seconds: state.seconds,
+        hints,
+        history
+      });
+    }, 15000);
+
+    return () => clearInterval(heartbeatTimer);
+  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds]);
+
+  // Final safety: Save on tab close/unload
+  useEffect(() => {
+    if (!user || state.solved) return;
+
+    const handleUnload = () => {
+      // Use navigator.sendBeacon or a synchronous-ish fetch if needed, 
+      // but Supabase/PostgREST typically needs a normal fetch.
+      // Since this is a small update, we'll just try a standard call.
+      savePuzzleProgress(user.id, puzzle.id, {
+        grid,
+        attempts: state.attempts,
+        moves: state.moves,
+        seconds: state.seconds,
+        hints,
+        history
+      });
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds]);
+  // Note: We keep state.seconds in the heartbeat so it resets the interval correctly or we just rely on the interval.
+  // Actually, for heartbeat, it's better to NOT have state.seconds in deps, just a pure interval.
+
+  // Sync state when puzzle changes or initialProgress is updated
+  useEffect(() => {
+    const newGrid = initialProgress?.grid_state || {};
+    const newHistory = initialProgress?.guess_history || [];
+    const newHints = initialProgress?.hints_revealed || [];
+    const newState = {
+      attempts: initialProgress?.attempts || 0,
+      moves: initialProgress?.move_count || 0,
+      solved: initialProgress?.status === 'solved',
+      errors: [],
+      seconds: initialProgress?.total_seconds_played || 0
+    };
+
+    setGrid(newGrid);
+    setHistory(newHistory);
+    setHints(newHints);
+    setState(newState);
+    lastSavedState.current = JSON.stringify({ grid: newGrid, attempts: newState.attempts, moves: newState.moves, hints: newHints, history: newHistory });
+  }, [puzzle.id, initialProgress?.id]); // Use IDs as key for syncing
 
   const onReset = useCallback(() => {
     setGrid({});
     setHistory([]);
     setHints([]);
-    setState(s => ({
-      ...s,
+    setState({
       attempts: 0,
       moves: 0,
       solved: false,
       errors: [],
-      startTime: Date.now()
-    }));
+      seconds: 0
+    });
   }, []);
 
   const handleMove = useCallback((sourceCoord, targetCoord, word) => {
@@ -48,21 +166,15 @@ export const usePuzzleGame = (puzzle, user) => {
   const onHint = useCallback(() => {
     if (state.solved || hints.length >= puzzle.categories.length * 2) return;
 
-    // 1. Identify which categories are currently "solved" on the board
-    // A category is solved if its words form a contiguous block matching its definition
     const solvedIndices = puzzle.categories.map((cat, idx) => {
       const hasOnBoard = Object.values(grid).filter(w => cat.words.includes(w)).length === cat.words.length;
       if (!hasOnBoard) return false;
-
-      // Basic check: is there ANY contiguous group on the grid that matches this category's words?
-      // For simplicity, we'll check if if the category words exist in a single group
       const matchingCat = puzzle.categories.find(c =>
         c.words.length === cat.words.length && c.words.every(w => cat.words.includes(w))
       );
       return !!matchingCat;
     }).map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
 
-    // 2. Prioritize Tier 1 (Names) then Tier 2 (Counts)
     const tier1Given = hints.filter(h => h.level === 1).map(h => h.index);
     const tier2Given = hints.filter(h => h.level === 2).map(h => h.index);
 
@@ -76,11 +188,9 @@ export const usePuzzleGame = (puzzle, user) => {
 
     if (candidates.length === 0) return;
 
-    // 3. Prioritize non-solved categories
     const unsolvedCandidates = candidates.filter(i => !solvedIndices.includes(i));
     const selectionSource = unsolvedCandidates.length > 0 ? unsolvedCandidates : candidates;
 
-    // 4. pick random
     const randomIndex = selectionSource[Math.floor(Math.random() * selectionSource.length)];
     setHints(prev => [...prev, { index: randomIndex, level }]);
   }, [grid, hints, puzzle, state.solved]);
@@ -90,14 +200,13 @@ export const usePuzzleGame = (puzzle, user) => {
     const currentAttempt = state.attempts + 1;
 
     if (result.solved) {
-      const seconds = Math.floor((Date.now() - state.startTime) / 1000);
       setState(s => ({ ...s, solved: true, attempts: currentAttempt }));
 
       if (user) {
         await recordPuzzleSolve(user.id, puzzle.id, {
           attempts: currentAttempt,
           moves: state.moves,
-          seconds: seconds
+          seconds: state.seconds
         });
       }
     } else {

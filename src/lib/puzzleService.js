@@ -74,6 +74,7 @@ export async function getPuzzle(id) {
 }
 
 export async function recordPuzzleSkip(userId, puzzleId) {
+  console.log("DB: Recording skip for", { userId, puzzleId });
   const { error } = await supabase
     .from('user_progress')
     .upsert({
@@ -82,5 +83,34 @@ export async function recordPuzzleSkip(userId, puzzleId) {
       status: 'skipped',
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
+  
+  if (error) console.error("DB Error in recordPuzzleSkip:", error);
   return { error };
+}
+
+export async function savePuzzleProgress(userId, puzzleId, progress) {
+  const { error } = await supabase
+    .from('user_progress')
+    .upsert({
+      user_id: userId,
+      puzzle_id: puzzleId,
+      grid_state: progress.grid,
+      attempts: progress.attempts,
+      move_count: progress.moves,
+      total_seconds_played: progress.seconds,
+      hints_revealed: progress.hints || [],
+      guess_history: progress.history || [],
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, puzzle_id' });
+  return { error };
+}
+
+export async function getPuzzleProgress(userId, puzzleId) {
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('puzzle_id', puzzleId)
+    .single();
+  return { data, error };
 }

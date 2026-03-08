@@ -6,7 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
-import { getPuzzle, recordPuzzleSkip } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip, getPuzzleProgress } from './lib/puzzleService';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -15,6 +15,7 @@ function App() {
   const [view, setView] = useState('solve'); // 'solve', 'create', 'auth', 'author'
   const [pendingData, setPendingData] = useState(null);
   const [authorId, setAuthorId] = useState(null);
+  const [progress, setProgress] = useState(null);
 
   useEffect(() => {
     // 1. Check for URL parameters on mount
@@ -51,6 +52,13 @@ function App() {
       }
 
       if (data) {
+        let progData = null;
+        if (user) {
+          const { data: pData } = await getPuzzleProgress(user.id, data.id);
+          progData = pData;
+        }
+        
+        setProgress(progData);
         setPuzzle(data);
         setView('solve');
         // Clear parameters after loading to allow clean state for "New Game"
@@ -132,7 +140,15 @@ function App() {
           data = fallbackData;
         }
 
-        setPuzzle(data);
+        if (data) {
+          let progData = null;
+          if (user) {
+            const { data: pData } = await getPuzzleProgress(user.id, data.id);
+            progData = pData;
+          }
+          setProgress(progData);
+          setPuzzle(data);
+        }
       }
     } catch (err) {
       console.error("Load Error:", err);
@@ -248,6 +264,7 @@ function App() {
             <PuzzleSolver
               puzzle={puzzle}
               user={user}
+              initialProgress={progress}
               onNavigateToCreate={() => setView('create')}
               onAuthorClick={(id) => {
                 setAuthorId(id);

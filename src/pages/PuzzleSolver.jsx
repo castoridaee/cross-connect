@@ -9,10 +9,18 @@ import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip }) {
-  const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
+export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress }) {
+  const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Show success modal when puzzle is solved
+  React.useEffect(() => {
+    if (state.solved) {
+      setShowSuccess(true);
+    }
+  }, [state.solved]);
   
   const handleShare = () => {
     const text = generateShareText(puzzle);
@@ -128,10 +136,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
               {hints.length > 0 && ` (${hints.length}/${puzzle.categories.length * 2})`}
             </button>
             <button
-              onClick={onCheck}
+              onClick={state.solved ? () => setShowSuccess(true) : onCheck}
               className="bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest transition-all active:scale-95 active:bg-slate-700 select-none uppercase text-xs"
             >
-              {isGridFull ? 'SUBMIT' : 'CHECK'}
+              {state.solved ? 'VIEW RESULTS' : isGridFull ? 'SUBMIT' : 'CHECK'}
             </button>
           </div>
         </div>
@@ -175,12 +183,14 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
           )}
         </DragOverlay>
 
-        {state.solved && (
+        {showSuccess && (
           <SuccessModal
             puzzle={puzzle}
             attempts={state.attempts}
             hintsUsed={hints.length}
             categories={puzzle.categories}
+            onAdmire={() => setShowSuccess(false)}
+            onNext={() => window.location.reload()}
           />
         )}
       </div>
