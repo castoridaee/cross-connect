@@ -1,20 +1,34 @@
-import { Trophy, ThumbsUp, Share2, Check } from 'lucide-react';
+import { Trophy, ThumbsUp, Share2, Check, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext }) => {
+export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false }) => {
   const [showCopied, setShowCopied] = useState(false);
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
+
+  // Sync state if prop changes (e.g. late fetch)
+  React.useEffect(() => {
+    setIsLiked(initialIsLiked);
+  }, [initialIsLiked]);
 
   const handleShare = () => {
     const text = generateShareText(puzzle, { attempts, hintsUsed });
     copyToClipboard(text, () => {
       setShowCopied(true);
+      if (onShareTrack) onShareTrack();
       setTimeout(() => setShowCopied(false), 2000);
     });
   };
 
+  const handleAuthorClick = () => {
+    if (onAuthorClick) onAuthorClick();
+  };
+
   const handleLike = () => {
-    // Supabase RPC or insert logic sequence executes here
+    // Optimistic toggle
+    const newState = !isLiked;
+    setIsLiked(newState);
+    if (onLikeTrack) onLikeTrack(newState);
   };
 
   return (
@@ -26,6 +40,10 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           <p className="text-slate-500 text-sm font-bold">Attempts: {attempts}</p>
           <p className="text-slate-500 text-sm font-bold">Hints: {hintsUsed}</p>
         </div>
+
+        <button onClick={onAdmire} className="w-full bg-slate-100 text-slate-400 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] mb-6">
+          Admire Puzzle
+        </button>
 
         <div className="relative mb-8">
           <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar text-left">
@@ -53,13 +71,21 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               <><Share2 size={16} /> Share</>
             )}
           </button>
-          <button onClick={handleLike} className="bg-slate-100 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 text-xs">
-            <ThumbsUp size={16} /> Like
+          <button 
+            onClick={handleLike} 
+            className={`p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all active:scale-95 ${
+              isLiked 
+                ? 'bg-pink-50 text-pink-600 border border-pink-100' 
+                : 'bg-slate-100 text-slate-700'
+            }`}
+          >
+            <ThumbsUp size={16} fill={isLiked ? "currentColor" : "none"} /> 
+            {isLiked ? 'Liked!' : 'Like'}
           </button>
         </div>
 
-        <button onClick={onAdmire} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] mb-4">
-          Admire Puzzle
+        <button onClick={handleAuthorClick} className="w-full bg-slate-100 text-slate-800 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] mb-2 flex items-center justify-center gap-2">
+          <User size={14} fill="currentColor" /> More from this Creator
         </button>
 
         <button onClick={onNext} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs shadow-xl shadow-slate-200">

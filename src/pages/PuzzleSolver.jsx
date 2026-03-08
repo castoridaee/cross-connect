@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
+import { recordPuzzleEngagement, togglePuzzleLike, getPuzzleProgress } from '../lib/puzzleService';
 import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
@@ -10,7 +11,7 @@ import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress }) {
-  const { grid, history, hints, state, isFlashing, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user, initialProgress);
+  const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onReset, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -193,6 +194,13 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             categories={puzzle.categories}
             onAdmire={() => setShowSuccess(false)}
             onNext={() => window.location.reload()}
+            onAuthorClick={() => {
+              recordPuzzleEngagement(puzzle.id, 'profile_click');
+              onAuthorClick(puzzle.created_by);
+            }}
+            onShareTrack={() => recordPuzzleEngagement(puzzle.id, 'share')}
+            onLikeTrack={onToggleLike}
+            initialIsLiked={isLiked}
           />
         )}
       </div>

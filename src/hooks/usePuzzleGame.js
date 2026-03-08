@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { validatePuzzle } from '../utils/validator';
-import { recordPuzzleSolve, savePuzzleProgress } from '../lib/puzzleService';
+import { recordPuzzleSolve, savePuzzleProgress, togglePuzzleLike } from '../lib/puzzleService';
 
 export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   // 1. Initialize state from saved progress if available
   const [grid, setGrid] = useState(initialProgress?.grid_state || {});
   const [history, setHistory] = useState(initialProgress?.guess_history || []);
   const [hints, setHints] = useState(initialProgress?.hints_revealed || []); 
+  const [isLiked, setIsLiked] = useState(initialProgress?.is_liked || false);
   const [isFlashing, setIsFlashing] = useState(false);
   
   const [state, setState] = useState({
@@ -131,6 +132,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     setGrid(newGrid);
     setHistory(newHistory);
     setHints(newHints);
+    setIsLiked(initialProgress?.is_liked || false);
     setState(newState);
     lastSavedState.current = JSON.stringify({ grid: newGrid, attempts: newState.attempts, moves: newState.moves, hints: newHints, history: newHistory });
   }, [puzzle.id, initialProgress?.id, initialProgress?.updated_at]); // Support refreshing same puzzle
@@ -196,6 +198,14 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     setHints(prev => [...prev, { index: randomIndex, level }]);
   }, [grid, hints, puzzle, state.solved]);
 
+  const onToggleLike = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await togglePuzzleLike(puzzle.id, user.id);
+    if (!error) {
+      setIsLiked(data);
+    }
+  }, [user, puzzle.id]);
+
   const onCheck = useCallback(async () => {
     // Check if any active layout cells are empty
     const isEmptyAny = puzzle.layout.some((row, r) => 
@@ -234,9 +244,11 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     hints,
     state,
     isFlashing,
+    isLiked,
     handleMove,
     onCheck,
     onHint,
-    onReset
+    onReset,
+    onToggleLike
   };
 };

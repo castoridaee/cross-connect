@@ -75,6 +75,9 @@ export async function getPuzzle(id) {
 
 export async function recordPuzzleSkip(userId, puzzleId) {
   console.log("DB: Recording skip for", { userId, puzzleId });
+  const { data: current } = await getPuzzleProgress(userId, puzzleId);
+  if (current?.status === 'solved') return { error: null };
+
   const { error } = await supabase
     .from('user_progress')
     .upsert({
@@ -89,11 +92,15 @@ export async function recordPuzzleSkip(userId, puzzleId) {
 }
 
 export async function savePuzzleProgress(userId, puzzleId, progress) {
+  const { data: current } = await getPuzzleProgress(userId, puzzleId);
+  if (current?.status === 'solved') return { error: null };
+
   const { error } = await supabase
     .from('user_progress')
     .upsert({
       user_id: userId,
       puzzle_id: puzzleId,
+      status: current?.status || 'in_progress',
       grid_state: progress.grid,
       attempts: progress.attempts,
       move_count: progress.moves,
@@ -121,5 +128,32 @@ export async function getUserProgressForPuzzles(userId, puzzleIds) {
     .select('puzzle_id, status')
     .eq('user_id', userId)
     .in('puzzle_id', puzzleIds);
+  return { data, error };
+}
+
+export async function recordPuzzleEngagement(puzzleId, metric) {
+  const { error } = await supabase.rpc('increment_puzzle_engagement', {
+    p_id: puzzleId,
+    metric: metric
+  });
+  return { error };
+}
+
+export async function togglePuzzleLike(puzzleId, userId) {
+  const { data, error } = await supabase.rpc('toggle_puzzle_like', {
+    p_id: puzzleId,
+    u_id: userId
+  });
+  return { data, error };
+}
+
+export async function getLikedPuzzles(userId) {
+  if (!userId) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('puzzles')
+    .select('*, user_progress!inner(is_liked)')
+    .eq('user_progress.user_id', userId)
+    .eq('user_progress.is_liked', true)
+    .order('created_at', { ascending: false });
   return { data, error };
 }
