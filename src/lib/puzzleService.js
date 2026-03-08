@@ -9,7 +9,7 @@ export async function recordPuzzleSolve(userId, puzzleId, stats) {
     .upsert({
       user_id: userId,
       puzzle_id: puzzleId,
-      status: 'solved',
+      is_solved: true,
       attempts: attempts,
       move_count: moves,
       total_seconds_played: seconds,
@@ -22,7 +22,8 @@ export async function recordPuzzleSolve(userId, puzzleId, stats) {
   const { error: rpcError } = await supabase.rpc('increment_puzzle_stats', {
     p_id: puzzleId,
     p_attempts: attempts,
-    p_seconds: seconds
+    p_seconds: seconds,
+    p_moves: moves
   });
 
   return { error: rpcError };
@@ -83,7 +84,7 @@ export async function recordPuzzleSkip(userId, puzzleId) {
     .upsert({
       user_id: userId,
       puzzle_id: puzzleId,
-      status: 'skipped',
+      is_skipped: true,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
   
@@ -100,7 +101,6 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
     .upsert({
       user_id: userId,
       puzzle_id: puzzleId,
-      status: current?.status || 'in_progress',
       grid_state: progress.grid,
       attempts: progress.attempts,
       move_count: progress.moves,
@@ -125,18 +125,41 @@ export async function getUserProgressForPuzzles(userId, puzzleIds) {
   if (!userId || !puzzleIds || puzzleIds.length === 0) return { data: [], error: null };
   const { data, error } = await supabase
     .from('user_progress')
-    .select('puzzle_id, status')
+    .select('puzzle_id, status, is_liked')
     .eq('user_id', userId)
     .in('puzzle_id', puzzleIds);
   return { data, error };
 }
 
-export async function recordPuzzleEngagement(puzzleId, metric) {
-  const { error } = await supabase.rpc('increment_puzzle_engagement', {
+export async function recordPuzzleEngagement(puzzleId, userId, metric) {
+  if (!userId) return { error: 'Not signed in' };
+  const { error } = await supabase.rpc('record_puzzle_engagement', {
     p_id: puzzleId,
+    u_id: userId,
     metric: metric
   });
   return { error };
+}
+
+export async function recordPuzzlePlay(userId, puzzleId) {
+  if (!userId || !puzzleId) return { error: 'Missing IDs' };
+  
+  // 1. Check if user already has progress for this puzzle
+  const { data: existing } = await getPuzzleProgress(userId, puzzleId);
+  
+  if (!existing) {
+    // 2. Initialize progress (Trigger will handle global play_count automatically)
+    const { error: progressError } = await supabase
+      .from('user_progress')
+      .insert({
+        user_id: userId,
+        puzzle_id: puzzleId
+      });
+      
+    return { error: progressError };
+  }
+  
+  return { data: existing, error: null };
 }
 
 export async function togglePuzzleLike(puzzleId, userId) {

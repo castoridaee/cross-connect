@@ -195,10 +195,12 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             onAdmire={() => setShowSuccess(false)}
             onNext={() => window.location.reload()}
             onAuthorClick={() => {
-              recordPuzzleEngagement(puzzle.id, 'profile_click');
+              if (user) recordPuzzleEngagement(puzzle.id, user.id, 'profile_click');
               onAuthorClick(puzzle.created_by);
             }}
-            onShareTrack={() => recordPuzzleEngagement(puzzle.id, 'share')}
+            onShareTrack={() => {
+              if (user) recordPuzzleEngagement(puzzle.id, user.id, 'share');
+            }}
             onLikeTrack={onToggleLike}
             initialIsLiked={isLiked}
           />

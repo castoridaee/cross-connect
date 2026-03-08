@@ -7,7 +7,6 @@ This document describes the database structure and policies for the Cross Connec
 ### `puzzles`
 The core table storing puzzle data, layouts, and metadata.
 - `id` (uuid, primary key): Unique identifier for the puzzle.
-- `author_id` (uuid): Potential legacy or secondary author reference.
 - `created_by` (uuid, references `auth.users`): The ID of the user who created the puzzle. Nullable for anonymous puzzles.
 - `title` (text): The title of the puzzle.
 - `categories` (jsonb): A list of category objects, each containing `words` and `description`.
@@ -18,8 +17,11 @@ The core table storing puzzle data, layouts, and metadata.
 - `likes_count` (int4): Number of likes.
 - `play_count` (int4): Number of times the puzzle was started.
 - `solve_count` (int4): Number of times the puzzle was solved.
-- `avg_attempts_to_solve` (float8): Global average of attempts needed.
-- `avg_time_to_solve` (float8): Global average time taken to solve.
+- `share_count` (int4): Number of times the puzzle was shared.
+- `author_profile_clicks` (int4): Number of times users clicked the author's profile.
+- `median_attempts_to_solve` (float8): Global median of attempts needed.
+- `median_time_to_solve` (float8): Global median time taken to solve.
+- `median_moves_to_solve` (float8): Global median number of moves.
 - `locale` (text): The browser locale (e.g., `en-US`) of the creator.
 - `created_at` (timestamp with time zone): When the puzzle was created.
 
@@ -35,14 +37,21 @@ Tracks user performance and "Skip" status on specific puzzles.
 - `id` (uuid, primary key).
 - `user_id` (uuid, references `auth.users`): Links to the player.
 - `puzzle_id` (uuid, references `puzzles`): Links to the puzzle.
-- `status` (text): State of the puzzle for this user (`in_progress`, `solved`, `skipped`).
+- `is_solved` (boolean): Whether the user has solved the puzzle.
+- `is_skipped` (boolean): Whether the user has skipped the puzzle.
+- `is_liked` (boolean): Whether the user has liked the puzzle.
+- `has_shared` (boolean): Whether the user has shared the puzzle.
+- `has_clicked_author` (boolean): Whether the user clicked the author's profile.
+- `status` (text, generated): Derived status (`solved` > `skipped` > `in_progress`).
 - `grid_state` (jsonb): The current state of the grid for resuming.
 - `attempts` (int4): Number of check/submit attempts.
 - `move_count` (int4): Number of moves made.
-- `started_at` (timestamp): When the user started the puzzle.
-- `solved_at` (timestamp): When the user solved the puzzle.
-- `updated_at` (timestamp): Last time any interaction occurred.
-- `total_seconds_played` (int4): Time taken to solve.
+- `hints_revealed` (jsonb): List of hints shown to the user.
+- `guess_history` (jsonb): History of validation attempts.
+- `total_seconds_played` (int4): Cumulative time played.
+- `started_at` (timestamp with time zone): When the user started the puzzle.
+- `solved_at` (timestamp with time zone): When the user first solved the puzzle.
+- `updated_at` (timestamp with time zone): Last time any interaction occurred.
 - **Unique Constraint:** `(user_id, puzzle_id)` ensures one record per player-puzzle pair.
 
 ## Row Level Security (RLS)
@@ -55,20 +64,3 @@ Tracks user performance and "Skip" status on specific puzzles.
 ### `profiles`
 - **Anyone** can view all public profiles for author mapping.
 - **Users** can only insert/update their own profile.
-
-## Syncing Local Documentation with Remote
-The best way to sync your remote Supabase schema back to this project is using the **Supabase CLI**.
-
-1. **Initialize Supabase locally (if not done):**
-   ```bash
-   npx supabase init
-   ```
-2. **Link to your remote project:**
-   ```bash
-   npx supabase link --project-ref <your-project-id>
-   ```
-3. **Pull remote changes into local migrations:**
-   ```bash
-   npx supabase db pull
-   ```
-This will generate new migration files in `supabase/migrations` that match your actual remote state.

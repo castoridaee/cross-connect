@@ -6,7 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
-import { getPuzzle, recordPuzzleSkip, getPuzzleProgress } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay } from './lib/puzzleService';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -78,6 +78,10 @@ function App() {
         setProgress(progData);
         setPuzzle(data);
         setView('solve');
+        
+        if (user) {
+          recordPuzzlePlay(user.id, data.id);
+        }
         // Clear parameters after loading to allow clean state for "New Game"
         window.history.replaceState({}, document.title, "/");
       } else {
@@ -166,6 +170,10 @@ function App() {
           }
           setProgress(progData);
           setPuzzle(data);
+          
+          if (user) {
+            recordPuzzlePlay(user.id, data.id);
+          }
         }
       }
     } catch (err) {
