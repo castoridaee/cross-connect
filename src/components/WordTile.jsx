@@ -13,7 +13,8 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
     default: `bg-white text-slate-800 ${borderClass}`,
     active: `bg-white text-slate-800 ${borderClass}`,
     error: `bg-red-500 text-white ${borderClass}`,
-    ghost: `bg-white ${borderClass}`
+    ghost: `bg-white ${borderClass}`,
+    dark: `bg-slate-900 ${borderClass}`
   };
 
   return (

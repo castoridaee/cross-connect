@@ -78,7 +78,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col items-center min-h-screen bg-slate-50 px-6 pb-6 pt-0 select-none relative">
+      <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 select-none relative">
         {/* Puzzle Metadata Header */}
         <div className="w-full max-w-md mb-6 text-center relative">
           <div className="flex justify-end gap-3 mb-2">
@@ -116,10 +116,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             )}
           </div>
         </div>
-        <div className="w-full relative px-4 mb-4">
+        <div className="w-full relative px-0 mb-4">
           {/* Visual cues for horizontal scrolling */}
-          <div className="absolute left-4 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
-          <div className="absolute right-4 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
+          <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
+          <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
 
           <div className="overflow-x-auto pb-6 custom-scrollbar text-center">
             <div className="inline-block min-w-max mx-auto">

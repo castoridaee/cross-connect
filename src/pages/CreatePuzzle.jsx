@@ -48,7 +48,7 @@ const EditorCell = ({ r, c, word, onCellClick, onEdit }) => {
       {word ? (
         <EditorDraggableTile id={word} label={word} r={r} c={c} onEdit={onEdit} />
       ) : (
-        <WordTile label="" variant="ghost" inGrid={true} />
+        <WordTile label="" variant="dark" inGrid={true} />
       )}
     </div>
   );
@@ -410,8 +410,8 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-2 sm:p-4">
-      <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-3 sm:p-5 border border-slate-100">
+    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-1 sm:p-4">
+      <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-1.5 sm:p-5 border border-slate-100">
         <div className="flex justify-between items-center mb-4">
           {step === 2 ? (
             <button onClick={() => setStep(1)} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -476,10 +476,10 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <div className="w-full relative px-4 mb-4">
+                <div className="w-full relative px-0 mb-4">
                   {/* Visual cues for horizontal scrolling */}
-                  <div className="absolute left-4 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
-                  <div className="absolute right-4 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
+                  <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
+                  <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
 
                   <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
                     <div className="inline-block min-w-max mx-auto">

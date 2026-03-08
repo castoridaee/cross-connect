@@ -276,7 +276,7 @@ function App() {
       <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-6 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('solve')}>
           <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-xl">C</div>
-          <span className="font-black uppercase tracking-tighter text-sm">Cross Connect</span>
+          <span className="font-black uppercase tracking-tighter text-sm max-w-[80px] leading-[0.85]">Cross Connect</span>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-6">
