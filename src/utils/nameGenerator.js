@@ -16,14 +16,19 @@ export function generateAnonymousName(seed) {
 
   if (seed) {
     // Simple hash to get stable indices from seed
-    let hash = 0;
+    let h1 = 0;
+    let h2 = 0;
     for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+      const char = seed.charCodeAt(i);
+      h1 = ((h1 << 5) - h1) + char;
+      h1 |= 0; // Convert to 32bit int
+      h2 = ((h2 << 7) - h2) + char;
+      h2 |= 0; // Convert to 32bit int
     }
-    const safeHash = Math.abs(hash);
-    index1 = safeHash % adjectives.length;
-    index2 = (safeHash >> 4) % nouns.length;
-    num = (safeHash % 899) + 100; // 100-999
+    
+    index1 = Math.abs(h1) % adjectives.length;
+    index2 = Math.abs(h2) % nouns.length;
+    num = (Math.abs(h1 ^ h2) % 900) + 100; // 100-999
   } else {
     index1 = Math.floor(Math.random() * adjectives.length);
     index2 = Math.floor(Math.random() * nouns.length);
