@@ -6,7 +6,7 @@ export const GridDroppable = ({ id, word, isError, activeDrag, isFlashing }) => 
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div ref={setNodeRef} className="overflow-hidden transition-colors">
+    <div ref={setNodeRef} className="w-full h-full">
       {word && !activeDrag ? (
         <DraggableTile id={word} label={word} inGrid isError={isError} />
       ) : (

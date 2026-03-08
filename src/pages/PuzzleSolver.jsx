@@ -126,18 +126,22 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
               <section className="grid gap-0 border-t-2 border-l-2 border-black">
                 {puzzle.layout.map((row, r) => (
                   <div key={r} className="flex gap-0 justify-center">
-                    {row.map((active, c) => active ? (
-                      <div key={`${r}-${c}`} onClick={(e) => handleGridClick(e, `${r}-${c}`)}>
-                        <GridDroppable
-                          id={`cell-${r}-${c}`}
-                          word={grid[`${r}-${c}`]}
-                          isError={state.errors.includes(`${r}-${c}`)}
-                          activeDrag={activeId === grid[`${r}-${c}`]}
-                          isFlashing={isFlashing && !grid[`${r}-${c}`]}
-                        />
+                    {row.map((active, c) => (
+                      <div 
+                        key={`${r}-${c}`} 
+                        className={`w-16 h-16 border-r-2 border-b-2 border-black overflow-hidden ${!active ? 'bg-slate-900' : ''}`}
+                        onClick={active ? (e) => handleGridClick(e, `${r}-${c}`) : undefined}
+                      >
+                        {active && (
+                          <GridDroppable
+                            id={`cell-${r}-${c}`}
+                            word={grid[`${r}-${c}`]}
+                            isError={state.errors.includes(`${r}-${c}`)}
+                            activeDrag={activeId === grid[`${r}-${c}`]}
+                            isFlashing={isFlashing && !grid[`${r}-${c}`]}
+                          />
+                        )}
                       </div>
-                    ) : (
-                      <div key={`${r}-${c}`} className="w-16 h-16 bg-slate-900 border-r-2 border-b-2 border-black" />
                     ))}
                   </div>
                 ))}
@@ -202,7 +206,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center text-center font-bold border-2 border-black shadow-2xl rotate-2 text-[11px] uppercase">
+            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center text-center font-bold border border-black shadow-2xl rotate-2 text-[11px] uppercase">
               {activeId}
             </div>
           )}

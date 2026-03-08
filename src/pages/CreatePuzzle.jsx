@@ -19,7 +19,7 @@ const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
+      className={`w-full h-full relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
       style={{ touchAction: 'none' }}
       onClick={(e) => {
         // Prevent trigger if it's just a click (DnD handles drag)
@@ -43,7 +43,7 @@ const EditorCell = ({ r, c, word, onCellClick, onEdit }) => {
     <div
       ref={setNodeRef}
       onClick={() => !word && onCellClick(r, c)}
-      className={`cursor-pointer transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2 z-10' : ''}`}
+      className={`w-16 h-16 border-r-2 border-b-2 border-black overflow-hidden cursor-pointer transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2 z-10' : ''}`}
     >
       {word ? (
         <EditorDraggableTile id={word} label={word} r={r} c={c} onEdit={onEdit} />

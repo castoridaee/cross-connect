@@ -3,11 +3,11 @@ import React from 'react';
 export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = false }) => {
   const sizeClasses = {
     sm: 'w-12 h-12 text-[9px]',
-    md: 'w-16 h-16 text-[11px]',
+    md: inGrid ? 'w-full h-full text-[11px]' : 'w-16 h-16 text-[11px]',
     lg: 'w-20 h-20 text-[13px]'
   };
 
-  const borderClass = inGrid ? 'border-r-2 border-b-2 border-black' : 'border border-black shadow-sm';
+  const borderClass = inGrid ? '' : 'border border-black shadow-sm';
 
   const variants = {
     default: `bg-white text-slate-800 ${borderClass}`,
