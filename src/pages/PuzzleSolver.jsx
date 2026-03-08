@@ -7,7 +7,7 @@ import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
 import { Plus } from 'lucide-react';
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
+export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
   const sensors = useSensors(useSensor(PointerSensor, {
@@ -37,8 +37,25 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate }) {
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
-
-
+        {/* Puzzle Metadata Header */}
+        <div className="w-full max-w-md mb-8 text-center">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1 uppercase">
+            {puzzle.title || 'Untitled Puzzle'}
+          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
+            {puzzle.created_by ? (
+              <button
+                onClick={() => onAuthorClick(puzzle.created_by)}
+                className="text-indigo-600 hover:text-indigo-800 font-bold transition-colors underline decoration-2 underline-offset-4"
+              >
+                {puzzle.author?.nickname || 'Anonymous'}
+              </button>
+            ) : (
+              <span className="text-slate-900 font-bold">Anonymous</span>
+            )}
+          </div>
+        </div>
         <div className="w-full relative px-4 mb-4">
           {/* Visual cues for horizontal scrolling */}
           <div className="absolute left-4 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />

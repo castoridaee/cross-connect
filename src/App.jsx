@@ -4,13 +4,15 @@ import { useAuth } from './context/AuthContext';
 import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
+import AuthorProfile from './pages/AuthorProfile';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
   const [puzzle, setPuzzle] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('solve'); // 'solve', 'create', 'auth'
+  const [view, setView] = useState('solve'); // 'solve', 'create', 'auth', 'author'
   const [pendingData, setPendingData] = useState(null);
+  const [authorId, setAuthorId] = useState(null);
 
   useEffect(() => {
     if (view === 'solve') {
@@ -18,7 +20,7 @@ function App() {
     }
   }, [view]);
 
-  async function loadPuzzles() {
+    async function loadPuzzles() {
     setLoading(true);
     try {
       // 1. Get the total count of puzzles
@@ -26,20 +28,37 @@ function App() {
         .from('puzzles')
         .select('*', { count: 'exact', head: true });
 
-      if (countError) throw countError;
+      if (countError) {
+        console.error("Count Error:", countError);
+        throw countError;
+      }
+
+      console.log("Found puzzles count:", count);
 
       if (count > 0) {
         // 2. Pick a random index
         const randomIndex = Math.floor(Math.random() * count);
 
-        // 3. Fetch that specific puzzle
-        const { data, error: fetchError } = await supabase
+        // 3. Fetch that specific puzzle with author nickname (using explicit join)
+        let { data, error: fetchError } = await supabase
           .from('puzzles')
-          .select('*')
+          .select('*, author:profiles!created_by(nickname)')
           .range(randomIndex, randomIndex)
           .single();
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.warn("Fetch with join failed, retrying without join...", fetchError);
+          // Fallback: Fetch without join
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('puzzles')
+            .select('*')
+            .range(randomIndex, randomIndex)
+            .single();
+          
+          if (fallbackError) throw fallbackError;
+          data = fallbackData;
+        }
+
         setPuzzle(data);
       }
     } catch (err) {
@@ -126,6 +145,10 @@ function App() {
               puzzle={puzzle}
               user={user}
               onNavigateToCreate={() => setView('create')}
+              onAuthorClick={(id) => {
+                setAuthorId(id);
+                setView('author');
+              }}
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
@@ -133,6 +156,20 @@ function App() {
               <button onClick={() => setView('create')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200">Create First Puzzle</button>
             </div>
           )
+        ) : view === 'author' ? (
+          <AuthorProfile
+            authorId={authorId}
+            currentUser={user}
+            onEditPuzzle={(p) => {
+              setPendingData({ ...p, grid: p.grid_data || {}, step: 1 });
+              setView('create');
+            }}
+            onBack={() => setView('solve')}
+            onNavigateToPuzzle={(p) => {
+              setPuzzle(p);
+              setView('solve');
+            }}
+          />
         ) : (
           <CreatePuzzle
             onComplete={() => { setView('solve'); setPendingData(null); }}

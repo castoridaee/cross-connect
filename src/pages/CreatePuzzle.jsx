@@ -81,14 +81,15 @@ const BankDraggableTile = ({ label }) => {
 
 export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequireAuth }) {
   const { user } = useAuth();
+  const [editingId, setEditingId] = useState(initialData?.id || null);
   const [step, setStep] = useState(initialData?.step || 1);
   const [title, setTitle] = useState(initialData?.title || '');
-  const [rows, setRows] = useState(initialData?.rows || 4);
-  const [cols, setCols] = useState(initialData?.cols || 4);
-  const [grid, setGrid] = useState(initialData?.grid || {}); // { "r-c": "WORD" }
+  const [rows, setRows] = useState(initialData?.rows || initialData?.layout?.length || 4);
+  const [cols, setCols] = useState(initialData?.cols || initialData?.layout?.[0]?.length || 4);
+  const [grid, setGrid] = useState(initialData?.grid || initialData?.grid_data || {});
   const [editingCell, setEditingCell] = useState(null);
   const [categories, setCategories] = useState(initialData?.categories || []);
-  const [wordOrder, setWordOrder] = useState(initialData?.wordOrder || []);
+  const [wordOrder, setWordOrder] = useState(initialData?.word_order || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDrag, setActiveDrag] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -288,25 +289,29 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       categories,
       layout,
       word_order: wordOrder,
+      grid_data: grid,
       is_published: true,
       created_by: user?.id || null,
       locale: navigator.language || 'en-US'
     };
 
-    const { data, error } = await createPuzzle(puzzleData);
+    const { data, error } = editingId 
+      ? await updatePuzzle(editingId, puzzleData)
+      : await createPuzzle(puzzleData);
+
     if (error) {
       setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
       setIsSubmitting(false);
     } else {
       if (!user || user.is_anonymous) {
-        setPublishedId(data.id);
+        if (data) setPublishedId(data.id);
         setStatusMsg({ 
           type: 'success', 
           text: "Puzzle published! Sign in to claim ownership and track stats.",
           showClaim: true
         });
       } else {
-        setStatusMsg({ type: 'success', text: "Puzzle published!" });
+        setStatusMsg({ type: 'success', text: editingId ? "Changes saved!" : "Puzzle published!" });
         setTimeout(() => {
           onComplete?.();
         }, 1500);

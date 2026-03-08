@@ -45,3 +45,21 @@ export async function updatePuzzle(id, data) {
     .eq('id', id);
   return { error };
 }
+
+export async function getPuzzlesByAuthor(authorId) {
+  const { data, error } = await supabase
+    .from('puzzles')
+    .select('*, author:profiles!created_by(nickname)')
+    .eq('created_by', authorId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+export async function getProfile(id) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', id)
+    .single();
+  return { data, error };
+}
