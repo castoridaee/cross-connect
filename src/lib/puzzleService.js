@@ -114,3 +114,12 @@ export async function getPuzzleProgress(userId, puzzleId) {
     .maybeSingle();
   return { data, error };
 }
+export async function getUserProgressForPuzzles(userId, puzzleIds) {
+  if (!userId || !puzzleIds || puzzleIds.length === 0) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('puzzle_id, status')
+    .eq('user_id', userId)
+    .in('puzzle_id', puzzleIds);
+  return { data, error };
+}

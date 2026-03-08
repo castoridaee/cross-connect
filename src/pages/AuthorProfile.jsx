@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getPuzzlesByAuthor, getProfile } from '../lib/puzzleService';
+import { getPuzzlesByAuthor, getProfile, getUserProgressForPuzzles } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, Edit2, Play, User, Share2, Check } from 'lucide-react';
+import { ChevronLeft, Edit2, Play, User, Share2, Check, SkipForward } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
@@ -9,6 +9,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [puzzles, setPuzzles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCopied, setShowCopied] = useState(false);
+  const [solveStatus, setSolveStatus] = useState({}); // { puzzleId: status }
 
   const handleShare = () => {
     const url = window.location.origin + '?a=' + authorId;
@@ -40,6 +41,19 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
            if (!simpleError) setPuzzles(simpleData || []);
         } else if (puzzlesRes.data) {
           setPuzzles(puzzlesRes.data);
+          
+          // Fetch solve status for the current user
+          if (currentUser && puzzlesRes.data.length > 0) {
+            const puzzleIds = puzzlesRes.data.map(p => p.id);
+            const { data: progressData } = await getUserProgressForPuzzles(currentUser.id, puzzleIds);
+            if (progressData) {
+              const statusMap = {};
+              progressData.forEach(p => {
+                statusMap[p.puzzle_id] = p.status;
+              });
+              setSolveStatus(statusMap);
+            }
+          }
         }
       } catch (err) {
         console.error("Profile load error:", err);
@@ -91,9 +105,21 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       <div className="grid gap-4 sm:grid-cols-2">
         {puzzles.map(p => (
           <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="text-lg font-black tracking-tight text-slate-900 mb-4">{p.title}</h3>
-              <div className="flex gap-2">
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="flex justify-between items-start mb-4 gap-2">
+                <h3 className="text-lg font-black tracking-tight text-slate-900 leading-tight">{p.title}</h3>
+                {solveStatus[p.id] === 'solved' && (
+                  <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shrink-0">
+                    <Check size={12} strokeWidth={3} /> Solved
+                  </div>
+                )}
+                {solveStatus[p.id] === 'skipped' && (
+                  <div className="bg-slate-100 text-slate-500 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shrink-0">
+                    <SkipForward size={12} strokeWidth={3} /> Skipped
+                  </div>
+                )}
+              </div>
+              <div className="mt-auto flex gap-2">
                 <button
                   onClick={() => onNavigateToPuzzle(p)}
                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors"
