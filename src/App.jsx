@@ -6,6 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
+import { getPuzzle } from './lib/puzzleService';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -16,10 +17,54 @@ function App() {
   const [authorId, setAuthorId] = useState(null);
 
   useEffect(() => {
-    if (view === 'solve') {
+    // 1. Check for URL parameters on mount
+    const params = new URLSearchParams(window.location.search);
+    const puzzleId = params.get('p');
+    const profileId = params.get('a');
+
+    if (puzzleId) {
+      loadSpecificPuzzle(puzzleId);
+    } else if (profileId) {
+      setAuthorId(profileId);
+      setView('author');
+      window.history.replaceState({}, document.title, "/");
+    } else if (view === 'solve') {
       loadPuzzles();
     }
   }, [view]);
+
+  async function loadSpecificPuzzle(id) {
+    setLoading(true);
+    try {
+      let { data, error } = await getPuzzle(id);
+      
+      if (error) {
+        console.warn("Specific fetch with join failed, retrying without join...", error);
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('puzzles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (fallbackError) throw fallbackError;
+        data = fallbackData;
+      }
+      
+      if (data) {
+        setPuzzle(data);
+        setView('solve');
+        // Clear parameters after loading to allow clean state for "New Game"
+        window.history.replaceState({}, document.title, "/");
+      } else {
+        throw new Error("Puzzle not found");
+      }
+    } catch (err) {
+      console.error("Failed to load specific puzzle:", err);
+      loadPuzzles(); // Fallback to random
+    } finally {
+      setLoading(false);
+    }
+  }
 
     async function loadPuzzles() {
     setLoading(true);

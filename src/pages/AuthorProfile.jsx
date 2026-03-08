@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { getPuzzlesByAuthor, getProfile } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, Edit2, Play, User } from 'lucide-react';
+import { ChevronLeft, Edit2, Play, User, Share2, Check } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
   const [profile, setProfile] = useState(null);
   const [puzzles, setPuzzles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCopied, setShowCopied] = useState(false);
+
+  const handleShare = () => {
+    const url = window.location.origin + '?a=' + authorId;
+    navigator.clipboard.writeText(url);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -59,7 +67,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         <ChevronLeft size={16} /> Back to Game
       </button>
 
-      <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 mb-8 flex items-center gap-6">
+      <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 mb-8 flex items-center gap-6 relative">
+        <button 
+          onClick={handleShare}
+          className="absolute right-8 top-8 p-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-slate-100"
+          title="Share Profile"
+        >
+          {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
+        </button>
         <div className="w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
           <User size={40} />
         </div>

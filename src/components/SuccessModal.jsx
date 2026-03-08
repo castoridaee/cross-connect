@@ -1,9 +1,16 @@
-import { Trophy, ThumbsUp, Share2 } from 'lucide-react';
+import { Trophy, ThumbsUp, Share2, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export const SuccessModal = ({ attempts, hintsUsed, categories = [] }) => {
+export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [] }) => {
+  const [showCopied, setShowCopied] = useState(false);
+
   const handleShare = () => {
-    const text = `Puzzle solved in ${attempts} attempts with ${hintsUsed} hints.`;
-    navigator.share ? navigator.share({ text }) : navigator.clipboard.writeText(text);
+    const text = generateShareText(puzzle, { attempts, hintsUsed });
+    copyToClipboard(text, () => {
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    });
   };
 
   const handleLike = () => {
@@ -39,8 +46,12 @@ export const SuccessModal = ({ attempts, hintsUsed, categories = [] }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <button onClick={handleShare} className="bg-slate-100 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 text-xs">
-            <Share2 size={16} /> Share
+          <button onClick={handleShare} className="bg-slate-100 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 text-xs transition-colors">
+            {showCopied ? (
+              <><Check size={16} className="text-green-500" /> Copied</>
+            ) : (
+              <><Share2 size={16} /> Share</>
+            )}
           </button>
           <button onClick={handleLike} className="bg-slate-100 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700 text-xs">
             <ThumbsUp size={16} /> Like

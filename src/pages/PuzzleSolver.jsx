@@ -5,12 +5,23 @@ import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
-import { Plus } from 'lucide-react';
+import { Plus, Share2, Check } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
+import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
   const [activeId, setActiveId] = useState(null);
+  const [showCopied, setShowCopied] = useState(false);
+  
+  const handleShare = () => {
+    const text = generateShareText(puzzle);
+    copyToClipboard(text, () => {
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    });
+  };
+
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 3 }
   }));
@@ -39,10 +50,18 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 p-6 select-none relative">
         {/* Puzzle Metadata Header */}
-        <div className="w-full max-w-md mb-8 text-center">
+        <div className="w-full max-w-md mb-8 text-center relative">
           <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1 uppercase">
             {puzzle.title || 'Untitled Puzzle'}
           </h1>
+          
+          <button 
+            onClick={handleShare}
+            className="absolute -right-2 top-0 p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
+            title="Share Puzzle"
+          >
+            {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
+          </button>
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
             {puzzle.created_by ? (
@@ -149,6 +168,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         {state.solved && (
           <SuccessModal
+            puzzle={puzzle}
             attempts={state.attempts}
             hintsUsed={hints.length}
             categories={puzzle.categories}

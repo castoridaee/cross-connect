@@ -63,3 +63,12 @@ export async function getProfile(id) {
     .single();
   return { data, error };
 }
+
+export async function getPuzzle(id) {
+  const { data, error } = await supabase
+    .from('puzzles')
+    .select('*, author:profiles!created_by(nickname)')
+    .eq('id', id)
+    .single();
+  return { data, error };
+}
