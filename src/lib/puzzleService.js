@@ -111,6 +111,6 @@ export async function getPuzzleProgress(userId, puzzleId) {
     .select('*')
     .eq('user_id', userId)
     .eq('puzzle_id', puzzleId)
-    .single();
+    .maybeSingle();
   return { data, error };
 }

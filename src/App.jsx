@@ -18,7 +18,7 @@ function App() {
   const [progress, setProgress] = useState(null);
 
   useEffect(() => {
-    // 1. Check for URL parameters on mount
+    // 1. Check for URL parameters
     const params = new URLSearchParams(window.location.search);
     const puzzleId = params.get('p');
     const profileId = params.get('a');
@@ -29,10 +29,10 @@ function App() {
       setAuthorId(profileId);
       setView('author');
       window.history.replaceState({}, document.title, "/");
-    } else if (view === 'solve') {
+    } else if (view === 'solve' && !puzzle && !authLoading) {
       loadPuzzles();
     }
-  }, [view]);
+  }, [view, user?.id, puzzle, authLoading]);
 
   async function loadSpecificPuzzle(id) {
     setLoading(true);
@@ -75,26 +75,27 @@ function App() {
   }
 
   async function loadPuzzles() {
+    if (authLoading) return;
     setLoading(true);
     try {
-      // 1. Get skipped puzzle IDs for current user
-      let skippedIds = [];
+      // 1. Get skipped OR solved puzzle IDs for current user
+      let excludedIds = [];
       if (user) {
-        const { data: skippedData } = await supabase
+        const { data: progressData } = await supabase
           .from('user_progress')
           .select('puzzle_id')
           .eq('user_id', user.id)
-          .eq('status', 'skipped');
-        skippedIds = skippedData?.map(s => s.puzzle_id).filter(id => id) || [];
+          .in('status', ['skipped', 'solved']);
+        excludedIds = progressData?.map(s => s.puzzle_id).filter(id => id) || [];
       }
 
-      // 2. Get the total count of puzzles (excluding skipped)
+      // 2. Get the total count of puzzles (excluding skipped/solved)
       let countQuery = supabase
         .from('puzzles')
         .select('*', { count: 'exact', head: true });
 
-      if (skippedIds.length > 0) {
-        countQuery = countQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+      if (excludedIds.length > 0) {
+        countQuery = countQuery.not('id', 'in', `(${excludedIds.join(',')})`);
       }
 
       const { count, error: countError } = await countQuery;
@@ -116,8 +117,8 @@ function App() {
           .select('*, author:profiles!created_by(nickname)')
           .range(randomIndex, randomIndex);
 
-        if (skippedIds.length > 0) {
-          fetchQuery = fetchQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+        if (excludedIds.length > 0) {
+          fetchQuery = fetchQuery.not('id', 'in', `(${excludedIds.join(',')})`);
         }
 
         let { data, error: fetchError } = await fetchQuery.single();
@@ -130,8 +131,8 @@ function App() {
             .select('*')
             .range(randomIndex, randomIndex);
 
-          if (skippedIds.length > 0) {
-            fallbackQuery = fallbackQuery.not('id', 'in', `(${skippedIds.join(',')})`);
+          if (excludedIds.length > 0) {
+            fallbackQuery = fallbackQuery.not('id', 'in', `(${excludedIds.join(',')})`);
           }
 
           const { data: fallbackData, error: fallbackError } = await fallbackQuery.single();
