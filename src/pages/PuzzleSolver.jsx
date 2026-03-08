@@ -100,9 +100,9 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
           <div className="overflow-x-auto pb-6 custom-scrollbar text-center">
             <div className="inline-block min-w-max mx-auto">
-              <section className="grid gap-1">
+              <section className="grid gap-0 border-t-2 border-l-2 border-black">
                 {puzzle.layout.map((row, r) => (
-                  <div key={r} className="flex gap-1 justify-center">
+                  <div key={r} className="flex gap-0 justify-center">
                     {row.map((active, c) => active ? (
                       <GridDroppable
                         key={`${r}-${c}`}
@@ -112,7 +112,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                         activeDrag={activeId === grid[`${r}-${c}`]}
                       />
                     ) : (
-                      <div key={`${r}-${c}`} className="w-16 h-16" />
+                      <div key={`${r}-${c}`} className="w-16 h-16 bg-slate-900 border-r-2 border-b-2 border-black" />
                     ))}
                   </div>
                 ))}
@@ -177,7 +177,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-indigo-600 text-white flex items-center justify-center font-bold rounded-lg shadow-2xl rotate-2 text-[9px] uppercase">
+            <div className="w-16 h-16 bg-indigo-600 text-white flex items-center justify-center font-bold border-2 border-black shadow-2xl rotate-2 text-[9px] uppercase">
               {activeId}
             </div>
           )}

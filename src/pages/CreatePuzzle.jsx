@@ -27,7 +27,7 @@ const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
         onEdit(r, c);
       }}
     >
-      <WordTile label={label} variant="active" />
+      <WordTile label={label} variant="active" inGrid={true} />
     </div>
   );
 };
@@ -43,12 +43,12 @@ const EditorCell = ({ r, c, word, onCellClick, onEdit }) => {
     <div
       ref={setNodeRef}
       onClick={() => !word && onCellClick(r, c)}
-      className={`cursor-pointer rounded-lg transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2' : ''}`}
+      className={`cursor-pointer transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2 z-10' : ''}`}
     >
       {word ? (
         <EditorDraggableTile id={word} label={word} r={r} c={c} onEdit={onEdit} />
       ) : (
-        <WordTile label="" variant="ghost" />
+        <WordTile label="" variant="ghost" inGrid={true} />
       )}
     </div>
   );
@@ -385,7 +385,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
                   <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
                     <div className="inline-block min-w-max mx-auto">
                       <div className="bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 relative">
-                        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                        <div className="grid gap-0 border-t-2 border-l-2 border-black relative" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                           {Array.from({ length: rows }).map((_, r) => (
                             Array.from({ length: cols }).map((_, c) => (
                               <EditorCell

@@ -6,11 +6,11 @@ export const GridDroppable = ({ id, word, isError, activeDrag }) => {
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div ref={setNodeRef} className="rounded-lg overflow-hidden transition-colors">
+    <div ref={setNodeRef} className="overflow-hidden transition-colors">
       {word && !activeDrag ? (
         <DraggableTile id={word} label={word} inGrid isError={isError} />
       ) : (
-        <WordTile label="" variant="ghost" />
+        <WordTile label="" variant="ghost" inGrid={true} />
       )}
     </div>
   );

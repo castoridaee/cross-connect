@@ -14,7 +14,7 @@ export const DraggableTile = ({ id, label, inGrid, isError, isDraggingOverlay })
       className="cursor-grab active:cursor-grabbing"
       style={{ touchAction: 'none' }}
     >
-      <WordTile label={label} variant={variant} />
+      <WordTile label={label} variant={variant} inGrid={inGrid} />
     </div>
   );
 };
