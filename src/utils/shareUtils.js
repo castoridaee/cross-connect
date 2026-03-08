@@ -18,7 +18,7 @@ export function generateEmojiGrid(puzzle) {
 
 export function generateShareText(puzzle, stats = null) {
   const emojiGrid = generateEmojiGrid(puzzle);
-  const baseUrl = window.location.origin + '?p=' + puzzle.id;
+  const baseUrl = window.location.origin + '/p/' + puzzle.id;
 
   // let header = `Try this puzzle!\n`;
 

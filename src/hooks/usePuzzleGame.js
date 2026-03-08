@@ -227,7 +227,10 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
         await recordPuzzleSolve(user.id, puzzle.id, {
           attempts: currentAttempt,
           moves: state.moves,
-          seconds: state.seconds
+          seconds: state.seconds,
+          grid: grid,
+          hints: hints,
+          history: history
         });
       }
     } else {

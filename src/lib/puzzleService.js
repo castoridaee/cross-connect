@@ -1,19 +1,23 @@
 import { supabase } from './supabase';
 
 export async function recordPuzzleSolve(userId, puzzleId, stats) {
-  const { attempts, moves, seconds } = stats;
+  const { attempts, moves, seconds, grid, hints, history } = stats;
 
-  // 1. Save the individual user's performance
+  // 1. Save the individual user's performance including final state
   const { error: progressError } = await supabase
     .from('user_progress')
     .upsert({
       user_id: userId,
       puzzle_id: puzzleId,
       is_solved: true,
+      grid_state: grid || {},
       attempts: attempts,
       move_count: moves,
       total_seconds_played: seconds,
-      solved_at: new Date().toISOString()
+      hints_revealed: hints || [],
+      guess_history: history || [],
+      solved_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
 
   if (progressError) throw progressError;
@@ -69,7 +73,10 @@ export async function getPuzzle(id) {
 export async function recordPuzzleSkip(userId, puzzleId) {
   console.log("DB: Recording skip for", { userId, puzzleId });
   const { data: current } = await getPuzzleProgress(userId, puzzleId);
-  if (current?.status === 'solved') return { error: null };
+  if (current?.is_solved || current?.status === 'solved') {
+    console.log("[recordPuzzleSkip] Ignoring skip: Puzzle already solved.");
+    return { error: null };
+  }
 
   const { error } = await supabase
     .from('user_progress')

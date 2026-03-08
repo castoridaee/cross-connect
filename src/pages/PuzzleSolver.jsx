@@ -15,6 +15,8 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [tapHint, setTapHint] = useState({ show: false, x: 0, y: 0 });
+  const hintTimeoutRef = React.useRef(null);
 
   // Show success modal when puzzle is solved
   React.useEffect(() => {
@@ -30,7 +32,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
       import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
     }
   }, [user?.id, puzzle?.id]);
-  
+
   const handleShare = () => {
     const text = generateShareText(puzzle);
     copyToClipboard(text, () => {
@@ -63,20 +65,31 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
     }
   };
 
+  const handleGridClick = (e, coord) => {
+    // Only show hint if the cell is empty
+    if (!grid[coord]) {
+      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+      setTapHint({ show: true, x: e.clientX, y: e.clientY });
+      hintTimeoutRef.current = setTimeout(() => {
+        setTapHint(prev => ({ ...prev, show: false }));
+      }, 3000);
+    }
+  };
+
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
       <div className="flex flex-col items-center min-h-screen bg-slate-50 px-6 pb-6 pt-0 select-none relative">
         {/* Puzzle Metadata Header */}
         <div className="w-full max-w-md mb-6 text-center relative">
           <div className="flex justify-end gap-3 mb-2">
-            <button 
+            <button
               onClick={onSkip}
               className="p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
-              title="Skip Puzzle"
+              title={state.solved ? "Next Puzzle" : "Skip Puzzle"}
             >
               <SkipForward size={18} />
             </button>
-            <button 
+            <button
               onClick={handleShare}
               className="p-2 text-slate-400 hover:text-indigo-600 transition-all active:scale-90"
               title="Share Puzzle"
@@ -88,7 +101,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
           <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1">
             {puzzle.title || 'Untitled Puzzle'}
           </h1>
-          
+
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
             {puzzle.created_by ? (
@@ -114,14 +127,15 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                 {puzzle.layout.map((row, r) => (
                   <div key={r} className="flex gap-0 justify-center">
                     {row.map((active, c) => active ? (
-                      <GridDroppable
-                        key={`${r}-${c}`}
-                        id={`cell-${r}-${c}`}
-                        word={grid[`${r}-${c}`]}
-                        isError={state.errors.includes(`${r}-${c}`)}
-                        activeDrag={activeId === grid[`${r}-${c}`]}
-                        isFlashing={isFlashing && !grid[`${r}-${c}`]}
-                      />
+                      <div key={`${r}-${c}`} onClick={(e) => handleGridClick(e, `${r}-${c}`)}>
+                        <GridDroppable
+                          id={`cell-${r}-${c}`}
+                          word={grid[`${r}-${c}`]}
+                          isError={state.errors.includes(`${r}-${c}`)}
+                          activeDrag={activeId === grid[`${r}-${c}`]}
+                          isFlashing={isFlashing && !grid[`${r}-${c}`]}
+                        />
+                      </div>
                     ) : (
                       <div key={`${r}-${c}`} className="w-16 h-16 bg-slate-900 border-r-2 border-b-2 border-black" />
                     ))}
@@ -188,7 +202,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center font-bold border-2 border-black shadow-2xl rotate-2 text-[11px] uppercase">
+            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center text-center font-bold border-2 border-black shadow-2xl rotate-2 text-[11px] uppercase">
               {activeId}
             </div>
           )}
@@ -212,6 +226,19 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             onLikeTrack={onToggleLike}
             initialIsLiked={isLiked}
           />
+        )}
+
+        {/* Floating Tap Hint Tip */}
+        {tapHint.show && (
+          <div
+            className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+20px)] animate-in fade-in zoom-in duration-300"
+            style={{ left: tapHint.x, top: tapHint.y }}
+          >
+            <div className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-2xl shadow-2xl relative whitespace-nowrap">
+              Grab words below to drop into this grid!
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-slate-900 rotate-45" />
+            </div>
+          </div>
         )}
       </div>
     </DndContext>

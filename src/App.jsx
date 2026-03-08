@@ -20,26 +20,62 @@ function App() {
   useEffect(() => {
     if (authLoading) return;
 
-    // 1. Check for URL parameters
-    const params = new URLSearchParams(window.location.search);
-    const puzzleId = params.get('p');
-    const profileId = params.get('a');
+    // 1. Function to parse current URL and set state
+    const syncStateWithUrl = () => {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      
+      // Handle /a/[id] or ?a=[id]
+      const profileId = path.startsWith('/a/') ? path.split('/a/')[1] : params.get('a');
+      // Handle /p/[id] or ?p=[id]
+      const puzzleId = path.startsWith('/p/') ? path.split('/p/')[1] : params.get('p');
 
-    if (view === 'solve') {
-      if (puzzleId) {
+      if (profileId) {
+        setAuthorId(profileId);
+        setView('author');
+      } else if (puzzleId) {
         loadSpecificPuzzle(puzzleId);
-      } else if (!puzzle) {
+      } else if (view === 'solve' && !puzzle) {
         loadPuzzles();
-      } else {
-        // Refresh progress for the current puzzle we are resuming
+      } else if (view === 'solve' && puzzle) {
         refreshCurrentProgress(puzzle.id);
       }
-    } else if (profileId) {
-      setAuthorId(profileId);
-      setView('author');
-      window.history.replaceState({}, document.title, "/");
+    };
+
+    // 2. Initial sync
+    syncStateWithUrl();
+
+    // 3. Listen for back/forward navigation
+    window.addEventListener('popstate', syncStateWithUrl);
+    return () => window.removeEventListener('popstate', syncStateWithUrl);
+  }, [authLoading]); // Removed view/user dependencies to avoid loops, syncStateWithUrl handles internal logic
+
+  // Update URL whenever view or specific IDs change
+  useEffect(() => {
+    if (authLoading) return;
+
+    let newPath = '/';
+    if (view === 'author' && authorId) {
+      newPath = `/a/${authorId}`;
+    } else if (view === 'solve' && puzzle) {
+      newPath = `/p/${puzzle.id}`;
+    } else if (view === 'create') {
+      newPath = '/create';
+    } else if (view === 'auth') {
+      newPath = '/auth';
     }
-  }, [view, user?.id, authLoading]);
+
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({ view, authorId, puzzleId: puzzle?.id }, '', newPath);
+    }
+  }, [view, authorId, puzzle?.id, authLoading]);
+
+  // Sync progress data whenever we enter solve view or user/puzzle changes
+  useEffect(() => {
+    if (view === 'solve' && puzzle?.id && !authLoading) {
+      refreshCurrentProgress(puzzle.id);
+    }
+  }, [view, puzzle?.id, user?.id, authLoading]);
 
   async function refreshCurrentProgress(puzzleId) {
     if (!user) return;
@@ -69,6 +105,19 @@ function App() {
       }
 
       if (data) {
+        // Direct Access Security Check: Owners go to creator, others get "not found"
+        if (data.is_published === false) {
+          if (data.created_by === user?.id) {
+            console.info("Redirecting owner to draft editor.");
+            setPendingData(data);
+            setView('create');
+            return; // Exit early since we're switching views
+          } else {
+            console.warn("Direct access to unpublished puzzle denied.");
+            throw new Error("Puzzle not found");
+          }
+        }
+
         let progData = null;
         if (user) {
           const { data: pData } = await getPuzzleProgress(user.id, data.id);
@@ -82,8 +131,6 @@ function App() {
         if (user) {
           recordPuzzlePlay(user.id, data.id);
         }
-        // Clear parameters after loading to allow clean state for "New Game"
-        window.history.replaceState({}, document.title, "/");
       } else {
         throw new Error("Puzzle not found");
       }
@@ -110,10 +157,11 @@ function App() {
         excludedIds = progressData?.map(s => s.puzzle_id).filter(id => id) || [];
       }
 
-      // 2. Get the total count of puzzles (excluding skipped/solved)
+      // 2. Get the total count of puzzles (excluding skipped/solved and unpublished)
       let countQuery = supabase
         .from('puzzles')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('is_published', true);
 
       if (excludedIds.length > 0) {
         countQuery = countQuery.not('id', 'in', `(${excludedIds.join(',')})`);
@@ -136,6 +184,7 @@ function App() {
         let fetchQuery = supabase
           .from('puzzles')
           .select('*, author:profiles!created_by(nickname)')
+          .eq('is_published', true)
           .range(randomIndex, randomIndex);
 
         if (excludedIds.length > 0) {
@@ -150,6 +199,7 @@ function App() {
           let fallbackQuery = supabase
             .from('puzzles')
             .select('*')
+            .eq('is_published', true)
             .range(randomIndex, randomIndex);
 
           if (excludedIds.length > 0) {
@@ -175,6 +225,10 @@ function App() {
             recordPuzzlePlay(user.id, data.id);
           }
         }
+      } else {
+        // No more puzzles available (excluding solved/skipped)
+        setPuzzle(null);
+        setProgress(null);
       }
     } catch (err) {
       console.error("Load Error:", err);

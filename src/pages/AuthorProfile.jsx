@@ -15,7 +15,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [likedPuzzles, setLikedPuzzles] = useState([]);
 
   const handleShare = () => {
-    const url = window.location.origin + '?a=' + authorId;
+    const url = window.location.origin + '/a/' + authorId;
     navigator.clipboard.writeText(url);
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
@@ -29,19 +29,20 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         if (profileRes.data) setProfile(profileRes.data);
 
         // Fetch author's puzzles
-        const puzzlesRes = await getPuzzlesByAuthor(authorId);
-        let authorPuzzles = [];
-        if (puzzlesRes.data) {
-          authorPuzzles = puzzlesRes.data;
-        } else {
-          const { data: simpleData } = await supabase
-            .from('puzzles')
-            .select('*')
-            .eq('created_by', authorId)
-            .order('created_at', { ascending: false });
-          authorPuzzles = simpleData || [];
+        let puzzlesQuery = supabase
+          .from('puzzles')
+          .select('*')
+          .eq('created_by', authorId);
+        
+        // If not the owner, only show published puzzles
+        if (currentUser?.id !== authorId) {
+          puzzlesQuery = puzzlesQuery.eq('is_published', true);
         }
-        setPuzzles(authorPuzzles);
+        
+        const { data: authorPuzzles, error: puzzlesErr } = await puzzlesQuery.order('created_at', { ascending: false });
+        
+        if (puzzlesErr) throw puzzlesErr;
+        setPuzzles(authorPuzzles || []);
 
         // Fetch liked puzzles if on that tab (or just always if it's the current user)
         if (currentUser) {
@@ -144,6 +145,11 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               <div className="flex justify-between items-start mb-4 gap-2">
                 <h3 className="text-lg font-black tracking-tight text-slate-900 leading-tight">{p.title}</h3>
                 <div className="flex gap-2 shrink-0">
+                  {p.is_published === false && (
+                    <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                      Draft
+                    </div>
+                  )}
                   {likeStatus[p.id] && (
                     <div className="bg-pink-50 text-pink-500 p-1.5 rounded-lg border border-pink-100">
                       <Heart size={14} fill="currentColor" />
@@ -164,9 +170,10 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               <div className="mt-auto flex gap-2">
                 <button
                   onClick={() => onNavigateToPuzzle(p)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                  disabled={p.is_published === false}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
                 >
-                  <Play size={14} fill="currentColor" /> PLAY
+                  {p.is_published === false ? 'DRAFT' : <><Play size={14} fill="currentColor" /> PLAY</>}
                 </button>
                 {isOwner && (
                   <button

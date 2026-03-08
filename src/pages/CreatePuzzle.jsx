@@ -5,7 +5,7 @@ import { WordBank } from '../components/WordBank';
 import { supabase } from '../lib/supabase';
 import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, Plus, Minus, X, Save, Trash2 } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, X, Save, Trash2, Check } from 'lucide-react';
 
 // Draggable tile for the grid editor
 const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
@@ -94,6 +94,50 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const [activeDrag, setActiveDrag] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [publishedId, setPublishedId] = useState(initialData?.publishedId || null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+
+  // iterative draft saving
+  useEffect(() => {
+    if (!user) return;
+    
+    // Auto-save logic
+    const wordCount = Object.keys(grid).length;
+    const hasContent = title.trim() || wordCount > 0 || categories.length > 0;
+    
+    // Don't autosave if we're in the middle of a check or if published
+    if (hasContent && !isSubmitting) {
+      setIsSaving(true);
+      const timer = setTimeout(async () => {
+        const payload = {
+          title: title.trim() || 'Untitled Puzzle',
+          grid_data: grid,
+          layout: Array.from({ length: rows }, (_, r) =>
+            Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
+          ),
+          categories: categories,
+          word_order: wordOrder,
+          is_published: false,
+          created_by: user.id
+        };
+        
+        try {
+          if (editingId) {
+            await updatePuzzle(editingId, payload);
+          } else {
+            const { data } = await createPuzzle(payload);
+            if (data?.id) setEditingId(data.id);
+          }
+          setLastSavedAt(new Date());
+        } catch (err) {
+          console.error("Autosave error:", err);
+        } finally {
+          setIsSaving(false);
+        }
+      }, 2000); // 2s debounce
+      return () => clearTimeout(timer);
+    }
+  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId]);
 
   // Auto-claim puzzle if user just logged in and we have a pending publishedId
   useEffect(() => {
@@ -279,7 +323,20 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       return;
     }
 
-    setCategories(detected);
+    // Smart mapping: preserve descriptions if words are the same or subset
+    const newCategories = detected.map(newCat => {
+      const sortedNewWords = [...newCat.words].sort().join(',');
+      const existing = categories.find(oldCat => {
+        const sortedOldWords = [...oldCat.words].sort().join(',');
+        // Same words
+        if (sortedNewWords === sortedOldWords) return true;
+        // Or new words contains all old words
+        return oldCat.words.every(w => newCat.words.includes(w));
+      });
+      return { ...newCat, description: existing?.description || "" };
+    });
+
+    setCategories(newCategories);
     setWordOrder([...new Set(words)].sort(() => Math.random() - 0.5));
     setStep(2);
   };
@@ -302,6 +359,26 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       created_by: user?.id || null,
       locale: navigator.language || 'en-US'
     };
+
+    // Validation: Description cannot contain words from category (len >= 3)
+    for (const cat of categories) {
+      const desc = cat.description.toLowerCase();
+      for (const word of cat.words) {
+        if (word.length >= 3) {
+          const forbidden = word.toLowerCase();
+          // Regex for full word match
+          const regex = new RegExp(`\\b${forbidden}\\b`, 'i');
+          if (regex.test(desc)) {
+            setStatusMsg({ 
+              type: 'error', 
+              text: `Category description cannot contain the word "${word}"` 
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+    }
 
     const { data, error } = editingId 
       ? await updatePuzzle(editingId, puzzleData)
@@ -346,7 +423,21 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
           <h2 className="text-xl font-black uppercase tracking-tight">
             {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
           </h2>
-          <div className="w-6" />
+          <div className="w-12 flex justify-end">
+            {isSaving ? (
+              <div className="flex items-center gap-1.5 text-indigo-400">
+                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+                <span className="text-[8px] font-black uppercase tracking-widest leading-none">Saving</span>
+              </div>
+            ) : lastSavedAt ? (
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <Check size={10} strokeWidth={4} />
+                <span className="text-[8px] font-black uppercase tracking-widest leading-none">Draft Saved</span>
+              </div>
+            ) : (
+              <div className="w-1.5 h-1.5 bg-slate-100 rounded-full" />
+            )}
+          </div>
         </div>
 
         {statusMsg.text && (
