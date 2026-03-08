@@ -253,6 +253,18 @@ function App() {
     loadPuzzles();
   };
 
+  const handleNext = () => {
+    // 1. Clear current puzzle/progress state
+    setPuzzle(null);
+    setProgress(null);
+    
+    // 2. Clear the URL to root
+    window.history.pushState({ view: 'solve' }, '', '/');
+    
+    // 3. Load a new random, unsolved puzzle
+    loadPuzzles();
+  };
+
   const handleAuthComplete = () => {
     if (pendingData) {
       setView('create');
@@ -351,6 +363,7 @@ function App() {
                 setView('author');
               }}
               onSkip={handleSkip}
+              onNext={handleNext}
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">

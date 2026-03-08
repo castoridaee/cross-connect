@@ -10,7 +10,7 @@ import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress }) {
+export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress, onNext }) {
   const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onReset, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
@@ -215,7 +215,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             hintsUsed={hints.length}
             categories={puzzle.categories}
             onAdmire={() => setShowSuccess(false)}
-            onNext={() => window.location.reload()}
+            onNext={onNext}
             onAuthorClick={() => {
               if (user) recordPuzzleEngagement(puzzle.id, user.id, 'profile_click');
               onAuthorClick(puzzle.created_by);
