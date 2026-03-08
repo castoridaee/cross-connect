@@ -6,6 +6,7 @@ import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
 import { Plus } from 'lucide-react';
+import { generateAnonymousName } from '../utils/nameGenerator';
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick }) {
   const { grid, history, hints, state, handleMove, onCheck, onHint, onReset } = usePuzzleGame(puzzle, user);
@@ -49,10 +50,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                 onClick={() => onAuthorClick(puzzle.created_by)}
                 className="text-indigo-600 hover:text-indigo-800 font-bold transition-colors underline decoration-2 underline-offset-4"
               >
-                {puzzle.author?.nickname || 'Anonymous'}
+                {puzzle.author?.nickname || generateAnonymousName(puzzle.created_by)}
               </button>
             ) : (
-              <span className="text-slate-900 font-bold">Anonymous</span>
+              <span className="text-slate-900 font-bold">{generateAnonymousName(puzzle.id)}</span>
             )}
           </div>
         </div>

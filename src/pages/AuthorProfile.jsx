@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getPuzzlesByAuthor, getProfile } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, Edit2, Play, User } from 'lucide-react';
+import { generateAnonymousName } from '../utils/nameGenerator';
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
   const [profile, setProfile] = useState(null);
@@ -64,10 +65,10 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         </div>
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 capitalize">
-            {profile?.nickname || 'Anonymous'}
+            {profile?.nickname || generateAnonymousName(authorId)}
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
-             {puzzles.length} Creations
+             {puzzles.length} Puzzles
           </p>
         </div>
       </div>

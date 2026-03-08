@@ -5,6 +5,7 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
+import { generateAnonymousName } from './utils/nameGenerator';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -110,18 +111,33 @@ function App() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {user && !user.is_anonymous ? (
+          {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logged in as</span>
-                <span className="text-xs font-bold">{user.user_metadata?.nickname || user.email?.split('@')[0]}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {user.is_anonymous ? 'Playing as' : 'Logged in as'}
+                </span>
+                <span className="text-xs font-bold">
+                  {user.is_anonymous 
+                    ? generateAnonymousName(user.id) 
+                    : (user.user_metadata?.nickname || user.email?.split('@')[0])}
+                </span>
               </div>
-              <button
-                onClick={() => signOut()}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
-              >
-                LOGOUT
-              </button>
+              {user.is_anonymous ? (
+                <button
+                  onClick={() => setView('auth')}
+                  className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
+                >
+                  SIGN IN
+                </button>
+              ) : (
+                <button
+                  onClick={() => signOut()}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
+                >
+                  LOGOUT
+                </button>
+              )}
             </div>
           ) : (
             <button
