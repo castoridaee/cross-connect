@@ -37,3 +37,11 @@ export async function createPuzzle(puzzleData) {
 
   return { data, error };
 }
+
+export async function updatePuzzle(id, data) {
+  const { error } = await supabase
+    .from('puzzles')
+    .update(data)
+    .eq('id', id);
+  return { error };
+}

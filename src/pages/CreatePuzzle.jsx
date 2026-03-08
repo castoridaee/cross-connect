@@ -3,7 +3,7 @@ import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDropp
 import { WordTile } from '../components/WordTile';
 import { WordBank } from '../components/WordBank';
 import { supabase } from '../lib/supabase';
-import { createPuzzle } from '../lib/puzzleService';
+import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Plus, Minus, X, Save, Trash2 } from 'lucide-react';
 
@@ -92,6 +92,24 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDrag, setActiveDrag] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [publishedId, setPublishedId] = useState(initialData?.publishedId || null);
+
+  // Auto-claim puzzle if user just logged in and we have a pending publishedId
+  useEffect(() => {
+    if (publishedId && user && !user.is_anonymous) {
+      const claim = async () => {
+        const { error } = await updatePuzzle(publishedId, { created_by: user.id });
+        if (!error) {
+          setPublishedId(null);
+          setStatusMsg({ type: 'success', text: "Puzzle successfully claimed and linked to your account!" });
+          setTimeout(() => {
+            onComplete?.();
+          }, 2000);
+        }
+      };
+      claim();
+    }
+  }, [publishedId, user, onComplete]);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 3 } // Responsive grab
@@ -258,11 +276,6 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   };
 
   const handleSubmit = async () => {
-    if (!user || user.is_anonymous) {
-      setShowAuthModal(true);
-      return;
-    }
-
     setIsSubmitting(true);
     setStatusMsg({ type: '', text: '' });
 
@@ -276,24 +289,33 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       layout,
       word_order: wordOrder,
       is_published: true,
-      created_by: user.id,
+      created_by: user?.id || null,
       locale: navigator.language || 'en-US'
     };
 
-    const { error } = await createPuzzle(puzzleData);
+    const { data, error } = await createPuzzle(puzzleData);
     if (error) {
       setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
       setIsSubmitting(false);
     } else {
-      setStatusMsg({ type: 'success', text: "Puzzle published!" });
-      setTimeout(() => {
-        onComplete?.();
-      }, 1500);
+      if (!user || user.is_anonymous) {
+        setPublishedId(data.id);
+        setStatusMsg({ 
+          type: 'success', 
+          text: "Puzzle published! Sign in to claim ownership and track stats.",
+          showClaim: true
+        });
+      } else {
+        setStatusMsg({ type: 'success', text: "Puzzle published!" });
+        setTimeout(() => {
+          onComplete?.();
+        }, 1500);
+      }
     }
   };
 
   const handleGoToAuth = () => {
-    const data = { step, title, rows, cols, grid, categories, wordOrder };
+    const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
     onRequireAuth(data);
   };
 
@@ -315,12 +337,24 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
         </div>
 
         {statusMsg.text && (
-          <div className={`mb-6 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
+          <div className={`mb-6 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
             }`}>
-            <span className="text-xs font-bold uppercase tracking-wide">{statusMsg.text}</span>
-            <button onClick={() => setStatusMsg({ type: '', text: '' })} className="text-slate-400 hover:text-slate-600">
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold uppercase tracking-wide">{statusMsg.text}</span>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {statusMsg.showClaim && (
+                <button
+                  onClick={handleGoToAuth}
+                  className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+                >
+                  Sign In to Claim
+                </button>
+              )}
+              <button onClick={() => setStatusMsg({ type: '', text: '' })} className="text-slate-400 hover:text-slate-600 ml-auto">
+                <X size={16} />
+              </button>
+            </div>
           </div>
         )}
 
