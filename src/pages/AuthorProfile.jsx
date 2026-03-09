@@ -29,7 +29,7 @@ function StatTooltip({ label, children }) {
       onTouchStart={handleInteraction}
     >
       {children}
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-50 ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-pre-wrap w-max max-w-[180px] text-center shadow-xl z-50 ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
         {label}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
@@ -325,7 +325,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             const getTime = p => p.median_time_to_solve || 999999;
             return getTime(a) - getTime(b);
           }
-          if (sortBy === 'attempts') return (b.median_adjusted_attempts || 0) - (a.median_adjusted_attempts || 0);
+          if (sortBy === 'attempts') return (b.trimmean_attempts_to_solve || 0) - (a.trimmean_attempts_to_solve || 0);
           return new Date(b.created_at) - new Date(a.created_at);
         }).map(p => (
           <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col">
@@ -356,46 +356,33 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                         </div>
                       )}
                     </>
-                  ) : p.likes_count > 0 && (
-                    <StatTooltip label="Community Likes">
-                      <div className="bg-pink-50 text-pink-500 px-2 py-1 rounded-lg border border-pink-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
-                        <Heart size={12} fill="currentColor" /> {p.likes_count}
-                      </div>
-                    </StatTooltip>
+                  ) : (
+                    <div className="flex gap-2">
+                      {p.solve_count > 0 && p.difficulty_score > 0 && (
+                        <StatTooltip label={"Difficulty Score\n(Based on time, moves, attempts, and hints)"}>
+                          <div className="bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                            <Hash size={12} strokeWidth={3} /> {p.difficulty_score.toFixed(1)}
+                          </div>
+                        </StatTooltip>
+                      )}
+                      {p.likes_count > 0 && (
+                        <StatTooltip label="Community Likes">
+                          <div className="bg-pink-50 text-pink-500 px-2 py-1 rounded-lg border border-pink-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                            <Heart size={12} fill="currentColor" /> {p.likes_count}
+                          </div>
+                        </StatTooltip>
+                      )}
+                      {p.solve_count > 0 && (
+                        <StatTooltip label="Total Solves">
+                          <div className="bg-green-50 text-green-700 px-2 py-1 rounded-lg border border-green-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                            <Check size={12} strokeWidth={3} /> {p.solve_count}
+                          </div>
+                        </StatTooltip>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
-
-              {(activeTab === 'manage' || activeTab === 'unpublished') && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {p.play_count > 0 && (
-                    <StatTooltip label={`${Math.round((p.solve_count / p.play_count) * 100)}% Solve Rate`}>
-                      <div className="bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg flex items-center gap-1.5 text-slate-500">
-                        <BarChart2 size={12} />
-                        <span className="text-[10px] font-bold">{Math.round((p.solve_count / p.play_count) * 100)}% Solves</span>
-                      </div>
-                    </StatTooltip>
-                  )}
-                  {p.median_time_to_solve > 0 && (
-                    <StatTooltip label="Median Solve Time">
-                      <div className="bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg flex items-center gap-1.5 text-slate-500">
-                        <Clock size={12} />
-                        <span className="text-[10px] font-bold">
-                          {Math.floor(p.median_time_to_solve / 60)}m {Math.round(p.median_time_to_solve % 60)}s
-                        </span>
-                      </div>
-                    </StatTooltip>
-                  )}
-                  {p.median_adjusted_attempts > 0 && (
-                    <StatTooltip label="Median Attempts + Hints Used">
-                      <div className="bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg flex items-center gap-1.5 text-slate-500">
-                        <Hash size={12} />
-                        <span className="text-[10px] font-bold">{p.median_adjusted_attempts.toFixed(1)} Attempts</span>
-                      </div>
-                    </StatTooltip>
-                  )}
-                </div>
-              )}
               <div className="mt-auto flex gap-2">
                 {(activeTab === 'manage' || activeTab === 'unpublished') ? (
                   <>

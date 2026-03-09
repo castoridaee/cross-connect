@@ -19,9 +19,11 @@ The core table storing puzzle data, layouts, and metadata.
 - `solve_count` (int4): Number of times the puzzle was solved.
 - `share_count` (int4): Number of times the puzzle was shared.
 - `author_profile_clicks` (int4): Number of times users clicked the author's profile.
-- `median_attempts_to_solve` (float8): Global median of attempts needed.
+- `trimmean_attempts_to_solve` (float8): Global 20% trimmed mean of attempts needed.
 - `median_time_to_solve` (float8): Global median time taken to solve.
 - `median_moves_to_solve` (float8): Global median number of moves.
+- `trimmean_hints_used` (float8): Global 20% trimmed mean of hints used.
+- `difficulty_score` (float8): Metric = `((MedTime/75 + MedMoves/30 + TrimAttempts-1 + TrimHints) / (SolveRate + 1)) / 5`.
 - `locale` (text): The browser locale (e.g., `en-US`) of the creator.
 - `created_at` (timestamp with time zone): When the puzzle was created.
 
@@ -47,6 +49,7 @@ Tracks user performance and "Skip" status on specific puzzles.
 - `attempts` (int4): Number of check/submit attempts.
 - `move_count` (int4): Number of moves made.
 - `hints_revealed` (jsonb): List of hints shown to the user.
+- `hints_revealed_count` (int4): Count of hints revealed (kept in sync via trigger).
 - `guess_history` (jsonb): History of validation attempts.
 - `total_seconds_played` (int4): Cumulative time played.
 - `started_at` (timestamp with time zone): When the user started the puzzle.
