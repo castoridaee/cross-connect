@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPuzzlesByAuthor, getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, Edit2, Play, User, Share2, Check, SkipForward, Heart, Trash2, EyeOff, MoreVertical, X, BarChart2, Clock, Hash, ChevronDown, Filter } from 'lucide-react';
+import { ChevronLeft, Edit2, Play, User, Share2, Check, SkipForward, Heart, Trash2, EyeOff, MoreVertical, X, BarChart2, Clock, Gauge, ChevronDown, Filter, Calendar } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 
 function StatTooltip({ label, children }) {
@@ -25,11 +25,11 @@ function StatTooltip({ label, children }) {
 
   return (
     <div
-      className="group relative flex items-center"
+      className="group/tool relative flex items-center"
       onTouchStart={handleInteraction}
     >
       {children}
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-pre-wrap w-max max-w-[180px] text-center shadow-xl z-50 ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-pre-wrap w-max max-w-[180px] text-center shadow-xl z-50 ${isVisible ? 'opacity-100' : 'opacity-0 group-hover/tool:opacity-100'
         }`}>
         {label}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
@@ -285,10 +285,10 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-4 border-t-slate-900 animate-in fade-in zoom-in duration-200">
                   {[
                     { id: 'newest', label: 'Newest First' },
+                    { id: 'difficulty_desc', label: 'Hardest First' },
+                    { id: 'difficulty_asc', label: 'Easiest First' },
                     { id: 'likes', label: 'Most Likes' },
-                    { id: 'solves', label: 'Solve Percentage' },
-                    { id: 'time', label: 'Fastest Solve' },
-                    { id: 'attempts', label: 'Fewest Attempts' },
+                    { id: 'solves', label: 'Most Solves' },
                   ].map(opt => (
                     <button
                       key={opt.id}
@@ -317,71 +317,80 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                 likedPuzzles
         ).sort((a, b) => {
           if (sortBy === 'likes') return (b.likes_count || 0) - (a.likes_count || 0);
-          if (sortBy === 'solves') {
-            const getRate = p => (p.play_count > 0 ? (p.solve_count || 0) / p.play_count : 0);
-            return getRate(b) - getRate(a);
+          if (sortBy === 'solves') return (b.solve_count || 0) - (a.solve_count || 0);
+          if (sortBy === 'difficulty_desc') return (b.difficulty_score || 0) - (a.difficulty_score || 0);
+          if (sortBy === 'difficulty_asc') {
+            // Sort by difficulty ASC, but put 0/null at the end
+            const scoreA = a.difficulty_score || 999;
+            const scoreB = b.difficulty_score || 999;
+            return scoreA - scoreB;
           }
-          if (sortBy === 'time') {
-            const getTime = p => p.median_time_to_solve || 999999;
-            return getTime(a) - getTime(b);
-          }
-          if (sortBy === 'attempts') return (b.trimmean_attempts_to_solve || 0) - (a.trimmean_attempts_to_solve || 0);
           return new Date(b.created_at) - new Date(a.created_at);
         }).map(p => (
           <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col">
             <div className="relative z-10 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-4 gap-2">
-                <h3 className="text-lg font-black tracking-tight text-slate-900 leading-tight">{p.title || 'Untitled'}</h3>
-                <div className="flex gap-2 shrink-0">
-                  {p.is_published === false && (
-                    <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                      Draft
-                    </div>
-                  )}
-                  {activeTab !== 'manage' && activeTab !== 'unpublished' ? (
-                    <>
-                      {likeStatus[p.id] && (
-                        <div className="bg-pink-50 text-pink-500 p-1.5 rounded-lg border border-pink-100">
-                          <Heart size={14} fill="currentColor" />
+              {/* Row 1: Title and Status */}
+              <div className="flex justify-between items-start mb-2 gap-2">
+                <h3 className="text-lg font-black tracking-tight text-slate-900 leading-tight grow">{p.title || 'Untitled'}</h3>
+                {p.is_published === false && (
+                  <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shrink-0">
+                    Draft
+                  </div>
+                )}
+              </div>
+
+              {/* Row 2: Badges */}
+              <div className="flex items-center gap-2 mb-6 flex-wrap">
+                {/* Date Badge */}
+                <StatTooltip label={"Created Date\n" + new Date(p.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}>
+                  <div className="bg-slate-50 text-slate-400 px-2 py-1 rounded-lg border border-slate-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                    <Calendar size={12} strokeWidth={3} /> {new Date(p.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  </div>
+                </StatTooltip>
+
+                {activeTab !== 'manage' && activeTab !== 'unpublished' ? (
+                  <>
+                    {likeStatus[p.id] && (
+                      <div className="bg-pink-50 text-pink-500 p-1.5 rounded-lg border border-pink-100">
+                        <Heart size={14} fill="currentColor" />
+                      </div>
+                    )}
+                    {solveStatus[p.id] === 'solved' && (
+                      <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <Check size={12} strokeWidth={3} /> Solved
+                      </div>
+                    )}
+                    {solveStatus[p.id] === 'skipped' && (
+                      <div className="bg-slate-100 text-slate-500 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <SkipForward size={12} strokeWidth={3} /> Skipped
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {p.difficulty_score > 0 && (
+                      <StatTooltip label={"Difficulty Score\n(Based on time, moves, attempts, and hints)"}>
+                        <div className="bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                          <Gauge size={12} strokeWidth={3} /> {p.difficulty_score.toFixed(1)}
                         </div>
-                      )}
-                      {solveStatus[p.id] === 'solved' && (
-                        <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                          <Check size={12} strokeWidth={3} /> Solved
+                      </StatTooltip>
+                    )}
+                    {p.likes_count > 0 && (
+                      <StatTooltip label="Community Likes">
+                        <div className="bg-pink-50 text-pink-500 px-2 py-1 rounded-lg border border-pink-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                          <Heart size={12} fill="currentColor" /> {p.likes_count}
                         </div>
-                      )}
-                      {solveStatus[p.id] === 'skipped' && (
-                        <div className="bg-slate-100 text-slate-500 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                          <SkipForward size={12} strokeWidth={3} /> Skipped
+                      </StatTooltip>
+                    )}
+                    {p.solve_count > 0 && (
+                      <StatTooltip label="Total Solves">
+                        <div className="bg-green-50 text-green-700 px-2 py-1 rounded-lg border border-green-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
+                          <Check size={12} strokeWidth={3} /> {p.solve_count}
                         </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex gap-2">
-                      {p.solve_count > 0 && p.difficulty_score > 0 && (
-                        <StatTooltip label={"Difficulty Score\n(Based on time, moves, attempts, and hints)"}>
-                          <div className="bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
-                            <Hash size={12} strokeWidth={3} /> {p.difficulty_score.toFixed(1)}
-                          </div>
-                        </StatTooltip>
-                      )}
-                      {p.likes_count > 0 && (
-                        <StatTooltip label="Community Likes">
-                          <div className="bg-pink-50 text-pink-500 px-2 py-1 rounded-lg border border-pink-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
-                            <Heart size={12} fill="currentColor" /> {p.likes_count}
-                          </div>
-                        </StatTooltip>
-                      )}
-                      {p.solve_count > 0 && (
-                        <StatTooltip label="Total Solves">
-                          <div className="bg-green-50 text-green-700 px-2 py-1 rounded-lg border border-green-100 text-[10px] font-black flex items-center gap-1 uppercase tracking-widest">
-                            <Check size={12} strokeWidth={3} /> {p.solve_count}
-                          </div>
-                        </StatTooltip>
-                      )}
-                    </div>
-                  )}
-                </div>
+                      </StatTooltip>
+                    )}
+                  </>
+                )}
               </div>
               <div className="mt-auto flex gap-2">
                 {(activeTab === 'manage' || activeTab === 'unpublished') ? (

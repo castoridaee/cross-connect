@@ -65,15 +65,17 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
     }
   };
 
-  const handleGridClick = (e, coord) => {
-    // Only show hint if the cell is empty
-    if (!grid[coord]) {
-      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
-      setTapHint({ show: true, x: e.clientX, y: e.clientY });
-      hintTimeoutRef.current = setTimeout(() => {
-        setTapHint(prev => ({ ...prev, show: false }));
-      }, 3000);
-    }
+  const handleGridClick = (e, msg) => {
+    if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+    
+    // Protection against edge spills
+    const x = Math.max(100, Math.min(window.innerWidth - 100, e.clientX));
+    
+    setTapHint({ show: true, x, y: e.clientY, text: msg });
+    
+    hintTimeoutRef.current = setTimeout(() => {
+      setTapHint(prev => ({ ...prev, show: false }));
+    }, 2000);
   };
 
   return (
@@ -130,7 +132,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                       <div 
                         key={`${r}-${c}`} 
                         className={`w-16 h-16 border-r-2 border-b-2 border-black overflow-hidden ${!active ? 'bg-slate-900' : ''}`}
-                        onClick={active ? (e) => handleGridClick(e, `${r}-${c}`) : undefined}
+                        onClick={active 
+                          ? (!grid[`${r}-${c}`] ? (e) => handleGridClick(e, "Grab words below\nAnd drag them into this grid") : undefined)
+                          : (e) => handleGridClick(e, "Grab words below\nAnd drag them into the open squares in this grid")
+                        }
                       >
                         {active && (
                           <GridDroppable
@@ -238,8 +243,8 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+20px)] animate-in fade-in zoom-in duration-300"
             style={{ left: tapHint.x, top: tapHint.y }}
           >
-            <div className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-2xl shadow-2xl relative whitespace-nowrap">
-              Grab words below to drop into this grid!
+            <div className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-2xl shadow-2xl relative whitespace-pre-wrap w-max max-w-[180px] text-center">
+              {tapHint.text}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-slate-900 rotate-45" />
             </div>
           </div>
