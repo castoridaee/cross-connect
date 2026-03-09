@@ -278,6 +278,7 @@ function App() {
       <AuthPage
         onComplete={handleAuthComplete}
         onCancel={() => setView(pendingData ? 'create' : 'solve')}
+        initialMode={pendingData?.mode || 'login'}
       />
     );
   }
@@ -387,7 +388,14 @@ function App() {
           />
         ) : (
           <CreatePuzzle
-            onComplete={() => { setView('solve'); setPendingData(null); }}
+            onComplete={(data) => {
+              if (data?.id) {
+                loadSpecificPuzzle(data.id);
+              } else {
+                setView('solve');
+              }
+              setPendingData(null);
+            }}
             onCancel={() => setView('solve')}
             initialData={pendingData}
             onRequireAuth={(data) => {

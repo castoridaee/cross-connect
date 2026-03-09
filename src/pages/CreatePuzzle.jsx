@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Plus, Minus, X, Save, Trash2, Check } from 'lucide-react';
+import { PublishSuccessModal } from '../components/PublishSuccessModal';
 
 // Draggable tile for the grid editor
 const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
@@ -94,6 +95,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const [activeDrag, setActiveDrag] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [publishedId, setPublishedId] = useState(initialData?.publishedId || null);
+  const [isPublishSuccess, setIsPublishSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
 
@@ -428,19 +430,21 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
       setIsSubmitting(false);
     } else {
-      if (!user || user.is_anonymous) {
-        if (data) setPublishedId(data.id);
-        setStatusMsg({ 
-          type: 'success', 
-          text: "Puzzle published! Sign in to claim ownership and track stats.",
-          showClaim: true
-        });
-      } else {
-        setStatusMsg({ type: 'success', text: "Puzzle published!" });
-        setTimeout(() => {
-          onComplete?.();
-        }, 1500);
-      }
+      if (data) setPublishedId(data.id);
+      setIsPublishSuccess(true);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    if (publishedId) {
+      // Find the puzzle in the list or just trigger onComplete with the ID
+      // The parent App.jsx handlePuzzleComplete usually takes no args or the puzzle object
+      // But we want to navigate to the solve page for this specific puzzle.
+      // We can pass the ID back and let the parent handle the navigation.
+      onComplete?.({ id: publishedId });
+    } else {
+      onComplete?.();
     }
   };
 
@@ -500,6 +504,21 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
               </button>
             </div>
           </div>
+        )}
+
+        {isPublishSuccess && (
+          <PublishSuccessModal
+            isAnonymous={!user || user.is_anonymous}
+            onSignIn={() => {
+              const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
+              onRequireAuth({ ...data, mode: 'login' });
+            }}
+            onSignUp={() => {
+              const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
+              onRequireAuth({ ...data, mode: 'signup' });
+            }}
+            onClose={handleModalClose}
+          />
         )}
 
         <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
