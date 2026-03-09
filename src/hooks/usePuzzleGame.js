@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { validatePuzzle } from '../utils/validator';
 import { recordPuzzleSolve, savePuzzleProgress, togglePuzzleLike } from '../lib/puzzleService';
+import { getPuzzleStructure } from '../utils/layoutParser';
 
 export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   // 1. Initialize state from saved progress if available
@@ -169,14 +170,29 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   const onHint = useCallback(() => {
     if (state.solved || hints.length >= puzzle.categories.length * 2) return;
 
-    const solvedIndices = puzzle.categories.map((cat, idx) => {
-      const hasOnBoard = Object.values(grid).filter(w => cat.words.includes(w)).length === cat.words.length;
-      if (!hasOnBoard) return false;
-      const matchingCat = puzzle.categories.find(c =>
-        c.words.length === cat.words.length && c.words.every(w => cat.words.includes(w))
-      );
-      return !!matchingCat;
-    }).map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
+    // Use physical grouping to find ACTUALLY correctly placed categories
+    const { allGroups } = getPuzzleStructure(puzzle.layout);
+    
+    // Helper: check if a list of words matches a specific category index
+    const matchesCategory = (words, catIdx) => {
+      const cat = puzzle.categories[catIdx];
+      return cat.words.length === words.length && words.every(w => cat.words.includes(w));
+    };
+
+    // Find indices of categories that are correctly placed on the board in their grid slots
+    const actuallySolvedIndices = new Set();
+    allGroups.forEach(group => {
+      const wordsInGroup = group.map(coord => grid[coord]).filter(Boolean);
+      if (wordsInGroup.length === group.length) {
+        puzzle.categories.forEach((cat, idx) => {
+          if (matchesCategory(wordsInGroup, idx)) {
+            actuallySolvedIndices.add(idx);
+          }
+        });
+      }
+    });
+
+    const solvedIndices = Array.from(actuallySolvedIndices);
 
     const tier1Given = hints.filter(h => h.level === 1).map(h => h.index);
     const tier2Given = hints.filter(h => h.level === 2).map(h => h.index);
