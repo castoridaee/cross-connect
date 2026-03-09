@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
+import { WordTile } from '../components/WordTile';
 import { recordPuzzleEngagement, togglePuzzleLike, getPuzzleProgress } from '../lib/puzzleService';
 import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
@@ -211,8 +212,8 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="w-16 h-16 bg-white text-slate-800 flex items-center justify-center text-center font-bold border border-black shadow-2xl rotate-2 text-[11px] uppercase">
-              {activeId}
+            <div className="opacity-80 scale-105 rotate-2 shadow-2xl">
+              <WordTile label={activeId} variant="active" />
             </div>
           )}
         </DragOverlay>

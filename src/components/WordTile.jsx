@@ -17,8 +17,28 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
     dark: `bg-slate-900 ${borderClass}`
   };
 
+  const getDynamicFontSize = () => {
+    if (!label) return null;
+    const parts = label.split(/\s+/);
+    const maxLen = Math.max(...parts.map(p => p.length));
+    
+    // md size is the primary concern for grid overflow
+    if (size === 'md') {
+      if (maxLen >= 12) return '7px';
+      if (maxLen >= 11) return '8px';
+      if (maxLen >= 10) return '9px';
+      if (maxLen >= 9) return '10px';
+    }
+    return null;
+  };
+
+  const dynamicFontSize = getDynamicFontSize();
+
   return (
-    <div className={`${sizeClasses[size] || sizeClasses.md} flex-shrink-0 aspect-square flex items-center justify-center text-center p-1 font-semibold uppercase transition-all select-none break-words leading-none tracking-tighter ${variants[variant]}`}>
+    <div 
+      className={`${sizeClasses[size] || sizeClasses.md} flex-shrink-0 aspect-square flex items-center justify-center text-center p-1 font-semibold uppercase transition-all select-none break-words leading-none tracking-tighter ${variants[variant]}`}
+      style={dynamicFontSize ? { fontSize: dynamicFontSize } : {}}
+    >
       {label}
     </div>
   );

@@ -175,6 +175,17 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     const newGrid = { ...grid };
 
     if (word) {
+      const parts = word.split(/\s+/);
+      const longestWord = Math.max(...parts.map(p => p.length));
+      if (longestWord > 12) {
+        setEditingCell(prev => ({ ...prev, error: "Individual words cannot exceed 12 letters!" }));
+        return;
+      }
+      if (word.length > 48) {
+        setEditingCell(prev => ({ ...prev, error: "Total characters in a tile cannot exceed 48!" }));
+        return;
+      }
+
       const exists = Object.entries(grid).find(([k, v]) => v === word && k !== `${editingCell.r}-${editingCell.c}`);
       if (exists) {
         setEditingCell(prev => ({ ...prev, error: "Word already exists in grid!" }));
@@ -326,6 +337,19 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     if (detected.length < 2) {
       setStatusMsg({ type: 'error', text: "Puzzle must have at least 2 categories (contiguous word groups)." });
       return;
+    }
+
+    // Final safety check for character limits
+    for (const word of words) {
+      const parts = word.split(/\s+/);
+      if (parts.some(p => p.length > 12)) {
+        setStatusMsg({ type: 'error', text: "One or more words exceed the 12-character limit." });
+        return;
+      }
+      if (word.length > 48) {
+        setStatusMsg({ type: 'error', text: "One or more tiles exceed the 48-character limit." });
+        return;
+      }
     }
 
     // Smart mapping: preserve descriptions if words are the same or subset
