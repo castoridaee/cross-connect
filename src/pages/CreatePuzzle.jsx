@@ -107,8 +107,8 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     const wordCount = Object.keys(grid).length;
     const hasContent = title.trim() || wordCount > 0 || categories.length > 0;
     
-    // Don't autosave if we're in the middle of a check or if published
-    if (hasContent && !isSubmitting) {
+    // Don't autosave if we're in the middle of a check or if published successfully in this session
+    if (hasContent && !isSubmitting && !isPublishSuccess) {
       setIsSaving(true);
       const timer = setTimeout(async () => {
         const defaultTitle = new Date().toLocaleString([], { 
@@ -124,7 +124,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
           ),
           categories: categories,
           word_order: wordOrder,
-          is_published: false,
+          is_published: initialData?.is_published || false,
           created_by: user.id
         };
         
@@ -144,7 +144,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       }, 2000); // 2s debounce
       return () => clearTimeout(timer);
     }
-  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId, isSubmitting]);
+  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId, isSubmitting, isPublishSuccess, initialData?.is_published]);
 
   // Auto-claim puzzle if user just logged in and we have a pending publishedId
   useEffect(() => {
