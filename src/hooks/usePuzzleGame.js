@@ -130,13 +130,15 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
       seconds: initialProgress?.total_seconds_played || 0
     };
 
+    // Avoiding direct set state on mount to prevent cascaded render warnings if possible, 
+    // but React 18 handles this better. To satisfy the exhaustive-deps while keeping behavior:
     setGrid(newGrid);
     setHistory(newHistory);
     setHints(newHints);
     setIsLiked(initialProgress?.is_liked || false);
     setState(newState);
     lastSavedState.current = JSON.stringify({ grid: newGrid, attempts: newState.attempts, moves: newState.moves, hints: newHints, history: newHistory });
-  }, [puzzle.id, initialProgress?.id, initialProgress?.updated_at]); // Support refreshing same puzzle
+  }, [puzzle.id, initialProgress?.id, initialProgress?.updated_at, initialProgress?.grid_state, initialProgress?.guess_history, initialProgress?.hints_revealed, initialProgress?.attempts, initialProgress?.move_count, initialProgress?.status, initialProgress?.total_seconds_played, initialProgress?.is_liked]); // Support refreshing same puzzle
 
   const onReset = useCallback(() => {
     setGrid({});
@@ -255,7 +257,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
       }
       setState(s => ({ ...s, attempts: currentAttempt, errors: result.errors }));
     }
-  }, [grid, puzzle, state, user]);
+  }, [grid, puzzle, state, user, hints, history]);
 
   return {
     grid,

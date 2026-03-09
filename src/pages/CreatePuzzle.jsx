@@ -1,88 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { WordTile } from '../components/WordTile';
 import { WordBank } from '../components/WordBank';
-import { supabase } from '../lib/supabase';
+
 import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Plus, Minus, X, Save, Trash2, Check } from 'lucide-react';
 import { PublishSuccessModal } from '../components/PublishSuccessModal';
+import { EditorDraggableTile } from '../components/EditorDraggableTile';
+import { usePuzzleDraft } from '../hooks/usePuzzleDraft';
+import { PuzzleGridEditor } from '../components/PuzzleGridEditor';
+import { PuzzleCategoryEditor } from '../components/PuzzleCategoryEditor';
 
-// Draggable tile for the grid editor
-const EditorDraggableTile = ({ id, label, r, c, onEdit }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `editor-${id}-${r}-${c}`,
-    data: { type: 'grid', r, c, word: label }
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`w-full h-full relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
-      style={{ touchAction: 'none' }}
-      onClick={(e) => {
-        // Prevent trigger if it's just a click (DnD handles drag)
-        // In dnd-kit, click is distinct from drag start
-        onEdit(r, c);
-      }}
-    >
-      <WordTile label={label} variant="active" inGrid={true} />
-    </div>
-  );
-};
-
-// Droppable cell for the editor
-const EditorCell = ({ r, c, word, onCellClick, onEdit }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `cell-${r}-${c}`,
-    data: { type: 'grid', r, c }
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      onClick={() => !word && onCellClick(r, c)}
-      className={`w-16 h-16 border-r-2 border-b-2 border-black overflow-hidden cursor-pointer transition-transform active:scale-95 ${isOver ? 'ring-2 ring-indigo-400 ring-offset-2 z-10' : ''}`}
-    >
-      {word ? (
-        <EditorDraggableTile id={word} label={word} r={r} c={c} onEdit={onEdit} />
-      ) : (
-        <WordTile label="" variant="dark" inGrid={true} />
-      )}
-    </div>
-  );
-};
-
-// Draggable tile for the bank reordering
-const BankDraggableTile = ({ label }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `bank-${label}`,
-    data: { type: 'bank', word: label }
-  });
-
-  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
-    id: `bank-drop-${label}`,
-    data: { type: 'bank', word: label }
-  });
-
-  return (
-    <div
-      ref={(node) => { setNodeRef(node); setDroppableRef(node); }}
-      {...listeners}
-      {...attributes}
-      className={`relative ${isDragging ? 'opacity-20' : 'opacity-100'} ${isOver ? 'scale-110' : ''} transition-all`}
-      style={{ touchAction: 'none' }}
-    >
-      <WordTile label={label} />
-    </div>
-  );
-};
-
-export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequireAuth }) {
+export default function CreatePuzzle({ onComplete, initialData, onRequireAuth }) {
   const { user } = useAuth();
-  const [editingId, setEditingId] = useState(initialData?.id || null);
   const [step, setStep] = useState(initialData?.step || 1);
   const [title, setTitle] = useState(initialData?.title || '');
   const [rows, setRows] = useState(initialData?.rows || initialData?.layout?.length || 4);
@@ -96,72 +27,24 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [publishedId, setPublishedId] = useState(initialData?.publishedId || null);
   const [isPublishSuccess, setIsPublishSuccess] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+  const { editingId, isSaving, lastSavedAt } = usePuzzleDraft({
+    user,
+    initialData,
+    title,
+    rows,
+    cols,
+    grid,
+    categories,
+    wordOrder,
+    isSubmitting,
+    isPublishSuccess,
+    publishedId,
+    setPublishedId,
+    setStatusMsg,
+    onComplete
+  });
 
-  // iterative draft saving
-  useEffect(() => {
-    if (!user) return;
-    
-    // Auto-save logic
-    const wordCount = Object.keys(grid).length;
-    const hasContent = title.trim() || wordCount > 0 || categories.length > 0;
-    
-    // Don't autosave if we're in the middle of a check or if published successfully in this session
-    if (hasContent && !isSubmitting && !isPublishSuccess) {
-      setIsSaving(true);
-      const timer = setTimeout(async () => {
-        const defaultTitle = new Date().toLocaleString([], { 
-          month: 'short', day: 'numeric', year: 'numeric', 
-          hour: '2-digit', minute: '2-digit' 
-        });
-        
-        const payload = {
-          title: title.trim() || defaultTitle,
-          grid_data: grid,
-          layout: Array.from({ length: rows }, (_, r) =>
-            Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
-          ),
-          categories: categories,
-          word_order: wordOrder,
-          is_published: initialData?.is_published || false,
-          created_by: user.id
-        };
-        
-        try {
-          if (editingId) {
-            await updatePuzzle(editingId, payload);
-          } else {
-            const { data } = await createPuzzle(payload);
-            if (data?.id) setEditingId(data.id);
-          }
-          setLastSavedAt(new Date());
-        } catch (err) {
-          console.error("Autosave error:", err);
-        } finally {
-          setIsSaving(false);
-        }
-      }, 2000); // 2s debounce
-      return () => clearTimeout(timer);
-    }
-  }, [title, grid, rows, cols, categories, wordOrder, user?.id, editingId, isSubmitting, isPublishSuccess, initialData?.is_published]);
-
-  // Auto-claim puzzle if user just logged in and we have a pending publishedId
-  useEffect(() => {
-    if (publishedId && user && !user.is_anonymous) {
-      const claim = async () => {
-        const { error } = await updatePuzzle(publishedId, { created_by: user.id });
-        if (!error) {
-          setPublishedId(null);
-          setStatusMsg({ type: 'success', text: "Puzzle successfully claimed and linked to your account!" });
-          setTimeout(() => {
-            onComplete?.();
-          }, 2000);
-        }
-      };
-      claim();
-    }
-  }, [publishedId, user, onComplete]);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 3 } // Responsive grab
@@ -277,7 +160,7 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     setGrid(newGrid);
   };
 
-  const detectGroups = () => {
+  const detectGroups = useCallback(() => {
     const groups = [];
 
     // Horizontal contiguous groups
@@ -309,9 +192,9 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
     }
 
     return groups;
-  };
+  }, [rows, cols, grid]);
 
-  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+
 
   // Auto-clear error messages when user fixes the issue
   useEffect(() => {
@@ -323,10 +206,10 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
       const isCatError = statusMsg.text.includes("2 categories");
 
       if ((isWordError && words.length >= 3) || (isCatError && detected.length >= 2)) {
-        setStatusMsg({ type: '', text: '' });
+        setTimeout(() => setStatusMsg({ type: '', text: '' }), 0);
       }
     }
-  }, [grid, step, statusMsg.type, statusMsg.text]);
+  }, [grid, step, statusMsg.type, statusMsg.text, detectGroups]);
 
   const goToStep2 = () => {
     const words = Object.values(grid);
@@ -523,102 +406,24 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
 
         <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
           {step === 1 ? (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
-                <input
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Title"
-                  className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
-                />
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 mt-1 italic">
-                  {('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'Tap' : 'Click'} the black grid below to start adding words.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-full relative px-0 mb-4">
-                  {/* Visual cues for horizontal scrolling */}
-                  <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
-                  <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
-
-                  <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
-                    <div className="inline-block min-w-max mx-auto">
-                      <div className="relative">
-                        <div className="grid gap-0 border-t-2 border-l-2 border-black relative" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-                          {Array.from({ length: rows }).map((_, r) => (
-                            Array.from({ length: cols }).map((_, c) => (
-                              <EditorCell
-                                key={`${r}-${c}`} r={r} c={c} word={grid[`${r}-${c}`]}
-                                onCellClick={handleCellClick} onEdit={handleCellClick}
-                              />
-                            ))
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap justify-center gap-6 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Height</span>
-                    <div className="flex gap-1">
-                      <button onClick={() => resize('rows', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
-                      <button onClick={() => resize('rows', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</span>
-                    <div className="flex gap-1">
-                      <button onClick={() => resize('cols', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
-                      <button onClick={() => resize('cols', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={goToStep2} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-colors uppercase">
-                Continue to Categories
-              </button>
-            </div>
+            <PuzzleGridEditor
+              title={title}
+              setTitle={setTitle}
+              rows={rows}
+              cols={cols}
+              grid={grid}
+              handleCellClick={handleCellClick}
+              resize={resize}
+              goToStep2={goToStep2}
+            />
           ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Descriptions</p>
-                {categories.map((cat, idx) => (
-                  <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
-                    <div className="flex gap-1.5 flex-wrap">
-                      {cat.words.map(w => (
-                        <span key={w} className="bg-white px-1.5 py-0.5 rounded text-[9px] font-black tracking-tight border border-slate-200">{w}</span>
-                      ))}
-                    </div>
-                    <input
-                      placeholder="Description"
-                      className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-xs font-bold pb-0.5 transition-colors"
-                      value={cat.description}
-                      onChange={e => {
-                        const next = [...categories];
-                        next[idx].description = e.target.value;
-                        setCategories(next);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
-                <WordBank>
-                  {wordOrder.map(w => <BankDraggableTile key={w} label={w} />)}
-                </WordBank>
-              </div>
-
-              <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100 mt-2">
-                {isSubmitting ? 'SAVING...' : <><Save size={16} /> SUBMIT PUZZLE</>}
-              </button>
-            </div>
+            <PuzzleCategoryEditor
+              categories={categories}
+              setCategories={setCategories}
+              wordOrder={wordOrder}
+              isSubmitting={isSubmitting}
+              handleSubmit={handleSubmit}
+            />
           )}
           <DragOverlay>
             {activeDrag && (
