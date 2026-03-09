@@ -265,7 +265,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         </button>
       </div>
 
-      {activeTab === 'manage' && (
+      {(activeTab === 'manage' || activeTab === 'puzzles') && (
         <div className="flex justify-end mb-6">
           <div className="relative">
             <button
@@ -273,7 +273,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
             >
               <Filter size={12} className="text-slate-400" />
-              Sort: <span className="text-slate-900">{sortBy}</span>
+              Sort: <span className="text-slate-900">{sortBy.replace('_', ' ')}</span>
               <ChevronDown size={12} className={`text-slate-400 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
             </button>
             {isSortOpen && (
@@ -283,13 +283,16 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                   onClick={() => setIsSortOpen(false)}
                 />
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-4 border-t-slate-900 animate-in fade-in zoom-in duration-200">
-                  {[
+                  {(activeTab === 'manage' ? [
                     { id: 'newest', label: 'Newest First' },
                     { id: 'difficulty_desc', label: 'Hardest First' },
                     { id: 'difficulty_asc', label: 'Easiest First' },
                     { id: 'likes', label: 'Most Likes' },
                     { id: 'solves', label: 'Most Solves' },
-                  ].map(opt => (
+                  ] : [
+                    { id: 'unsolved', label: 'Unsolved First' },
+                    { id: 'newest', label: 'Newest First' },
+                  ]).map(opt => (
                     <button
                       key={opt.id}
                       onClick={() => {
@@ -316,6 +319,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               activeTab === 'puzzles' ? puzzles.filter(p => isOwner ? p.is_published : true) :
                 likedPuzzles
         ).sort((a, b) => {
+          if (sortBy === 'unsolved') {
+            const solvedA = solveStatus[a.id] === 'solved';
+            const solvedB = solveStatus[b.id] === 'solved';
+            if (solvedA !== solvedB) {
+              return solvedA ? 1 : -1;
+            }
+            return (b.likes_count || 0) - (a.likes_count || 0);
+          }
           if (sortBy === 'likes') return (b.likes_count || 0) - (a.likes_count || 0);
           if (sortBy === 'solves') return (b.solve_count || 0) - (a.solve_count || 0);
           if (sortBy === 'difficulty_desc') return (b.difficulty_score || 0) - (a.difficulty_score || 0);
