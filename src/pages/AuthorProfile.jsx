@@ -24,14 +24,13 @@ function StatTooltip({ label, children }) {
   }, []);
 
   return (
-    <div 
+    <div
       className="group relative flex items-center"
       onTouchStart={handleInteraction}
     >
       {children}
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-50 ${
-        isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-      }`}>
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-50 ${isVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
         {label}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
       </div>
@@ -46,22 +45,22 @@ function DeleteDialog({ puzzle, onConfirm, onUnpublish, onEdit, onCancel }) {
         <button onClick={onCancel} className="absolute right-6 top-6 text-slate-400 hover:text-slate-600 transition-colors">
           <X size={20} />
         </button>
-        
+
         <h3 className="text-xl font-black text-slate-900 mb-2">Manage Puzzle</h3>
         <p className="text-slate-500 text-sm mb-6 leading-relaxed">
           What would you like to do with <span className="font-bold text-slate-900">"{puzzle.title || 'Untitled'}"</span>?
         </p>
 
         <div className="grid gap-3">
-          <button 
+          <button
             onClick={onEdit}
             className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             <Edit2 size={16} /> EDIT PUZZLE
           </button>
-          
+
           {puzzle.is_published && (
-            <button 
+            <button
               onClick={onUnpublish}
               className="w-full bg-amber-50 hover:bg-amber-100 text-amber-700 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
             >
@@ -69,14 +68,14 @@ function DeleteDialog({ puzzle, onConfirm, onUnpublish, onEdit, onCancel }) {
             </button>
           )}
 
-          <button 
+          <button
             onClick={onConfirm}
             className="w-full bg-red-50 hover:bg-red-100 text-red-600 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
           >
             <Trash2 size={16} /> DELETE PERMANENTLY
           </button>
-          
-          <button 
+
+          <button
             onClick={onCancel}
             className="w-full border-2 border-slate-100 hover:bg-slate-50 text-slate-400 py-3 rounded-xl font-bold text-sm transition-colors mt-2"
           >
@@ -127,14 +126,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           .from('puzzles')
           .select('*')
           .eq('created_by', authorId);
-        
+
         // If not the owner, only show published puzzles
         if (currentUser?.id !== authorId) {
           puzzlesQuery = puzzlesQuery.eq('is_published', true);
         }
-        
+
         const { data: authorPuzzles, error: puzzlesErr } = await puzzlesQuery.order('created_at', { ascending: false });
-        
+
         if (puzzlesErr) throw puzzlesErr;
         setPuzzles(authorPuzzles || []);
 
@@ -207,7 +206,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       </button>
 
       <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 mb-8 flex items-center gap-6 relative">
-        <button 
+        <button
           onClick={handleShare}
           className="absolute right-8 top-8 p-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-slate-100"
           title="Share Profile"
@@ -222,7 +221,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             {profile?.nickname || generateAnonymousName(authorId)}
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
-             {puzzles.length} Puzzles Created • {likedPuzzles.length} Liked
+            {puzzles.length} Puzzles Created • {likedPuzzles.length} Liked
           </p>
         </div>
       </div>
@@ -232,18 +231,16 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           <>
             <button
               onClick={() => setActiveTab('manage')}
-              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
-                activeTab === 'manage' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'manage' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
             >
               Manage
               {activeTab === 'manage' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab('unpublished')}
-              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
-                activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
             >
               Unpublished
               {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
@@ -252,18 +249,16 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         )}
         <button
           onClick={() => setActiveTab('puzzles')}
-          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
-            activeTab === 'puzzles' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-          }`}
+          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'puzzles' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+            }`}
         >
           Puzzles
           {activeTab === 'puzzles' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
         </button>
         <button
           onClick={() => setActiveTab('liked')}
-          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
-            activeTab === 'liked' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-          }`}
+          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'liked' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+            }`}
         >
           Liked
           {activeTab === 'liked' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
@@ -273,7 +268,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       {activeTab === 'manage' && (
         <div className="flex justify-end mb-6">
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsSortOpen(!isSortOpen)}
               className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
             >
@@ -283,8 +278,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             </button>
             {isSortOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
+                <div
+                  className="fixed inset-0 z-40"
                   onClick={() => setIsSortOpen(false)}
                 />
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-4 border-t-slate-900 animate-in fade-in zoom-in duration-200">
@@ -301,9 +296,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                         setSortBy(opt.id);
                         setIsSortOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                        sortBy === opt.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors ${sortBy === opt.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -318,9 +312,9 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       <div className="grid gap-4 sm:grid-cols-2">
         {(
           activeTab === 'manage' ? puzzles.filter(p => p.is_published) :
-          activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
-          activeTab === 'puzzles' ? puzzles.filter(p => isOwner ? p.is_published : true) :
-          likedPuzzles
+            activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
+              activeTab === 'puzzles' ? puzzles.filter(p => isOwner ? p.is_published : true) :
+                likedPuzzles
         ).sort((a, b) => {
           if (sortBy === 'likes') return (b.likes_count || 0) - (a.likes_count || 0);
           if (sortBy === 'solves') {
@@ -334,7 +328,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           if (sortBy === 'attempts') return (b.median_adjusted_attempts || 0) - (a.median_adjusted_attempts || 0);
           return new Date(b.created_at) - new Date(a.created_at);
         }).map(p => (
-          <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col">
+          <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col">
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-start mb-4 gap-2">
                 <h3 className="text-lg font-black tracking-tight text-slate-900 leading-tight">{p.title || 'Untitled'}</h3>
@@ -393,7 +387,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                     </StatTooltip>
                   )}
                   {p.median_adjusted_attempts > 0 && (
-                    <StatTooltip label="Median Attempts + Hints">
+                    <StatTooltip label="Median Attempts + Hints Used">
                       <div className="bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg flex items-center gap-1.5 text-slate-500">
                         <Hash size={12} />
                         <span className="text-[10px] font-bold">{p.median_adjusted_attempts.toFixed(1)} Attempts</span>
@@ -429,14 +423,16 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                 )}
               </div>
             </div>
-            {/* Subtle background flair */}
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-110 transition-transform" />
+            {/* Background flair isolated in its own overflow-hidden container */}
+            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-110 transition-transform" />
+            </div>
           </div>
         ))}
       </div>
 
       {deletingPuzzle && (
-        <DeleteDialog 
+        <DeleteDialog
           puzzle={deletingPuzzle}
           onConfirm={handleDeleteClick}
           onUnpublish={handleUnpublishClick}
@@ -447,22 +443,22 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
 
       {(
         activeTab === 'manage' ? puzzles.filter(p => p.is_published) :
-        activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
-        activeTab === 'puzzles' ? puzzles.filter(p => isOwner ? p.is_published : true) :
-        likedPuzzles
+          activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
+            activeTab === 'puzzles' ? puzzles.filter(p => isOwner ? p.is_published : true) :
+              likedPuzzles
       ).length === 0 && (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-          <p className="font-bold text-slate-400">
-            {activeTab === 'manage' 
-              ? "You haven't published any puzzles yet." 
-              : activeTab === 'unpublished'
-              ? "No drafts found."
-              : activeTab === 'puzzles'
-              ? "This user hasn't published any puzzles yet."
-              : "No liked puzzles found."}
-          </p>
-        </div>
-      )}
+          <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+            <p className="font-bold text-slate-400">
+              {activeTab === 'manage'
+                ? "You haven't published any puzzles yet."
+                : activeTab === 'unpublished'
+                  ? "No drafts found."
+                  : activeTab === 'puzzles'
+                    ? "This user hasn't published any puzzles yet."
+                    : "No liked puzzles found."}
+            </p>
+          </div>
+        )}
     </div>
   );
 }

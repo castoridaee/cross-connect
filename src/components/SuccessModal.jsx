@@ -11,6 +11,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     setIsLiked(initialIsLiked);
   }, [initialIsLiked]);
 
+  // Lock body scroll when modal is open
+  React.useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow || 'unset';
+    };
+  }, []);
+
   const handleShare = () => {
     const text = generateShareText(puzzle, { attempts, hintsUsed });
     copyToClipboard(text, () => {
@@ -41,7 +50,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           <p className="text-slate-500 text-sm font-bold">Hints: {hintsUsed}</p>
         </div>
 
-        <button onClick={onAdmire} className="w-full bg-slate-100 text-slate-400 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] mb-6">
+        <button onClick={onAdmire} className="w-full bg-indigo-50 text-indigo-600 border border-indigo-100 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-indigo-100 transition-all active:scale-95 text-[10px] mb-6 shadow-sm">
           Admire Puzzle
         </button>
 

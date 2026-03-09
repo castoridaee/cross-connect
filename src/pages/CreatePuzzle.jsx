@@ -489,6 +489,9 @@ export default function CreatePuzzle({ onComplete, onCancel, initialData, onRequ
                   placeholder="Title"
                   className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
                 />
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 mt-1 italic">
+                  {('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'Tap' : 'Click'} the black grid below to start adding words.
+                </p>
               </div>
 
               <div className="flex flex-col items-center gap-4">
