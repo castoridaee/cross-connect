@@ -83,6 +83,16 @@ export async function getProfile(id) {
   return { data, error };
 }
 
+export async function updateProfile(id, data) {
+  const { data: updatedData, error } = await supabase
+    .from('profiles')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data: updatedData, error };
+}
+
 export async function getPuzzle(id) {
   const { data, error } = await supabase
     .from('puzzles')
@@ -211,4 +221,20 @@ export async function getLikedPuzzles(userId) {
     .eq('user_progress.is_liked', true)
     .order('created_at', { ascending: false });
   return { data, error };
+}
+
+export async function getRecommendedPuzzle(userId) {
+  const { data, error } = await supabase.rpc('get_recommended_puzzle', {
+    p_user_id: userId || null
+  }).select('*, author:profiles!created_by(nickname)');
+  
+  if (error) {
+    console.warn("RPC fetch with join failed, retrying without join...", error);
+    const { data: fallbackData, error: fallbackError } = await supabase.rpc('get_recommended_puzzle', {
+      p_user_id: userId || null
+    });
+    if (fallbackError) return { data: null, error: fallbackError };
+    return { data: fallbackData?.[0] || null, error: null };
+  }
+  return { data: data?.[0] || null, error: null };
 }

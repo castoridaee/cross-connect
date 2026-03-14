@@ -6,7 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
-import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -146,87 +146,27 @@ function App() {
     if (authLoading) return;
     setLoading(true);
     try {
-      // 1. Get skipped OR solved puzzle IDs for current user
-      let excludedIds = [];
-      if (user) {
-        const { data: progressData } = await supabase
-          .from('user_progress')
-          .select('puzzle_id')
-          .eq('user_id', user.id)
-          .in('status', ['skipped', 'solved']);
-        excludedIds = progressData?.map(s => s.puzzle_id).filter(id => id) || [];
+      const { data, error } = await getRecommendedPuzzle(user?.id);
+
+      if (error) {
+        console.error("Load Error:", error);
+        throw error;
       }
 
-      // 2. Get the total count of puzzles (excluding skipped/solved and unpublished)
-      let countQuery = supabase
-        .from('puzzles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_published', true);
-
-      if (excludedIds.length > 0) {
-        countQuery = countQuery.not('id', 'in', `(${excludedIds.join(',')})`);
-      }
-
-      const { count, error: countError } = await countQuery;
-
-      if (countError) {
-        console.error("Count Error:", countError);
-        throw countError;
-      }
-
-      console.log("Found puzzles count:", count);
-
-      if (count > 0) {
-        // 3. Pick a random index
-        const randomIndex = Math.floor(Math.random() * count);
-
-        // 4. Fetch that specific puzzle with author nickname
-        let fetchQuery = supabase
-          .from('puzzles')
-          .select('*, author:profiles!created_by(nickname)')
-          .eq('is_published', true)
-          .range(randomIndex, randomIndex);
-
-        if (excludedIds.length > 0) {
-          fetchQuery = fetchQuery.not('id', 'in', `(${excludedIds.join(',')})`);
+      if (data) {
+        let progData = null;
+        if (user) {
+          const { data: pData } = await getPuzzleProgress(user.id, data.id);
+          progData = pData;
         }
-
-        let { data, error: fetchError } = await fetchQuery.single();
-
-        if (fetchError) {
-          console.warn("Fetch with join failed, retrying without join...", fetchError);
-          // Fallback: Fetch without join
-          let fallbackQuery = supabase
-            .from('puzzles')
-            .select('*')
-            .eq('is_published', true)
-            .range(randomIndex, randomIndex);
-
-          if (excludedIds.length > 0) {
-            fallbackQuery = fallbackQuery.not('id', 'in', `(${excludedIds.join(',')})`);
-          }
-
-          const { data: fallbackData, error: fallbackError } = await fallbackQuery.single();
-
-          if (fallbackError) throw fallbackError;
-          data = fallbackData;
-        }
-
-        if (data) {
-          let progData = null;
-          if (user) {
-            const { data: pData } = await getPuzzleProgress(user.id, data.id);
-            progData = pData;
-          }
-          setProgress(progData);
-          setPuzzle(data);
-          
-          if (user) {
-            recordPuzzlePlay(user.id, data.id);
-          }
+        setProgress(progData);
+        setPuzzle(data);
+        
+        if (user) {
+          recordPuzzlePlay(user.id, data.id);
         }
       } else {
-        // No more puzzles available (excluding solved/skipped)
+        // No more puzzles available
         setPuzzle(null);
         setProgress(null);
       }

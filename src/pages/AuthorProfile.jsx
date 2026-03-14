@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, User, Share2, Check, ChevronDown, Filter } from 'lucide-react';
+import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { PuzzleCard } from '../components/PuzzleCard';
 import { PuzzleOptionsModal } from '../components/PuzzleOptionsModal';
+import { ProfileSettingsModal } from '../components/ProfileSettingsModal';
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
   const [profile, setProfile] = useState(null);
@@ -18,6 +19,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [deletingPuzzle, setDeletingPuzzle] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const isOwner = currentUser?.id === authorId;
 
@@ -129,6 +131,15 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         >
           {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
         </button>
+        {isOwner && (
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="absolute right-20 top-8 p-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-slate-100"
+            title="Profile Settings"
+          >
+            <Settings size={18} />
+          </button>
+        )}
         <div className="w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
           <User size={40} />
         </div>
@@ -267,6 +278,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           onClose={() => setDeletingPuzzle(null)}
           isDeleting={false}
           isUnpublishing={false}
+        />
+      )}
+
+      {isSettingsOpen && isOwner && profile && (
+        <ProfileSettingsModal
+          profile={profile}
+          onClose={() => setIsSettingsOpen(false)}
+          onUpdated={(updatedProfile) => setProfile(updatedProfile)}
         />
       )}
 
