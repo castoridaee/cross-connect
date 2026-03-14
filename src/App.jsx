@@ -52,7 +52,7 @@ function App() {
 
   // Update URL whenever view or specific IDs change
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || loading) return;
 
     let newPath = '/';
     if (view === 'author' && authorId) {
@@ -68,7 +68,7 @@ function App() {
     if (window.location.pathname !== newPath) {
       window.history.pushState({ view, authorId, puzzleId: puzzle?.id }, '', newPath);
     }
-  }, [view, authorId, puzzle?.id, authLoading]);
+  }, [view, authorId, puzzle, authLoading, loading]);
 
   // Sync progress data whenever we enter solve view or user/puzzle changes
   useEffect(() => {

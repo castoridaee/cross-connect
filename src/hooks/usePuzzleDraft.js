@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
+import { createPuzzle, updatePuzzle, clearPuzzleProgress } from '../lib/puzzleService';
 
 export function usePuzzleDraft({
   user,
@@ -53,6 +53,7 @@ export function usePuzzleDraft({
         try {
           if (editingId) {
             await updatePuzzle(editingId, payload);
+            await clearPuzzleProgress(editingId);
           } else {
             const { data } = await createPuzzle(payload);
             if (data?.id) setEditingId(data.id);

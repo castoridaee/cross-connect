@@ -57,6 +57,14 @@ export async function unpublishPuzzle(id) {
   return await updatePuzzle(id, { is_published: false });
 }
 
+export async function clearPuzzleProgress(puzzleId) {
+  const { error } = await supabase
+    .from('user_progress')
+    .delete()
+    .eq('puzzle_id', puzzleId);
+  return { error };
+}
+
 export async function getPuzzlesByAuthor(authorId) {
   const { data, error } = await supabase
     .from('puzzles')

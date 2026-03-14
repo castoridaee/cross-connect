@@ -3,7 +3,7 @@ import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@
 import { WordTile } from '../components/WordTile';
 import { WordBank } from '../components/WordBank';
 
-import { createPuzzle, updatePuzzle } from '../lib/puzzleService';
+import { createPuzzle, updatePuzzle, clearPuzzleProgress } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Plus, Minus, X, Save, Trash2, Check } from 'lucide-react';
 import { PublishSuccessModal } from '../components/PublishSuccessModal';
@@ -308,6 +308,10 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
     const { data, error } = editingId 
       ? await updatePuzzle(editingId, puzzleData)
       : await createPuzzle(puzzleData);
+
+    if (editingId && !error) {
+      await clearPuzzleProgress(editingId);
+    }
 
     if (error) {
       setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
