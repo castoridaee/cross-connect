@@ -24,13 +24,18 @@ The core table storing puzzle data, layouts, and metadata.
 - `median_moves_to_solve` (float8): Global median number of moves.
 - `trimmean_hints_used` (float8): Global 20% trimmed mean of hints used.
 - `difficulty_score` (float8): Metric = `((MedTime/75 + MedMoves/30 + TrimAttempts-1 + TrimHints) / (SolveRate + 1)) / 5`.
+- `quality_score` (float8): Bayesian average metric (0-100) combining solves, likes, shares, skips, and author reputation.
 - `locale` (text): The browser locale (e.g., `en-US`) of the creator.
 - `created_at` (timestamp with time zone): When the puzzle was created.
+- `updated_at` (timestamp with time zone): When the puzzle was last modified.
 
 ### `profiles`
 Public user profiles linked to Supabase Auth users.
 - `id` (uuid, references `auth.users`): Primary key.
 - `nickname` (text): The public display name of the user.
+- `skill_score` (float8): Calculated player skill based on their last 50 solves.
+- `difficulty_preference` (int4): Player difficulty offset (-5 for easier, +5 for harder).
+- `author_reputation` (float8): Bayesian average (0-100) of the quality of all puzzles published by this user.
 - `updated_at` (timestamp with time zone): Last updated timestamp.
 - `locale` (text): The user's preferred browser locale.
 
@@ -67,3 +72,14 @@ Tracks user performance and "Skip" status on specific puzzles.
 ### `profiles`
 - **Anyone** can view all public profiles for author mapping.
 - **Users** can only insert/update their own profile.
+
+### `user_progress`
+- **Anyone** (authenticated or anonymous depending on app settings) can view their own progress.
+- **Users** can insert, update, or delete their own progress, enabling manual resets.
+
+## Triggers and Automation
+
+- **Skill Sync:** (`on_user_progress_solved_sync_skill`) Updates a user's `skill_score` calculation whenever they successfully complete a puzzle.
+- **Stats Sync:** (`on_user_progress_sync_v3`) Recalculates `puzzles` difficulty, medians, trimmeans, and quality scores whenever `user_progress` changes (like, solve, share, etc).
+- **Quality Metrics:** (`recalculate_author_reputation`) Maintains the author's reputation score on `profiles` when puzzle qualities change.
+- **Content Change Reset:** (`handle_puzzle_content_change`) Flushes `user_progress` and resets performance stats automatically if a puzzle's `categories`, `grid_data`, `layout`, or `word_order` is edited.
