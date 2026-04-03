@@ -1,5 +1,19 @@
 import { supabase } from './supabase';
 
+// Helper to retry transient Safari/Networking errors (Load failed)
+const withRetry = async (fn, retries = 1) => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries > 0 && err.message === 'Load failed') {
+      console.warn(`Retrying fetch after transient Safari error...`);
+      await new Promise(r => setTimeout(r, 500));
+      return withRetry(fn, retries - 1);
+    }
+    throw err;
+  }
+};
+
 export async function recordPuzzleSolve(userId, puzzleId, stats) {
   const { attempts, moves, seconds, grid, hints, history } = stats;
 
@@ -141,6 +155,23 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
   
+  if (error && error.message === 'Load failed') {
+    // Retry once for Safari transient issues
+    const { error: retryError } = await supabase.from('user_progress').upsert({
+      user_id: userId,
+      puzzle_id: puzzleId,
+      grid_state: progress.grid,
+      attempts: progress.attempts,
+      move_count: progress.moves,
+      total_seconds_played: progress.seconds,
+      hints_revealed: progress.hints || [],
+      guess_history: progress.history || [],
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, puzzle_id' });
+    if (retryError) console.error(`[savePuzzleProgress] Persistent DB Error:`, retryError.message);
+    return { error: retryError };
+  }
+  
   if (error) console.error(`[savePuzzleProgress] DB Error:`, error.message);
   else console.log(`[savePuzzleProgress] Auto-saved progress for ${puzzleId}`);
   
@@ -148,21 +179,41 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
 }
 
 export async function getPuzzleProgress(userId, puzzleId) {
-  const { data, error } = await supabase
+  const fetchFn = () => supabase
     .from('user_progress')
     .select('*')
     .eq('user_id', userId)
     .eq('puzzle_id', puzzleId)
     .maybeSingle();
+
+  let { data, error } = await fetchFn();
+
+  if (error && error.message === 'Load failed') {
+    await new Promise(r => setTimeout(r, 500));
+    const result = await fetchFn();
+    data = result.data;
+    error = result.error;
+  }
+
   return { data, error };
 }
 export async function getUserProgressForPuzzles(userId, puzzleIds) {
   if (!userId || !puzzleIds || puzzleIds.length === 0) return { data: [], error: null };
-  const { data, error } = await supabase
+  const fetchFn = () => supabase
     .from('user_progress')
     .select('puzzle_id, status, is_liked')
     .eq('user_id', userId)
     .in('puzzle_id', puzzleIds);
+
+  let { data, error } = await fetchFn();
+
+  if (error && error.message === 'Load failed') {
+    await new Promise(r => setTimeout(r, 500));
+    const result = await fetchFn();
+    data = result.data;
+    error = result.error;
+  }
+
   return { data, error };
 }
 
@@ -224,10 +275,21 @@ export async function getLikedPuzzles(userId) {
 }
 
 export async function getRecommendedPuzzle(userId) {
-  const { data, error } = await supabase.rpc('get_recommended_puzzle', {
+  const fetchFn = () => supabase.rpc('get_recommended_puzzle', {
     p_user_id: userId || null
   }).select('*, author:profiles!created_by(nickname)');
+
+  let { data, error } = await fetchFn();
   
+  // Safari "Load failed" retry
+  if (error && error.message === 'Load failed') {
+    console.warn("Safari Load failed detected, retrying...");
+    await new Promise(r => setTimeout(r, 500));
+    const result = await fetchFn();
+    data = result.data;
+    error = result.error;
+  }
+
   if (error) {
     console.warn("RPC fetch with join failed, retrying without join...", error);
     const { data: fallbackData, error: fallbackError } = await supabase.rpc('get_recommended_puzzle', {

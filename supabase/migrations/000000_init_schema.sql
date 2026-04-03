@@ -444,7 +444,7 @@ FOR EACH ROW EXECUTE FUNCTION public.on_user_progress_sync_v3();
 -- 5. RPC ENDPOINTS
 -- ==========================================
 
--- AI-driven endpoint to fetch the next best puzzle based on skill, preferences, and quality
+-- Endpoint to fetch the next best puzzle based on skill, preferences, and quality
 CREATE OR REPLACE FUNCTION public.get_recommended_puzzle(p_user_id UUID)
 RETURNS SETOF public.puzzles AS $$
 DECLARE

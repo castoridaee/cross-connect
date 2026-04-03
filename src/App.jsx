@@ -142,7 +142,7 @@ function App() {
     }
   }
 
-  async function loadPuzzles() {
+  async function loadPuzzles(retryCount = 0) {
     if (authLoading) return;
     setLoading(true);
     try {
@@ -150,6 +150,11 @@ function App() {
 
       if (error) {
         console.error("Load Error:", error);
+        if (retryCount < 1) {
+          console.log("Retrying loadPuzzles in 1s...");
+          setTimeout(() => loadPuzzles(retryCount + 1), 1000);
+          return;
+        }
         throw error;
       }
 
@@ -171,7 +176,7 @@ function App() {
         setProgress(null);
       }
     } catch (err) {
-      console.error("Load Error:", err);
+      console.error("Final Load Error:", err);
     } finally {
       setLoading(false);
     }
@@ -307,9 +312,28 @@ function App() {
               onNext={handleNext}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-              <p className="font-bold text-slate-400">No puzzles found.</p>
-              <button onClick={() => setView('create')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200">Create a Puzzle</button>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-2xl">🧩</span>
+              </div>
+              <h2 className="font-black text-xl text-slate-800 uppercase tracking-tight">No puzzles available</h2>
+              <p className="text-slate-500 max-w-xs text-sm leading-relaxed">
+                We couldn't fetch a puzzle for you. This might be a temporary connection issue.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                <button 
+                  onClick={() => loadPuzzles()} 
+                  className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200 transition-transform active:scale-95"
+                >
+                  Try Again
+                </button>
+                <button 
+                  onClick={() => setView('create')} 
+                  className="bg-white border-2 border-slate-100 text-slate-600 px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-colors hover:bg-slate-50"
+                >
+                  Create One
+                </button>
+              </div>
             </div>
           )
         ) : view === 'author' ? (
