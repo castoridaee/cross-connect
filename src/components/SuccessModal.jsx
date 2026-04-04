@@ -27,13 +27,19 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
   // Capture height of the results tab to maintain consistency
   useEffect(() => {
-    if (activeTab === 'results' && modalRef.current && !fixedHeight) {
-      const timer = setTimeout(() => {
-        if (modalRef.current) setFixedHeight(modalRef.current.offsetHeight);
-      }, 500);
+    if (activeTab === 'results' && modalRef.current) {
+      const updateHeight = () => {
+        if (modalRef.current) {
+          setFixedHeight(modalRef.current.offsetHeight);
+        }
+      };
+      // Measure immediately
+      updateHeight();
+      // And measure after animation completes
+      const timer = setTimeout(updateHeight, 350);
       return () => clearTimeout(timer);
     }
-  }, [activeTab, fixedHeight]);
+  }, [activeTab, categories]);
 
   // Check if categories/comments list needs scroll indicator
   useEffect(() => {
@@ -74,7 +80,10 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 sm:p-6">
       <div 
         ref={modalRef}
-        style={{ minHeight: fixedHeight ? `${fixedHeight}px` : 'auto' }}
+        style={{ 
+          height: fixedHeight ? `${fixedHeight}px` : 'auto',
+          minHeight: fixedHeight ? `${fixedHeight}px` : 'auto'
+        }}
         className="bg-white px-5 py-6 sm:px-10 sm:py-9 rounded-3xl shadow-2xl text-center w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl animate-in fade-in zoom-in duration-300 relative h-full sm:h-auto max-h-[94vh] flex flex-col overflow-hidden"
       >
         
@@ -105,8 +114,8 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           </button>
         </div>
 
-        <div className="flex-shrink-0">
-          {activeTab === 'results' && (
+        <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}>
+          <div className="overflow-hidden">
             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
               <Trophy className="mx-auto text-yellow-500 mb-2 mt-4 sm:mt-0" size={44} />
               <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved!</h1>
@@ -116,11 +125,11 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                 <p className="text-slate-500 text-[10px] sm:text-sm font-black uppercase tracking-widest opacity-60">Hints: {hintsUsed}</p>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex-shrink-0 flex justify-center gap-2 mb-4 bg-slate-50 p-1 rounded-2xl w-fit mx-auto border border-slate-100/50 mt-4 h-fit">
+        <div className={`flex-shrink-0 flex justify-center gap-2 mb-4 bg-slate-50 p-1 rounded-2xl w-fit mx-auto border border-slate-100/50 h-fit transition-all duration-500 ${activeTab === 'results' ? 'mt-4' : 'mt-8 sm:mt-12'}`}>
           <button
             onClick={() => setActiveTab('results')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'results' ? 'bg-white text-slate-900 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
@@ -142,7 +151,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
             className="space-y-2.5 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full"
           >
             {activeTab === 'results' ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both">
                 {categories.map((cat, i) => (
                   <div key={i} className="bg-white p-3 sm:p-4 rounded-xl border border-slate-100 shadow-sm">
                     <p className="text-[10px] sm:text-xs font-black uppercase text-indigo-600 mb-1">{cat.description || 'Contiguous Group'}</p>
@@ -155,7 +164,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center bg-white rounded-2xl border border-slate-100 shadow-sm px-4 h-full min-h-[300px]">
+              <div className="flex flex-col items-center justify-center py-8 text-center bg-white rounded-2xl border border-slate-100 shadow-sm px-4 h-full min-h-[300px] animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 flex-shrink-0">
                   <MessageSquare size={32} className="text-slate-300" />
                 </div>
@@ -180,17 +189,19 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           )}
         </div>
 
-        {activeTab === 'results' && (
-          <div className="space-y-2.5 sm:space-y-3 flex-shrink-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <button onClick={handleAuthorClick} className="w-full bg-slate-100 text-slate-800 py-3.5 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] sm:text-xs flex items-center justify-center gap-2">
-              <User size={14} fill="currentColor" /> More from this Creator
-            </button>
+        <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}>
+          <div className="overflow-hidden">
+            <div className="space-y-2.5 sm:space-y-3 pb-1">
+              <button onClick={handleAuthorClick} className="w-full bg-slate-100 text-slate-800 py-3.5 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-[10px] sm:text-xs flex items-center justify-center gap-2">
+                <User size={14} fill="currentColor" /> More from this Creator
+              </button>
 
-            <button onClick={onNext} className="w-full bg-slate-900 text-white py-4.5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs sm:text-sm shadow-xl shadow-slate-200">
-              Another Puzzle
-            </button>
+              <button onClick={onNext} className="w-full bg-slate-900 text-white py-4.5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xs sm:text-sm shadow-xl shadow-slate-200">
+                Another Puzzle
+              </button>
+            </div>
           </div>
-        )}
+        </div>
 
       </div>
     </div>
