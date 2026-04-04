@@ -18,6 +18,9 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
   };
 
   const getDynamicFontSize = () => {
+    // potentially use @chenglou/pretext or something similar if issues come up.
+    // but NPM reports 2 high vulnerabilities currently, stick with heuristics for now
+    
     if (!label || size !== 'md') return null;
 
     let fontSize = 11; // Default md font size
