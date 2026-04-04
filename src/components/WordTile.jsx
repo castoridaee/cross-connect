@@ -25,8 +25,8 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
     // 1. Calculate size based on longest word
     const parts = label.split(/\s+/);
     const maxLen = Math.max(...parts.map(p => p.length));
-    if (maxLen >= 11) fontSize = 7;
-    else if (maxLen >= 10) fontSize = 8;
+    if (maxLen >= 12) fontSize = 7;
+    else if (maxLen >= 11) fontSize = 8;
     else if (maxLen >= 9) fontSize = 9;
     else if (maxLen >= 8) fontSize = 10;
 
