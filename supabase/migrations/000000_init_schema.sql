@@ -453,6 +453,17 @@ DECLARE
     v_pref INTEGER;
 BEGIN
     IF p_user_id IS NULL THEN
+        -- 0. Priority: Starter Puzzle
+        RETURN QUERY 
+        SELECT * FROM public.puzzles 
+        WHERE id = '1834b762-a70b-4dcc-9403-e40d55f5ab07' 
+          AND is_published = true;
+        
+        IF FOUND THEN
+            RETURN;
+        END IF;
+
+        -- Fallback to Quality Score
         RETURN QUERY SELECT * FROM public.puzzles 
         WHERE is_published = true ORDER BY quality_score DESC, random() LIMIT 1;
         RETURN;
@@ -461,6 +472,23 @@ BEGIN
     SELECT skill_score, difficulty_preference INTO v_skill, v_pref FROM public.profiles WHERE id = p_user_id;
     v_target_difficulty := COALESCE(v_skill, 1.0) + (COALESCE(v_pref, 0) * 0.3);
 
+    -- 0. Priority: Starter Puzzle for brand new users
+    -- If the user has NO solved or skipped progress, try to serve the tutorial/starter puzzle
+    IF NOT EXISTS (
+        SELECT 1 FROM public.user_progress up 
+        WHERE up.user_id = p_user_id AND up.status IN ('solved', 'skipped')
+    ) THEN
+        RETURN QUERY 
+        SELECT * FROM public.puzzles 
+        WHERE id = '1834b762-a70b-4dcc-9403-e40d55f5ab07' 
+          AND is_published = true;
+        
+        IF FOUND THEN
+            RETURN;
+        END IF;
+    END IF;
+
+    -- 1. Regular Recommendation Logic
     RETURN QUERY 
     SELECT p.* FROM public.puzzles p
     WHERE p.is_published = true

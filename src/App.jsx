@@ -353,11 +353,16 @@ function App() {
         ) : (
           <CreatePuzzle
             onComplete={(data) => {
-              if (data?.id) {
-                loadSpecificPuzzle(data.id);
+              const isRealUser = user && !user.is_anonymous;
+              if (isRealUser) {
+                setAuthorId(user.id);
+                setView('author');
               } else {
                 setView('solve');
+                loadPuzzles();
               }
+              setPuzzle(null);
+              setProgress(null);
               setPendingData(null);
             }}
             onCancel={() => setView('solve')}

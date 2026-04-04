@@ -18,24 +18,32 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
   };
 
   const getDynamicFontSize = () => {
-    if (!label) return null;
+    if (!label || size !== 'md') return null;
+
+    let fontSize = 11; // Default md font size
+
+    // 1. Calculate size based on longest word
     const parts = label.split(/\s+/);
     const maxLen = Math.max(...parts.map(p => p.length));
-    
-    // md size is the primary concern for grid overflow
-    if (size === 'md') {
-      if (maxLen >= 12) return '7px';
-      if (maxLen >= 11) return '8px';
-      if (maxLen >= 10) return '9px';
-      if (maxLen >= 9) return '10px';
+    if (maxLen >= 11) fontSize = 7;
+    else if (maxLen >= 10) fontSize = 8;
+    else if (maxLen >= 9) fontSize = 9;
+    else if (maxLen >= 8) fontSize = 10;
+
+    // 2. Calculate size based on overall phrase length
+    if (label.length > 44) {
+      fontSize = Math.min(fontSize, 9);
+    } else if (label.length > 32) {
+      fontSize = Math.min(fontSize, 10);
     }
-    return null;
+
+    return fontSize < 11 ? `${fontSize}px` : null;
   };
 
   const dynamicFontSize = getDynamicFontSize();
 
   return (
-    <div 
+    <div
       className={`${sizeClasses[size] || sizeClasses.md} flex-shrink-0 aspect-square flex items-center justify-center text-center p-1 font-semibold uppercase transition-all select-none break-words leading-none tracking-tighter ${variants[variant]}`}
       style={dynamicFontSize ? { fontSize: dynamicFontSize } : {}}
     >
