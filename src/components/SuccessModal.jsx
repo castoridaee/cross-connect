@@ -161,47 +161,47 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[2000] flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-500 overflow-hidden h-[100dvh]">
+    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center p-2 sm:p-6 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300">
       <div
         ref={modalRef}
-        className="mx-auto w-full max-w-4xl px-2 pt-4 pb-2 sm:px-4 sm:pt-6 sm:pb-3 text-center flex flex-col overflow-hidden h-full relative"
+        className="w-full max-w-md sm:max-w-3xl bg-white rounded-[1.5rem] shadow-2xl px-2 pt-4 pb-2 sm:px-4 sm:pt-5 sm:pb-4 text-center flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-500 h-full max-h-[96dvh] sm:max-h-[90dvh]"
       >
 
         {/* Top-left Admire/Close action */}
         <button
           onClick={onAdmire}
-          className={`absolute left-2 top-2 sm:left-4 sm:top-4 p-3 text-slate-500 hover:text-slate-700 transition-all active:scale-90 hover:bg-slate-100 rounded-2xl z-20 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          className="absolute left-2 top-2 sm:left-3 sm:top-3 p-2 text-slate-500 hover:text-slate-700 transition-all active:scale-90 hover:bg-slate-100 rounded-xl z-20"
           title="Close and Admire"
         >
-          <X size={28} />
+          <X size={24} strokeWidth={2.5} />
         </button>
 
         {/* Top-right quick actions */}
-        <div className={`absolute right-2 top-2 sm:right-4 sm:top-4 flex gap-2 z-20 transition-all duration-300 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`absolute right-2 top-2 sm:right-3 sm:top-3 flex gap-1 z-20 transition-all duration-300 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <button
             onClick={handleLike}
-            className={`p-3 rounded-2xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-600 hover:bg-slate-100'}`}
+            className={`p-2 rounded-xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-600 hover:bg-slate-100'}`}
             title={isLiked ? "Unlike" : "Like"}
           >
-            <Heart size={28} fill={isLiked ? "currentColor" : "none"} />
+            <Heart size={24} fill={isLiked ? "currentColor" : "none"} strokeWidth={2.5} />
           </button>
           <button
             onClick={handleShare}
-            className="p-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:bg-slate-100 rounded-2xl"
+            className="p-2 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:bg-slate-100 rounded-xl"
             title="Share Result"
           >
-            {showCopied ? <Check size={28} className="text-green-500" /> : <Share2 size={28} />}
+            {showCopied ? <Check size={24} className="text-green-500" strokeWidth={2.5} /> : <Share2 size={24} strokeWidth={2.5} />}
           </button>
         </div>
 
         <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? 'hidden' : ''}`}>
           <div className="overflow-hidden">
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-              <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved</h1>
-              <div className="flex justify-center gap-2 sm:gap-3 mt-1 sm:mt-2 mb-2 sm:mb-4">
-                <p className="text-slate-500 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Attempts: {attempts}</p>
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-300 rounded-full self-center" />
-                <p className="text-slate-500 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Hints: {hintsUsed}</p>
+            <div className="animate-in fade-in slide-in-from-top-4 duration-500 mt-1 sm:mt-0">
+              <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved</h1>
+              <div className="flex justify-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 mb-2 sm:mb-3">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-60">Attempts: {attempts}</p>
+                <div className="w-1.5 h-1.5 bg-slate-300 rounded-full self-center" />
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-60">Hints: {hintsUsed}</p>
               </div>
             </div>
           </div>

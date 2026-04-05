@@ -69,12 +69,12 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
   const handleGridClick = (e, msg) => {
     if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
-    
+
     // Protection against edge spills
     const x = Math.max(100, Math.min(window.innerWidth - 100, e.clientX));
-    
+
     setTapHint({ show: true, x, y: e.clientY, text: msg });
-    
+
     hintTimeoutRef.current = setTimeout(() => {
       setTapHint(prev => ({ ...prev, show: false }));
     }, 2000);
@@ -131,10 +131,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                 {puzzle.layout.map((row, r) => (
                   <div key={r} className="flex gap-0 justify-center">
                     {row.map((active, c) => (
-                      <div 
-                        key={`${r}-${c}`} 
+                      <div
+                        key={`${r}-${c}`}
                         className={`w-16 h-16 border-r-2 border-b-2 border-black overflow-hidden ${!active ? 'bg-slate-900' : ''}`}
-                        onClick={active 
+                        onClick={active
                           ? (!grid[`${r}-${c}`] ? (e) => handleGridClick(e, "Grab words below\nAnd drag them into this grid") : undefined)
                           : (e) => handleGridClick(e, "Grab words below\nAnd drag them into the open squares in this grid")
                         }
