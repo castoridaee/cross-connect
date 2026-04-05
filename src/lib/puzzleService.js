@@ -494,8 +494,70 @@ export async function getLikedPuzzles(userId) {
   return { data, error };
 }
 
+import dailyPuzzlesCsv from '../data/daily_puzzles.csv?raw';
+
+function parseDailyPuzzles(csv) {
+  if (!csv) return {};
+  const lines = csv.trim().split('\n');
+  const mapping = {};
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(s => s.trim());
+    if (parts.length >= 2) {
+      const [date, puzzleId] = parts;
+      if (date && puzzleId) mapping[date] = puzzleId;
+    }
+  }
+  return mapping;
+}
+
+const dailyPuzzlesMapping = parseDailyPuzzles(dailyPuzzlesCsv);
+
 export async function getRecommendedPuzzle(userId) {
-  const fetchFn = () => supabase.rpc('get_recommended_puzzle', {
+  const TUTORIAL_PUZZLE_ID = '1834b762-a70b-4dcc-9403-e40d55f5ab07';
+  let skipToStandard = false;
+  
+  // --- STAGE 1: TUTORIAL ---
+  if (userId) {
+    const { data: prog } = await getPuzzleProgress(userId, TUTORIAL_PUZZLE_ID);
+    if (prog?.is_skipped) {
+      skipToStandard = true;
+    } else if (prog?.status !== 'solved') {
+      const res = await getPuzzle(TUTORIAL_PUZZLE_ID);
+      if (res.data) return res;
+    }
+  } else {
+    // Guest: Always show tutorial first
+    const res = await getPuzzle(TUTORIAL_PUZZLE_ID);
+    if (res.data) return res;
+  }
+
+  // --- STAGE 2: CALENDAR ---
+  if (!skipToStandard) {
+    const today = new Date().toISOString().split('T')[0];
+    const calendarId = dailyPuzzlesMapping[today];
+    
+    if (calendarId) {
+      if (userId) {
+        const { data: prog } = await getPuzzleProgress(userId, calendarId);
+        if (prog?.is_skipped) {
+          skipToStandard = true;
+        } else if (prog?.status !== 'solved') {
+          const res = await getPuzzle(calendarId);
+          if (res.data) return res;
+        }
+      } else {
+        // Guest: show calendar if tutorial solved (not possible for guest without persistence, but for consistency)
+        const res = await getPuzzle(calendarId);
+        if (res.data) return res;
+      }
+    }
+  }
+
+  // --- STAGE 3: STANDARD SELECTION ---
+  const isLowPlay = Math.random() < 0.25;
+  const rpcName = isLowPlay ? 'get_low_play_puzzle' : 'get_recommended_puzzle';
+
+  const fetchFn = () => supabase.rpc(rpcName, {
     p_user_id: userId || null
   }).select('*, author:profiles!created_by(nickname)');
 
@@ -503,7 +565,7 @@ export async function getRecommendedPuzzle(userId) {
   
   // Safari "Load failed" retry
   if (error && error.message === 'Load failed') {
-    console.warn("Safari Load failed detected, retrying...");
+    console.warn(`Safari Load failed for ${rpcName}, retrying...`);
     await new Promise(r => setTimeout(r, 500));
     const result = await fetchFn();
     data = result.data;
@@ -511,13 +573,14 @@ export async function getRecommendedPuzzle(userId) {
   }
 
   if (error) {
-    console.warn("RPC fetch with join failed, retrying without join...", error);
-    const { data: fallbackData, error: fallbackError } = await supabase.rpc('get_recommended_puzzle', {
+    console.warn(`RPC ${rpcName} with join failed, retrying without join...`, error);
+    const { data: fallbackData, error: fallbackError } = await supabase.rpc(rpcName, {
       p_user_id: userId || null
     });
     if (fallbackError) return { data: null, error: fallbackError };
     return { data: fallbackData?.[0] || null, error: null };
   }
+  
   return { data: data?.[0] || null, error: null };
 }
 
