@@ -120,7 +120,7 @@ export function PuzzleCard({
                 )}
 
                 {puzzle.trimmean_attempts_to_solve != null && (
-                  <StatTooltip label="Median Attempts (Guesses + Hints)">
+                  <StatTooltip label="Average Number of Attempts (Guesses + Hints)">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-xs shadow-sm hover:bg-purple-100 transition-colors border border-purple-100/50">
                       <BarChart2 size={14} className="opacity-70" />
                       <span>{Math.round(puzzle.trimmean_attempts_to_solve * 10) / 10}</span>

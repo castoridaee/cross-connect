@@ -24,7 +24,7 @@ function App() {
     const syncStateWithUrl = () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
-      
+
       // Handle /a/[id] or ?a=[id]
       const profileId = path.startsWith('/a/') ? path.split('/a/')[1] : params.get('a');
       // Handle /p/[id] or ?p=[id]
@@ -123,11 +123,11 @@ function App() {
           const { data: pData } = await getPuzzleProgress(user.id, data.id);
           progData = pData;
         }
-        
+
         setProgress(progData);
         setPuzzle(data);
         setView('solve');
-        
+
         if (user) {
           recordPuzzlePlay(user.id, data.id);
         }
@@ -166,7 +166,7 @@ function App() {
         }
         setProgress(progData);
         setPuzzle(data);
-        
+
         if (user) {
           recordPuzzlePlay(user.id, data.id);
         }
@@ -202,10 +202,10 @@ function App() {
     // 1. Clear current puzzle/progress state
     setPuzzle(null);
     setProgress(null);
-    
+
     // 2. Clear the URL to root
     window.history.pushState({ view: 'solve' }, '', '/');
-    
+
     // 3. Load a new random, unsolved puzzle
     loadPuzzles();
   };
@@ -231,64 +231,71 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       {/* Header / Global Nav */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('solve')}>
-          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-xl">C</div>
-          <span className="font-black uppercase tracking-tighter text-sm max-w-[80px] leading-[0.85]">Cross Connect</span>
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-3 flex items-center">
+        {/* Left Section: Logo */}
+        <div className="flex-1 flex justify-start">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('solve')}>
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-xl">C</div>
+            <span className="font-black uppercase tracking-tighter text-sm max-w-[85px] leading-[0.85] hidden sm:block">Cross Connect</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-6">
+        {/* Center Section: Navigation */}
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => setView('solve')}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
           >
             SOLVE
           </button>
           <button
             onClick={() => { setPendingData(null); setView('create'); }}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
           >
             CREATE
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          {user ? (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {user.is_anonymous ? 'Playing as' : 'Logged in as'}
-                </span>
-                <span className="text-xs font-bold">
-                  {user.is_anonymous
-                    ? generateAnonymousName(user.id)
-                    : (user.user_metadata?.nickname || user.email?.split('@')[0])}
-                </span>
+        {/* Right Section: User */}
+        <div className="flex-1 flex justify-end">
+          <div className="flex items-center gap-2 sm:gap-2">
+            {user ? (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden md:flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {user.is_anonymous ? 'Playing as' : 'Logged in as'}
+                  </span>
+                  <span className="text-xs font-bold">
+                    {user.is_anonymous
+                      ? generateAnonymousName(user.id)
+                      : (user.user_metadata?.nickname || user.email?.split('@')[0])}
+                  </span>
+                </div>
+                {user.is_anonymous ? (
+                  <button
+                    onClick={() => setView('auth')}
+                    className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    SIGN IN
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => signOut()}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
+                  >
+                    LOGOUT
+                  </button>
+                )}
               </div>
-              {user.is_anonymous ? (
-                <button
-                  onClick={() => setView('auth')}
-                  className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
-                >
-                  SIGN IN
-                </button>
-              ) : (
-                <button
-                  onClick={() => signOut()}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
-                >
-                  LOGOUT
-                </button>
-              )}
-            </div>
-          ) : (
-            <button
-              onClick={() => setView('auth')}
-              className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
-            >
-              SIGN IN
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={() => setView('auth')}
+                className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
+              >
+                SIGN IN
+              </button>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -313,22 +320,19 @@ function App() {
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-                <span className="text-2xl">🧩</span>
-              </div>
               <h2 className="font-black text-xl text-slate-800 uppercase tracking-tight">No puzzles available</h2>
               <p className="text-slate-500 max-w-xs text-sm leading-relaxed">
                 We couldn't fetch a puzzle for you. This might be a temporary connection issue.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                <button 
-                  onClick={() => loadPuzzles()} 
+                <button
+                  onClick={() => loadPuzzles()}
                   className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-200 transition-transform active:scale-95"
                 >
                   Try Again
                 </button>
-                <button 
-                  onClick={() => setView('create')} 
+                <button
+                  onClick={() => setView('create')}
                   className="bg-white border-2 border-slate-100 text-slate-600 px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-colors hover:bg-slate-50"
                 >
                   Create One

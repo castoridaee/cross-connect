@@ -38,10 +38,10 @@ export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
           <div className="w-6 h-6 bg-slate-900 rounded-lg flex items-center justify-center text-white">
             <User size={12} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-tight text-slate-900">
+          <span className="text-sm font-black uppercase tracking-tight text-slate-900">
             {author?.nickname || 'Anonymous'}
           </span>
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             • {formatDistanceToNow(created_at)}
           </span>
         </div>
@@ -52,10 +52,10 @@ export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
           }`}
         >
           <Heart size={12} fill={isLiked ? 'currentColor' : 'none'} />
-          <span className="text-[10px] font-black">{likes_count || 0}</span>
+          <span className="text-sm font-black">{likes_count || 0}</span>
         </button>
       </div>
-      <p className="text-[11px] font-bold text-slate-600 leading-relaxed">
+      <p className="text-sm sm:text-base font-bold text-slate-600 leading-relaxed">
         {renderContent(content)}
       </p>
     </div>

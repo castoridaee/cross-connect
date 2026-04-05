@@ -14,6 +14,7 @@ The core table storing puzzle data, layouts, and metadata.
 - `word_order` (text[]): An array of words in the shuffled order they appear in the bank.
 - `grid_data` (jsonb): The mapping of words to grid coordinates (used for editing).
 - `is_published` (boolean): Whether the puzzle is visible to everyone. Defaults to `true`.
+- `is_shadowbanned` (boolean): Flag for content moderation. When `true`, ONLY the author can see the puzzle.
 - `likes_count` (int4): Number of likes.
 - `play_count` (int4): Number of times the puzzle was started.
 - `solve_count` (int4): Number of times the puzzle was solved.
@@ -36,8 +37,26 @@ Public user profiles linked to Supabase Auth users.
 - `skill_score` (float8): Calculated player skill based on their last 50 solves.
 - `difficulty_preference` (int4): Player difficulty offset (-5 for easier, +5 for harder).
 - `author_reputation` (float8): Bayesian average (0-100) of the quality of all puzzles published by this user.
+- `is_hard_shadowbanned` (boolean): Flag for repeat/severe offenders. When `true`, all their content is automatically shadowbanned.
+- `shadowban_total` (int4): Total count of shadowbanned content (puzzles/comments) associated with this user.
 - `updated_at` (timestamp with time zone): Last updated timestamp.
 - `locale` (text): The user's preferred browser locale.
+
+### `comments`
+Interactive comments on puzzles.
+- `id` (uuid, primary key).
+- `puzzle_id` (uuid, references `puzzles`): Puzzle the comment belongs to.
+- `user_id` (uuid, references `profiles`): Author of the comment.
+- `content` (text): The comment text.
+- `is_shadowbanned` (boolean): Flag for content moderation. 
+- `likes_count` (int4): Total likes for the comment.
+- `created_at` (timestamp with time zone).
+
+### `comment_likes`
+Tracks which users liked which comments.
+- `comment_id` (uuid, references `comments`).
+- `user_id` (uuid, references `profiles`).
+- **Unique Constraint:** `(comment_id, user_id)`.
 
 ### `user_progress`
 Tracks user performance and "Skip" status on specific puzzles.
@@ -65,21 +84,30 @@ Tracks user performance and "Skip" status on specific puzzles.
 ## Row Level Security (RLS)
 
 ### `puzzles`
-- **Anyone** can view puzzles where `is_published = true`.
-- **Authenticated users** can insert their own puzzles (`auth.uid() = created_by`).
+- **Public access** is allowed for published puzzles where `is_shadowbanned = false`.
+- **Owners** can always view their own puzzles (even if shadowbanned or unpublished).
 - **Owners** can update or delete their own puzzles.
+
+### `comments`
+- **Public access** is allowed for comments where `is_shadowbanned = false`.
+- **Owners** can always view their own comments (even if shadowbanned).
 
 ### `profiles`
 - **Anyone** can view all public profiles for author mapping.
 - **Users** can only insert/update their own profile.
 
 ### `user_progress`
-- **Anyone** (authenticated or anonymous depending on app settings) can view their own progress.
-- **Users** can insert, update, or delete their own progress, enabling manual resets.
+- **Users** can view/insert/update/delete their own progress.
 
 ## Triggers and Automation
 
-- **Skill Sync:** (`on_user_progress_solved_sync_skill`) Updates a user's `skill_score` calculation whenever they successfully complete a puzzle.
-- **Stats Sync:** (`on_user_progress_sync_v3`) Recalculates `puzzles` difficulty, medians, trimmeans, and quality scores whenever `user_progress` changes (like, solve, share, etc).
-- **Quality Metrics:** (`recalculate_author_reputation`) Maintains the author's reputation score on `profiles` when puzzle qualities change.
-- **Content Change Reset:** (`handle_puzzle_content_change`) Flushes `user_progress` and resets performance stats automatically if a puzzle's `categories`, `grid_data`, `layout`, or `word_order` is edited.
+- **Skill Sync:** (`on_user_progress_solved_sync_skill`) Updates a user's `skill_score`.
+- **Stats Sync:** (`on_user_progress_sync_v3`) Recalculates puzzle difficulty, medians, and quality scores.
+- **Content Change Reset:** (`handle_puzzle_content_change`) Flushes progress if puzzle structure is edited.
+- **Shadowban Tracking:** Logic in `puzzleService.js` (Web Client) automatically flags content and increments `shadowban_total` on `profiles`.
+
+## RPC Functions
+
+- `get_recommended_puzzle(p_user_id)`: Fetches a puzzle for the user based on skill/preference. **Filters out shadowbanned and self-authored puzzles.**
+- `toggle_comment_like(p_comment_id, p_user_id)`: Toggles comment like status and increments/decrements `likes_count` atomically.
+- `record_puzzle_play(userId, puzzleId)`: Upserts `user_progress` to trigger global play count increments.
