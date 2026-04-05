@@ -108,6 +108,8 @@ Tracks user performance and "Skip" status on specific puzzles.
 
 ## RPC Functions
 
-- `get_recommended_puzzle(p_user_id)`: Fetches a puzzle for the user based on skill/preference. **Filters out shadowbanned and self-authored puzzles.**
+- `get_recommended_puzzle(p_user_id)`: Fetches a puzzle based on skill/preference. **Filters out shadowbanned, self-authored, and already played/skipped puzzles.**
+- `get_low_play_puzzle(p_user_id)`: Discovery function that returns a random puzzle with fewer than 10 plays. **Filters out shadowbanned, self-authored, and already played/skipped puzzles.**
 - `toggle_comment_like(p_comment_id, p_user_id)`: Toggles comment like status and increments/decrements `likes_count` atomically.
 - `record_puzzle_play(userId, puzzleId)`: Upserts `user_progress` to trigger global play count increments.
+- `sync_guest_progress(guest_id, p_user_id)`: Migrates progress and puzzles from an anonymous session to a registered user account after signup.

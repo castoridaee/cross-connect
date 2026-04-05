@@ -37,7 +37,7 @@ export function PuzzleGridEditor({
   goToStep2
 }) {
   return (
-    <div className="space-y-4">
+    <>
       <div className="flex flex-col gap-1">
         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
         <input
@@ -51,7 +51,7 @@ export function PuzzleGridEditor({
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 mt-4">
         <div className="w-full relative px-0 mb-4">
           <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
           <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
@@ -92,9 +92,9 @@ export function PuzzleGridEditor({
         </div>
       </div>
 
-      <button onClick={goToStep2} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-colors uppercase">
+      <button onClick={goToStep2} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-colors uppercase mt-4">
         Continue to Categories
       </button>
-    </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 # Cross Connect Design Conventions
 
-This document outlines the design conventions for the Cross Connect game.
+This document outlines the design conventions for the Cross Connect game. The game is a puzzle game similar to Connections but with a x-y grid and crossing categories similar to a Crossword puzzle.
 
 ## Core Principles
 

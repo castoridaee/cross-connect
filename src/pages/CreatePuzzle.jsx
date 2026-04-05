@@ -220,7 +220,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
 
     const detected = detectGroups();
     if (detected.length < 2) {
-      setStatusMsg({ type: 'error', text: "Puzzle must have at least 2 categories (contiguous word groups)." });
+      setStatusMsg({ type: 'error', text: "Puzzle must have at least 2 different word groups." });
       return;
     }
 
@@ -341,9 +341,8 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-1 sm:p-4">
-      <div className="w-full max-w-5xl bg-white sm:rounded-2xl shadow-lg p-1.5 sm:p-5 border border-slate-100">
-        <div className="flex justify-between items-center mb-4">
+    <div className="min-h-screen p-4 sm:p-10 max-w-5xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
           {step === 2 ? (
             <button onClick={() => setStep(1)} className="text-slate-400 hover:text-slate-600 transition-colors">
               <ChevronLeft size={24} />
@@ -437,8 +436,6 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
             )}
           </DragOverlay>
         </DndContext>
-      </div>
-
       {editingCell && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">

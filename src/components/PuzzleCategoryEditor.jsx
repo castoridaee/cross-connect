@@ -36,7 +36,7 @@ export function PuzzleCategoryEditor({
   handleSubmit
 }) {
   return (
-    <div className="space-y-4">
+    <>
       <div className="space-y-2">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Descriptions</p>
         {categories.map((cat, idx) => (
@@ -60,16 +60,16 @@ export function PuzzleCategoryEditor({
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 mt-4">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
         <WordBank>
           {wordOrder.map(w => <BankDraggableTile key={w} label={w} />)}
         </WordBank>
       </div>
 
-      <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100 mt-2">
+      <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100 mt-6">
         {isSubmitting ? 'SAVING...' : <><Save size={16} /> SUBMIT PUZZLE</>}
       </button>
-    </div>
+    </>
   );
 }
