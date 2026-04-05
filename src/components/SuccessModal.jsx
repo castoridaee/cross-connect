@@ -228,7 +228,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           {activeTab === 'results' ? (
             <div
               ref={scrollRef}
-              className="space-y-2.5 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both"
+              className="space-y-2.5 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both touch-pan-y overscroll-contain"
             >
               {categories.map((cat, i) => (
                 <div key={i} className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-100 shadow-sm">
@@ -294,7 +294,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               ) : (
                 <div
                   ref={scrollRef}
-                  className="flex-grow min-h-0 overflow-y-auto pr-1 custom-scrollbar scroll-smooth"
+                  className="flex-grow min-h-0 overflow-y-auto pr-1 custom-scrollbar scroll-smooth touch-pan-y overscroll-contain"
                 >
                   {comments.map(c => (
                     <CommentItem
@@ -331,7 +331,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                     <button
                       type="submit"
                       disabled={!newComment.trim() || isSubmitting}
-                      className={`px-4 rounded-2xl text-white transition-all active:scale-95 flex items-center justify-center h-[68px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-lg shadow-indigo-100' : 'bg-slate-200 cursor-not-allowed'
+                      className={`aspect-square rounded-xl text-white transition-all active:scale-95 flex items-center justify-center h-[68px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-lg shadow-indigo-100' : 'bg-slate-200 cursor-not-allowed'
                         }`}
                     >
                       <Send size={20} />

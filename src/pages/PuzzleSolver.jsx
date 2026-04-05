@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
 import { WordTile } from '../components/WordTile';
 import { recordPuzzleEngagement, togglePuzzleLike, getPuzzleProgress } from '../lib/puzzleService';
@@ -42,9 +42,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
     });
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 3 }
-  }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 3 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } })
+  );
 
   const allWords = puzzle.word_order?.length > 0
     ? puzzle.word_order
@@ -81,9 +82,9 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
   return (
     <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 select-none relative">
+      <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 relative touch-pan-y">
         {/* Puzzle Metadata Header */}
-        <div className="w-full max-w-md mb-6 text-center relative">
+        <div className="w-full max-w-md mb-6 text-center relative select-none">
           <div className="flex justify-end gap-3 mb-2">
             <button
               onClick={onSkip}
@@ -124,7 +125,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
           <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
           <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
 
-          <div className="overflow-x-auto pb-6 custom-scrollbar text-center">
+          <div className="overflow-x-auto pb-6 custom-scrollbar text-center select-none">
             <div className="inline-block min-w-max mx-auto">
               <section className="grid gap-0 border-t-2 border-l-2 border-black">
                 {puzzle.layout.map((row, r) => (
@@ -156,9 +157,11 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
           </div>
         </div>
 
-        <WordBank>
-          {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
-        </WordBank>
+        <div className="select-none w-full flex flex-col items-center">
+          <WordBank>
+            {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
+          </WordBank>
+        </div>
 
         <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
           <div className="grid grid-cols-2 gap-3">
