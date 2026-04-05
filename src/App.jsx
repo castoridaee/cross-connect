@@ -244,13 +244,13 @@ function App() {
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => setView('solve')}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             SOLVE
           </button>
           <button
             onClick={() => { setPendingData(null); setView('create'); }}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             CREATE
           </button>

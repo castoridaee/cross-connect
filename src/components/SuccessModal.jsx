@@ -208,18 +208,18 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
         </div>
 
         {/* Tab Switcher */}
-        <div className={`flex-shrink-0 flex justify-center gap-2 sm:gap-2 mb-2 sm:mb-3 bg-slate-100 p-1 sm:p-2 rounded-xl sm:rounded-2xl w-fit mx-auto border border-slate-200/50 h-fit transition-all duration-500 z-30 ${activeTab === 'results' ? 'mt-1 sm:mt-2' : 'mt-0.5 sm:mt-1'}`}>
+        <div className={`flex-shrink-0 flex justify-center gap-6 sm:gap-8 mb-4 sm:mb-6 w-fit mx-auto h-fit transition-all duration-500 z-30 ${activeTab === 'results' ? 'mt-1 sm:mt-2' : 'mt-0.5 sm:mt-1'}`}>
           <button
             onClick={() => setActiveTab('results')}
-            className={`flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'results' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${activeTab === 'results' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <List className="w-5 h-5" /> Result
+            Result
           </button>
           <button
             onClick={() => setActiveTab('comments')}
-            className={`flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'comments' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <MessageSquare className="w-5 h-5" /> Comments
+            Comments
           </button>
         </div>
 
