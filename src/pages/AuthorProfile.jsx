@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle } from '../lib/puzzleService';
+import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings } from 'lucide-react';
+import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { PuzzleCard } from '../components/PuzzleCard';
 import { PuzzleOptionsModal } from '../components/PuzzleOptionsModal';
 import { ProfileSettingsModal } from '../components/ProfileSettingsModal';
+import { CommentItem } from '../components/CommentItem';
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
   const [profile, setProfile] = useState(null);
@@ -20,6 +21,12 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [sortBy, setSortBy] = useState('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // New Comments/Mentions State
+  const [userComments, setUserComments] = useState([]);
+  const [userMentions, setUserMentions] = useState([]);
+  const [likedCommentIds, setLikedCommentIds] = useState(new Set());
+  const [loadingExtras, setLoadingExtras] = useState(false);
 
   const isOwner = currentUser?.id === authorId;
 
@@ -37,7 +44,12 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       setLoading(true);
       try {
         const profileRes = await getProfile(authorId);
-        if (profileRes.data) setProfile(profileRes.data);
+        if (profileRes.data) {
+          setProfile(profileRes.data);
+          
+          // If we have a profile, fetch comments and mentions
+          loadExtras(profileRes.data);
+        }
 
         // Fetch author's puzzles
         let puzzlesQuery = supabase
@@ -106,6 +118,57 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     if (!error) {
       setPuzzles(prev => prev.map(p => p.id === deletingPuzzle.id ? { ...p, is_published: false } : p));
       setDeletingPuzzle(null);
+    }
+  };
+
+  async function loadExtras(profileData) {
+    setLoadingExtras(true);
+    try {
+      const [commentsRes, mentionsRes] = await Promise.all([
+        getUserComments(authorId),
+        isOwner ? getUserMentions(profileData.nickname || generateAnonymousName(authorId)) : { data: [] }
+      ]);
+
+      setUserComments(commentsRes.data || []);
+      setUserMentions(mentionsRes.data || []);
+
+      const allCommentIds = [
+        ...(commentsRes.data || []).map(c => c.id),
+        ...(mentionsRes.data || []).map(c => c.id)
+      ];
+
+      if (currentUser && allCommentIds.length > 0) {
+        const { data: likes } = await getCommentLikes(currentUser.id, allCommentIds);
+        if (likes) {
+          setLikedCommentIds(new Set(likes.map(l => l.comment_id)));
+        }
+      }
+    } catch (err) {
+      console.error("Error loading profile extras:", err);
+    } finally {
+      setLoadingExtras(false);
+    }
+  }
+
+  const handleToggleCommentLike = async (commentId) => {
+    if (!currentUser) return;
+    const isCurrentlyLiked = likedCommentIds.has(commentId);
+    const newLikedSet = new Set(likedCommentIds);
+    if (isCurrentlyLiked) newLikedSet.delete(commentId);
+    else newLikedSet.add(commentId);
+    setLikedCommentIds(newLikedSet);
+
+    // Update in both lists if present
+    const updater = c => c.id === commentId ? { ...c, likes_count: (c.likes_count || 0) + (isCurrentlyLiked ? -1 : 1) } : c;
+    setUserComments(prev => prev.map(updater));
+    setUserMentions(prev => prev.map(updater));
+
+    try {
+      await toggleCommentLike(commentId, currentUser.id);
+    } catch (err) {
+      console.error("Error liking comment:", err);
+      // Revert if needed
+      setLikedCommentIds(likedCommentIds);
     }
   };
 
@@ -181,6 +244,24 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('comments')}
+          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'comments' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+            }`}
+        >
+          Comments
+          {activeTab === 'comments' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+        </button>
+        {isOwner && (
+          <button
+            onClick={() => setActiveTab('mentions')}
+            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'mentions' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            Mentions
+            {activeTab === 'mentions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />}
+          </button>
+        )}
       </div>
 
       {(activeTab === 'puzzles' || activeTab === 'unpublished') && (
@@ -229,39 +310,95 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       )}
 
       <div className="grid grid-cols-1 gap-6 mb-12">
-        {(
-          activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
-            activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
-              likedPuzzles
-        ).sort((a, b) => {
-          if (sortBy === 'unsolved') {
-            const solvedA = solveStatus[a.id] === 'solved';
-            const solvedB = solveStatus[b.id] === 'solved';
-            if (solvedA !== solvedB) {
-              return solvedA ? 1 : -1;
+        {activeTab === 'comments' ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {userComments.length > 0 ? (
+              userComments.map(c => (
+                <div key={c.id} className="relative group">
+                  <div className="absolute -left-3 top-4 bottom-4 w-1 bg-slate-100 rounded-full group-hover:bg-indigo-100 transition-colors" />
+                  <div className="mb-1 ml-2">
+                     <button 
+                        onClick={() => onNavigateToPuzzle(c.puzzle_id)}
+                        className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
+                     >
+                       <MessageSquare size={10} /> Puzzle: {c.puzzle?.title || 'Unknown'}
+                     </button>
+                  </div>
+                  <CommentItem 
+                    comment={c} 
+                    isLiked={likedCommentIds.has(c.id)}
+                    onLike={handleToggleCommentLike}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                <p className="font-bold text-slate-400">No comments found.</p>
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'mentions' ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             {userMentions.length > 0 ? (
+              userMentions.map(c => (
+                <div key={c.id} className="relative group">
+                  <div className="absolute -left-3 top-4 bottom-4 w-1 bg-indigo-100 rounded-full" />
+                  <div className="mb-1 ml-2">
+                     <button 
+                        onClick={() => onNavigateToPuzzle(c.puzzle_id)}
+                        className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
+                     >
+                       <AtSign size={10} /> Mentioned in: {c.puzzle?.title || 'Unknown'}
+                     </button>
+                  </div>
+                  <CommentItem 
+                    comment={c} 
+                    isLiked={likedCommentIds.has(c.id)}
+                    onLike={handleToggleCommentLike}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                <p className="font-bold text-slate-400">No mentions found yet.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          (
+            activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
+              activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
+                likedPuzzles
+          ).sort((a, b) => {
+            if (sortBy === 'unsolved') {
+              const solvedA = solveStatus[a.id] === 'solved';
+              const solvedB = solveStatus[b.id] === 'solved';
+              if (solvedA !== solvedB) {
+                return solvedA ? 1 : -1;
+              }
+              return (b.likes_count || 0) - (a.likes_count || 0);
             }
-            return (b.likes_count || 0) - (a.likes_count || 0);
-          }
-          if (sortBy === 'likes') return (b.likes_count || 0) - (a.likes_count || 0);
-          if (sortBy === 'solves') return (b.solve_count || 0) - (a.solve_count || 0);
-          if (sortBy === 'difficulty_desc') return (b.difficulty_score || 0) - (a.difficulty_score || 0);
-          if (sortBy === 'difficulty_asc') {
-            const scoreA = a.difficulty_score || 999;
-            const scoreB = b.difficulty_score || 999;
-            return scoreA - scoreB;
-          }
-          return new Date(b.created_at) - new Date(a.created_at);
-        }).map(p => (
-          <PuzzleCard
-            key={p.id}
-            puzzle={p}
-            solveStatus={solveStatus}
-            likeStatus={likeStatus}
-            tab={activeTab}
-            onNavigateToPuzzle={onNavigateToPuzzle}
-            onActionClick={isOwner ? () => setDeletingPuzzle(p) : null}
-          />
-        ))}
+            if (sortBy === 'likes') return (b.likes_count || 0) - (a.likes_count || 0);
+            if (sortBy === 'solves') return (b.solve_count || 0) - (a.solve_count || 0);
+            if (sortBy === 'difficulty_desc') return (b.difficulty_score || 0) - (a.difficulty_score || 0);
+            if (sortBy === 'difficulty_asc') {
+              const scoreA = a.difficulty_score || 999;
+              const scoreB = b.difficulty_score || 999;
+              return scoreA - scoreB;
+            }
+            return new Date(b.created_at) - new Date(a.created_at);
+          }).map(p => (
+            <PuzzleCard
+              key={p.id}
+              puzzle={p}
+              solveStatus={solveStatus}
+              likeStatus={likeStatus}
+              tab={activeTab}
+              onNavigateToPuzzle={onNavigateToPuzzle}
+              onActionClick={isOwner ? () => setDeletingPuzzle(p) : null}
+            />
+          ))
+        )}
       </div>
 
       {deletingPuzzle && (
@@ -292,8 +429,9 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       {(
         activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
           activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
-            likedPuzzles
-      ).length === 0 && (
+            activeTab === 'liked' ? likedPuzzles :
+            []
+      ).length === 0 && activeTab !== 'comments' && activeTab !== 'mentions' && (
           <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
             <p className="font-bold text-slate-400">
               {activeTab === 'unpublished'

@@ -300,3 +300,71 @@ export async function getRecommendedPuzzle(userId) {
   }
   return { data: data?.[0] || null, error: null };
 }
+
+export async function getComments(puzzleId, sortBy = 'newest') {
+  let query = supabase
+    .from('comments')
+    .select('*, author:profiles!user_id(id, nickname)')
+    .eq('puzzle_id', puzzleId);
+
+  if (sortBy === 'liked') {
+    query = query.order('likes_count', { ascending: false });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
+  return { data, error };
+}
+
+export async function addComment(puzzleId, userId, content) {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert([{
+      puzzle_id: puzzleId,
+      user_id: userId,
+      content: content
+    }])
+    .select('*, author:profiles!user_id(nickname)')
+    .single();
+
+  return { data, error };
+}
+
+export async function toggleCommentLike(commentId, userId) {
+  const { data, error } = await supabase.rpc('toggle_comment_like', {
+    p_comment_id: commentId,
+    p_user_id: userId
+  });
+  return { data, error };
+}
+
+export async function getUserComments(userId) {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*, puzzle:puzzles(id, title, description, categories)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+export async function getUserMentions(nickname) {
+  // Simple mention check using @nickname
+  const mentionPattern = `@${nickname}`;
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*, author:profiles!user_id(nickname), puzzle:puzzles(id, title, description, categories)')
+    .ilike('content', `%${mentionPattern}%`)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+export async function getCommentLikes(userId, commentIds) {
+  if (!userId || !commentIds || commentIds.length === 0) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('comment_likes')
+    .select('comment_id')
+    .eq('user_id', userId)
+    .in('comment_id', commentIds);
+  return { data, error };
+}
