@@ -161,116 +161,124 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 sm:p-6">
+    <div className="fixed inset-0 bg-white z-[2000] flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-500 overflow-hidden h-[100dvh]">
       <div
         ref={modalRef}
-        className="bg-white px-4 py-5 sm:px-6 sm:py-6 rounded-3xl shadow-2xl text-center w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl animate-in fade-in zoom-in duration-300 relative h-[95vh] sm:h-[85vh] max-h-[100vh] flex flex-col overflow-hidden"
+        className="mx-auto w-full max-w-4xl px-2 pt-4 pb-2 sm:px-4 sm:pt-6 sm:pb-3 text-center flex flex-col overflow-hidden h-full relative"
       >
 
         {/* Top-left Admire/Close action */}
         <button
           onClick={onAdmire}
-          className={`absolute left-3 top-3 sm:left-6 sm:top-6 p-2 text-slate-500 hover:text-slate-700 transition-all active:scale-90 hover:bg-slate-50 rounded-xl z-20 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          className={`absolute left-2 top-2 sm:left-4 sm:top-4 p-3 text-slate-500 hover:text-slate-700 transition-all active:scale-90 hover:bg-slate-100 rounded-2xl z-20 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
           title="Close and Admire"
         >
-          <X size={22} />
+          <X size={28} />
         </button>
 
         {/* Top-right quick actions */}
-        <div className={`absolute right-3 top-3 sm:right-6 sm:top-6 flex gap-1 z-20 transition-all duration-300 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`absolute right-2 top-2 sm:right-4 sm:top-4 flex gap-2 z-20 transition-all duration-300 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <button
             onClick={handleLike}
-            className={`p-2 rounded-xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-500 hover:bg-slate-50'}`}
+            className={`p-3 rounded-2xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-600 hover:bg-slate-100'}`}
             title={isLiked ? "Unlike" : "Like"}
           >
-            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+            <Heart size={28} fill={isLiked ? "currentColor" : "none"} />
           </button>
           <button
             onClick={handleShare}
-            className="p-2 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:bg-slate-50 rounded-xl"
+            className="p-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:bg-slate-100 rounded-2xl"
             title="Share Result"
           >
-            {showCopied ? <Check size={20} className="text-green-500" /> : <Share2 size={20} />}
+            {showCopied ? <Check size={28} className="text-green-500" /> : <Share2 size={28} />}
           </button>
         </div>
 
         <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? 'hidden' : ''}`}>
           <div className="overflow-hidden">
             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-              <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved!</h1>
-              <div className="flex justify-center gap-4 mt-1 mb-2">
-                <p className="text-slate-500 text-xs sm:text-base font-black uppercase tracking-widest opacity-60">Attempts: {attempts}</p>
-                <div className="w-1 h-1 bg-slate-200 rounded-full self-center" />
-                <p className="text-slate-500 text-xs sm:text-base font-black uppercase tracking-widest opacity-60">Hints: {hintsUsed}</p>
+              <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved</h1>
+              <div className="flex justify-center gap-2 sm:gap-3 mt-1 sm:mt-2 mb-2 sm:mb-4">
+                <p className="text-slate-500 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Attempts: {attempts}</p>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-300 rounded-full self-center" />
+                <p className="text-slate-500 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-60">Hints: {hintsUsed}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className={`flex-shrink-0 flex justify-center gap-1 mb-2 bg-slate-50 p-0.5 rounded-2xl w-fit mx-auto border border-slate-100/50 h-fit transition-all duration-500 z-30 ${activeTab === 'results' ? 'mt-4' : 'mt-2'}`}>
+        <div className={`flex-shrink-0 flex justify-center gap-2 sm:gap-2 mb-2 sm:mb-3 bg-slate-100 p-1 sm:p-2 rounded-xl sm:rounded-2xl w-fit mx-auto border border-slate-200/50 h-fit transition-all duration-500 z-30 ${activeTab === 'results' ? 'mt-1 sm:mt-2' : 'mt-0.5 sm:mt-1'}`}>
           <button
             onClick={() => setActiveTab('results')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'results' ? 'bg-white text-slate-900 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'results' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <List size={18} /> Result
+            <List className="w-5 h-5" /> Result
           </button>
           <button
             onClick={() => setActiveTab('comments')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'comments' ? 'bg-white text-slate-900 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${activeTab === 'comments' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <MessageSquare size={18} /> Comments
+            <MessageSquare className="w-5 h-5" /> Comments
           </button>
         </div>
 
         {/* Action Panel Section */}
-        <div className={`bg-slate-50 border border-slate-100 rounded-2xl p-3 sm:p-5 mb-5 relative text-left overflow-hidden flex-grow flex flex-col min-h-0 min-w-0 transition-all duration-500 ${activeTab === 'comments' ? 'mt-0' : ''}`}>
+        <div className={`bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-[1.25rem] p-3 sm:p-4 relative text-left overflow-hidden flex-grow flex flex-col min-h-0 min-w-0 transition-all duration-500 ${activeTab === 'comments' ? 'mt-0 mb-0' : 'mb-2 sm:mb-3'}`}>
           {activeTab === 'results' ? (
-            <div
-              ref={scrollRef}
-              className="space-y-2.5 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both touch-pan-y overscroll-contain"
-            >
-              {categories.map((cat, i) => (
-                <div key={i} className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-100 shadow-sm">
-                  <p className="text-sm sm:text-base font-black uppercase text-indigo-600 mb-1">{cat.description || 'Contiguous Group'}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cat.words.map(w => (
-                      <span key={w} className="text-xs sm:text-sm font-bold bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-600 uppercase tracking-tighter leading-none">{w}</span>
-                    ))}
+            <div className="relative flex-grow min-h-0 flex flex-col">
+              <div
+                ref={scrollRef}
+                className="space-y-3 sm:space-y-3 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both touch-pan-y overscroll-contain"
+              >
+                {categories.map((cat, i) => (
+                  <div key={i} className="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-lg sm:text-xl font-black text-indigo-600 mb-1.5 sm:mb-2 tracking-tight">{cat.description || 'Contiguous Group'}</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                      {cat.words.map(w => (
+                        <span key={w} className="text-sm sm:text-base font-semibold bg-slate-100 px-3 py-1 sm:px-4 sm:py-1.5 rounded-md sm:rounded-lg border border-slate-200 text-slate-700 uppercase tracking-tighter leading-tight opacity-90">{w}</span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+
+                {/* Dummy pad to ensure last item clears the gradient */}
+                <div className="h-12 flex-shrink-0" />
+              </div>
+              {isScrollable && (
+                <div className="absolute bottom-0 left-0 right-1 h-16 sm:h-24 bg-gradient-to-t from-slate-100 via-slate-100/80 to-transparent pointer-events-none z-10" />
+              )}
             </div>
           ) : (
             <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both overflow-hidden">
               {/* Comments Header & Sort */}
-              <div className="flex justify-between items-center mb-2 px-1 flex-shrink-0">
-                <span className="text-sm font-black uppercase tracking-tight text-slate-400">
+              <div className="flex justify-between items-center mb-6 sm:mb-6 px-2 flex-shrink-0">
+                <span className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-500">
                   {comments.length} Comments
                 </span>
 
                 <div className="relative">
                   <button
                     onClick={() => setIsSortOpen(!isSortOpen)}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors"
+                    className="flex items-center gap-2 p-2 sm:p-2 text-base sm:text-base font-black uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors bg-white rounded-xl shadow-sm border border-slate-200"
                   >
-                    <Filter size={12} /> {commentSort === 'newest' ? 'Newest' : 'Top Liked'}
-                    <ChevronDown size={12} className={`transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
+                    <Filter size={12} className="w-4 h-4" /> {commentSort === 'newest' ? 'Newest' : 'Most Liked'}
+                    <ChevronDown size={12} className={`w-4 h-4 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isSortOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl z-50 p-1 overflow-hidden border-t-2 border-t-slate-900 animate-in fade-in zoom-in duration-200">
+                      <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-2 border-t-slate-900 animate-in fade-in zoom-in duration-200">
                         <button
                           onClick={() => { setCommentSort('newest'); setIsSortOpen(false); }}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs sm:text-sm font-bold uppercase tracking-widest transition-colors ${commentSort === 'newest' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                          className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'newest' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
-                          Newest First
+                          Newest
                         </button>
                         <button
                           onClick={() => { setCommentSort('liked'); setIsSortOpen(false); }}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs sm:text-sm font-bold uppercase tracking-widest transition-colors ${commentSort === 'liked' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                          className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'liked' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           Most Liked
                         </button>
@@ -282,64 +290,73 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
               {loadingComments && comments.length === 0 ? (
                 <div className="flex-grow flex items-center justify-center">
-                  <div className="animate-pulse font-black text-slate-200 text-base">LOADING...</div>
+                  <div className="animate-pulse font-black text-slate-300 text-2xl sm:text-3xl tracking-widest">LOADING...</div>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="flex-grow flex flex-col items-center justify-center py-8 text-center bg-white rounded-2xl border border-slate-100 shadow-sm px-4 overflow-hidden">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 flex-shrink-0">
-                    <MessageSquare size={32} className="text-slate-300" />
+                <div className="flex-grow flex flex-col items-center justify-center py-16 sm:py-24 text-center bg-white rounded-3xl sm:rounded-3xl border border-slate-200 shadow-sm px-6 overflow-hidden">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 bg-slate-100 rounded-full flex items-center justify-center mb-6 sm:mb-8 flex-shrink-0">
+                    <MessageSquare className="text-slate-400 w-12 h-12 sm:w-14 sm:h-14" />
                   </div>
-                  <p className="text-base font-black uppercase tracking-widest text-slate-400 mb-1">No comments yet</p>
+                  <p className="text-2xl sm:text-3xl font-black uppercase tracking-widest text-slate-500 mb-2">No comments yet</p>
                 </div>
               ) : (
-                <div
-                  ref={scrollRef}
-                  className="flex-grow min-h-0 overflow-y-auto pr-1 custom-scrollbar scroll-smooth touch-pan-y overscroll-contain"
-                >
-                  {comments.map(c => (
-                    <CommentItem
-                      key={c.id}
-                      comment={c}
-                      isLiked={likedCommentIds.has(c.id)}
-                      onLike={handleToggleCommentLike}
-                    />
-                  ))}
+                <div className="relative flex-grow min-h-0">
+                  <div
+                    ref={scrollRef}
+                    className="h-full overflow-y-auto pr-1 custom-scrollbar scroll-smooth touch-pan-y overscroll-contain"
+                  >
+                    {comments.map(c => (
+                      <CommentItem
+                        key={c.id}
+                        comment={c}
+                        isLiked={likedCommentIds.has(c.id)}
+                        onLike={handleToggleCommentLike}
+                      />
+                    ))}
+
+                    {/* Dummy pad to ensure last item clears the gradient */}
+                    <div className="h-12 flex-shrink-0" />
+                  </div>
+                  {isScrollable && (
+                    <div className="absolute bottom-0 left-0 right-1 h-16 sm:h-24 bg-gradient-to-t from-slate-100 via-slate-100/80 to-transparent pointer-events-none z-10" />
+                  )}
                 </div>
               )}
 
               {/* Input Area (Fixed inside current flex-grow container) */}
-              <div className="mt-4 flex-shrink-0 z-10 pt-2 border-t border-slate-100 bg-slate-50/50 backdrop-blur-[2px]">
+              <div className="mt-4 flex-shrink-0 z-10 pt-2 border-t border-slate-200 bg-slate-100/50 backdrop-blur-[2px]">
                 {user ? (
                   <form
                     onSubmit={handlePostComment}
                     className="flex gap-2 items-stretch"
                   >
                     <div className="relative flex-grow">
-                      <textarea
+                      <input
+                        type="text"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
+                          if (e.key === 'Enter') {
                             e.preventDefault();
                             handlePostComment(e);
                           }
                         }}
                         placeholder="Write a comment..."
-                        className="w-full bg-white border border-slate-100 rounded-2xl p-3 text-sm sm:text-base font-bold text-slate-700 resize-none outline-none focus:border-indigo-600 transition-all shadow-inner h-[68px]"
+                        className="w-full bg-white border border-slate-200 rounded-lg sm:rounded-xl px-4 sm:px-5 text-base sm:text-lg font-normal text-slate-800 outline-none focus:border-indigo-600 transition-all shadow-inner h-[48px] sm:h-[56px]"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={!newComment.trim() || isSubmitting}
-                      className={`aspect-square rounded-xl text-white transition-all active:scale-95 flex items-center justify-center h-[68px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-lg shadow-indigo-100' : 'bg-slate-200 cursor-not-allowed'
+                      className={`aspect-square rounded-lg sm:rounded-xl text-white transition-all active:scale-95 flex items-center justify-center h-[48px] sm:h-[56px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-xl shadow-indigo-200' : 'bg-slate-200 cursor-not-allowed'
                         }`}
                     >
-                      <Send size={20} />
+                      <Send className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                   </form>
                 ) : (
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">
+                  <div className="bg-slate-100 border border-slate-200 rounded-[1.25rem] p-6 sm:p-8 text-center">
+                    <p className="text-base sm:text-lg font-black uppercase tracking-widest text-slate-500">
                       Sign in to join the conversation
                     </p>
                   </div>
@@ -347,21 +364,16 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               </div>
             </div>
           )}
-
-          {/* Scroll Fade Indicator (only results or if results list scrollable) */}
-          {activeTab === 'results' && isScrollable && (
-            <div className="absolute bottom-0 left-0 right-1 h-12 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
-          )}
         </div>
 
         <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? 'hidden' : ''}`}>
           <div className="overflow-hidden">
-            <div className={`space-y-1.5 sm:space-y-2 pb-0.5 transition-all duration-500 ${activeTab === 'results' ? 'mt-0' : 'mt-4'}`}>
-              <button onClick={handleAuthorClick} className="w-full bg-slate-100 text-slate-800 py-3.5 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center gap-2">
-                <User size={18} fill="currentColor" /> More from this Creator
+            <div className={`space-y-2 sm:space-y-3 pb-0 transition-all duration-500 ${activeTab === 'results' ? 'mt-0' : 'mt-2'}`}>
+              <button onClick={handleAuthorClick} className="w-full bg-slate-200 text-slate-900 py-3.5 sm:py-3.5 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-300 transition-all active:scale-95 text-lg sm:text-sm flex items-center justify-center gap-2">
+                <User className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" /> More from this Creator
               </button>
 
-              <button onClick={onNext} className="w-full bg-slate-900 text-white py-5 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-base sm:text-lg shadow-xl shadow-slate-200">
+              <button onClick={onNext} className="w-full bg-slate-900 text-white py-4 sm:py-4 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 text-xl sm:text-base shadow-lg shadow-slate-200">
                 Another Puzzle
               </button>
             </div>

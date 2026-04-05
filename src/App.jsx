@@ -244,13 +244,13 @@ function App() {
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => setView('solve')}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'solve' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             SOLVE
           </button>
           <button
             onClick={() => { setPendingData(null); setView('create'); }}
-            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors py-1 ${view === 'create' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             CREATE
           </button>
@@ -262,7 +262,7 @@ function App() {
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="hidden md:flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                     {user.is_anonymous ? 'Playing as' : 'Logged in as'}
                   </span>
                   <span className="text-xs font-bold">
@@ -281,7 +281,7 @@ function App() {
                 ) : (
                   <button
                     onClick={() => signOut()}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
                   >
                     LOGOUT
                   </button>
@@ -333,7 +333,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => setView('create')}
-                  className="bg-white border-2 border-slate-100 text-slate-600 px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-colors hover:bg-slate-50"
+                  className="bg-white border-2 border-slate-200 text-slate-700 px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-colors hover:bg-slate-100"
                 >
                   Create One
                 </button>
