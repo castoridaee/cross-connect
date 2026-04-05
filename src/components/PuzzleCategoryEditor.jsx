@@ -38,17 +38,17 @@ export function PuzzleCategoryEditor({
   return (
     <>
       <div className="space-y-2">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Descriptions</p>
+        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Category Descriptions</p>
         {categories.map((cat, idx) => (
           <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
             <div className="flex gap-1.5 flex-wrap">
               {cat.words.map(w => (
-                <span key={w} className="bg-white px-1.5 py-0.5 rounded text-[9px] font-black tracking-tight border border-slate-200">{w}</span>
+                <span key={w} className="bg-white px-1.5 py-0.5 rounded text-xs font-black tracking-tight border border-slate-200">{w}</span>
               ))}
             </div>
             <input
               placeholder="Description"
-              className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-xs font-bold pb-0.5 transition-colors"
+              className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold pb-0.5 transition-colors"
               value={cat.description}
               onChange={e => {
                 const next = [...categories];
@@ -61,13 +61,13 @@ export function PuzzleCategoryEditor({
       </div>
 
       <div className="space-y-2 mt-4">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
+        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Word Bank (Drag to Reorder)</p>
         <WordBank>
           {wordOrder.map(w => <BankDraggableTile key={w} label={w} />)}
         </WordBank>
       </div>
 
-      <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100 mt-6">
+      <button disabled={isSubmitting} onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-700 transition-colors uppercase flex items-center justify-center gap-2 disabled:opacity-50 text-base shadow-lg shadow-indigo-100 mt-6">
         {isSubmitting ? 'SAVING...' : <><Save size={16} /> SUBMIT PUZZLE</>}
       </button>
     </>

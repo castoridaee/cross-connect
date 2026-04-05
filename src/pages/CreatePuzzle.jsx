@@ -212,6 +212,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
   }, [grid, step, statusMsg.type, statusMsg.text, detectGroups]);
 
   const goToStep2 = () => {
+    setStatusMsg({ type: '', text: '' });
     const words = Object.values(grid);
     if (words.length < 3) {
       setStatusMsg({ type: 'error', text: "Please add at least 3 words." });
@@ -350,19 +351,19 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
           ) : (
             <div className="w-6" />
           )}
-          <h2 className="text-xl font-black uppercase tracking-tight">
+          <h2 className="text-2xl font-black uppercase tracking-tight">
             {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
           </h2>
           <div className="w-12 flex justify-end">
             {isSaving ? (
               <div className="flex items-center gap-1.5 text-indigo-400">
                 <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest leading-none">Saving</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Saving</span>
               </div>
             ) : lastSavedAt ? (
               <div className="flex items-center gap-1.5 text-slate-300">
                 <Check size={10} strokeWidth={4} />
-                <span className="text-[8px] font-black uppercase tracking-widest leading-none">Draft Saved</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Draft Saved</span>
               </div>
             ) : (
               <div className="w-1.5 h-1.5 bg-slate-100 rounded-full" />
@@ -374,13 +375,13 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
           <div className={`mb-6 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
             }`}>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold uppercase tracking-wide">{statusMsg.text}</span>
+              <span className="text-sm font-bold uppercase tracking-wide">{statusMsg.text}</span>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {statusMsg.showClaim && (
                 <button
                   onClick={handleGoToAuth}
-                  className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+                  className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
                 >
                   Sign In to Claim
                 </button>
@@ -439,15 +440,15 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
       {editingCell && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Update Word</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Update Word</h3>
             <input
-              autoFocus className="w-full text-center text-3xl font-black uppercase tracking-tight border-b-4 border-indigo-500 outline-none pb-2 mb-2"
+              autoFocus className="w-full text-center text-4xl font-black uppercase tracking-tight border-b-4 border-indigo-500 outline-none pb-2 mb-2"
               value={editingCell.val} onChange={e => setEditingCell({ ...editingCell, val: e.target.value, error: '' })}
               onKeyDown={e => e.key === 'Enter' && saveCell()}
             />
 
             {editingCell.error && (
-              <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center mb-4 animate-in fade-in slide-in-from-top-1">
+              <p className="text-red-500 text-xs font-black uppercase tracking-widest text-center mb-4 animate-in fade-in slide-in-from-top-1">
                 {editingCell.error}
               </p>
             )}

@@ -39,14 +39,14 @@ export function PuzzleGridEditor({
   return (
     <>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
+        <label className="text-xs font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Title"
-          className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
+          className="text-3xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
         />
-        <p className="text-[10px] sm:text-xs font-bold text-slate-400 mt-1 italic">
+        <p className="text-xs sm:text-sm font-bold text-slate-400 mt-1 italic">
           {('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'Tap' : 'Click'} the black grid below to start adding words.
         </p>
       </div>
@@ -76,14 +76,14 @@ export function PuzzleGridEditor({
 
         <div className="flex flex-wrap justify-center gap-6 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Height</span>
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Height</span>
             <div className="flex gap-1">
               <button onClick={() => resize('rows', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
               <button onClick={() => resize('rows', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</span>
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Width</span>
             <div className="flex gap-1">
               <button onClick={() => resize('cols', -1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Minus size={14} /></button>
               <button onClick={() => resize('cols', 1, 'end')} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm"><Plus size={14} /></button>
