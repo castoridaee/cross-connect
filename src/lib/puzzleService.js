@@ -1,4 +1,177 @@
 import { supabase } from './supabase';
+import { 
+  RegExpMatcher, 
+  englishDataset, 
+  englishRecommendedTransformers,
+  DataSet,
+  pattern as obscenityPattern
+} from 'obscenity';
+
+// 1. Configure the dataset with our custom whitelist
+const dataset = new DataSet().addAll(englishDataset);
+
+// Terms to allow (remove from profanity list)
+const allowedTerms = [
+  'boob', 'boobs', 'butt', 'booty', 'chest', 'nipple', 'nipples', 
+  'crotch', 'rear', 'anus', 'pubic', 'ass', 'tit', 'hell', 
+  'damn', 'darn', 'crap', 'piss'
+];
+
+dataset.removePhrasesIf(phrase => {
+  const word = phrase.metadata?.originalWord?.toLowerCase();
+  return allowedTerms.includes(word);
+});
+
+// 2. Supplement with missing serious slurs that should ALWAYS be blocked
+const extraSlurs = [
+  'wetback'
+];
+
+extraSlurs.forEach(word => {
+  dataset.addPhrase(phrase => 
+    phrase.setMetadata({ originalWord: word }).addPattern(obscenityPattern`|${word}|`)
+  );
+});
+
+// Add Scunthorpe protection (e.g., "a bit")
+dataset.addPhrase(phrase => phrase.addWhitelistedTerm('a bit'));
+
+const matcher = new RegExpMatcher({
+  ...dataset.build(),
+  ...englishRecommendedTransformers,
+});
+
+// Patterns for directed insults (stealth shadowblock)
+const directedInsultPatterns = [
+  /(yo?u['’]?(re|r|ar)?|yo?ur|ur|this(\s+puzzle)?)\s+(are|r|is|s|an?)?\s*(ga+y|idiot|dumb|dummy|stupid|trash|garbage|terrible|awful|cr+ap|shit)/i,
+  /(yo?u['’]?(re|r|ar)?|yo?ur|ur|this(\s+puzzle)?)\s+su+cks?/i,
+  /(yo?u['’]?(re|r|ar)?|ur|yo?ur)\s+ga+y/i
+];
+
+// 3. Advanced standalone word filter for comments
+// Uses obscenity engine to catch variations (leet-speak) of mildly toxic standalone words.
+const singleWordDataset = new DataSet();
+[
+  'sucks', 'gay', 'damn', 'crap', 'stupid', 'idiot', 'dumb', 
+  'trash', 'garbage', 'awful', 'terrible', 'bad', 'worst', 'lame', 'boring', 'sux'
+].forEach(word => {
+  singleWordDataset.addPhrase(phrase => 
+    phrase.setMetadata({ originalWord: word }).addPattern(obscenityPattern`|${word}|`)
+  );
+});
+
+const singleWordMatcher = new RegExpMatcher({
+  ...singleWordDataset.build(),
+  ...englishRecommendedTransformers,
+});
+
+function checkProfanity(text, isComment = false) {
+  if (!text) return false;
+  
+  const trimmed = text.trim();
+
+  // 1. Aggressive single-word check (only for standalone comments)
+  // Uses obscenity engine to catch "suuuucks", "sux", etc.
+  if (isComment && !trimmed.includes(' ')) {
+    if (singleWordMatcher.hasMatch(trimmed)) return true;
+  }
+
+  // 2. Standard profanity (respecting our modified dataset)
+  if (matcher.hasMatch(text)) return true;
+
+  // 3. Directed insults
+  if (directedInsultPatterns.some(pattern => pattern.test(text))) return true;
+
+  return false;
+}
+
+function checkPuzzleContent(puzzleData) {
+  // 1. Check Title and Description
+  if (checkProfanity(puzzleData.title)) return true;
+  if (checkProfanity(puzzleData.description)) return true;
+
+  // 2. Check Categories JSONB
+  if (puzzleData.categories && Array.isArray(puzzleData.categories)) {
+    for (const cat of puzzleData.categories) {
+      // Descriptions get full check
+      if (checkProfanity(cat.description)) return true;
+      
+      // Individual words only get slurry check (allow "sux", "lame", etc. on tiles)
+      if (cat.words && Array.isArray(cat.words)) {
+        for (const word of cat.words) {
+          if (matcher.hasMatch(word)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function detectSwastikaPattern(grid, rows, cols) {
+  if (!grid || rows < 5 || cols < 5) return false;
+
+  // Standard right-facing swastika pattern (5x5)
+  // 1 = occupied, 0 = empty
+  // 1 0 1 1 1
+  // 1 0 1 0 0
+  // 1 1 1 1 1
+  // 0 0 1 0 1
+  // 1 1 1 0 1
+  const pattern = [
+    [1, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0],
+    [1, 1, 1, 1, 1],
+    [0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 1]
+  ];
+
+  // Inverse pattern (1s and 0s flipped - check if empty space forms it)
+  const inversePattern = pattern.map(row => row.map(cell => cell === 1 ? 0 : 1));
+
+  const checkAt = (startR, startC, targetPattern) => {
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const cellValue = grid[`${startR + r}-${startC + c}`] ? 1 : 0;
+        if (cellValue !== targetPattern[r][c]) return false;
+      }
+    }
+    return true;
+  };
+
+  // Scan all 5x5 windows
+  for (let r = 0; r <= rows - 5; r++) {
+    for (let c = 0; c <= cols - 5; c++) {
+      if (checkAt(r, c, pattern) || checkAt(r, c, inversePattern)) return true;
+    }
+  }
+
+  return false;
+}
+
+async function recordShadowban(userId, severity = 'content') {
+  if (!userId) return;
+  
+  const updates = {
+    shadowban_total: supabase.rpc('increment', { row_id: userId, table_name: 'profiles', column_name: 'shadowban_total' })
+  };
+
+  if (severity === 'hard') {
+    updates.is_hard_shadowbanned = true;
+  }
+
+  // Increment shadowban count and potentially set hard shadowban
+  const { data: profile } = await getProfile(userId);
+  const newCount = (profile?.shadowban_total || 0) + 1;
+  const isHard = profile?.is_hard_shadowbanned || severity === 'hard';
+
+  await supabase
+    .from('profiles')
+    .update({ 
+      shadowban_total: newCount,
+      is_hard_shadowbanned: isHard
+    })
+    .eq('id', userId);
+}
 
 // Helper to retry transient Safari/Networking errors (Load failed)
 const withRetry = async (fn, retries = 1) => {
@@ -40,22 +213,69 @@ export async function recordPuzzleSolve(userId, puzzleId, stats) {
 }
 
 export async function createPuzzle(puzzleData) {
+  const { data: profile } = await getProfile(puzzleData.created_by);
+  let shouldShadowban = profile?.is_hard_shadowbanned || false;
+  let isHard = false;
+
+  // Check content deeply
+  if (checkPuzzleContent(puzzleData)) {
+    shouldShadowban = true;
+  }
+
+  // Check grid pattern
+  if (detectSwastikaPattern(puzzleData.grid_state, puzzleData.rows, puzzleData.cols)) {
+    shouldShadowban = true;
+    isHard = true;
+  }
+
+  const finalPuzzleData = {
+    ...puzzleData,
+    is_shadowbanned: shouldShadowban
+  };
+
   const { data, error } = await supabase
     .from('puzzles')
-    .insert([puzzleData])
+    .insert([finalPuzzleData])
     .select()
     .single();
+
+  if (!error && shouldShadowban) {
+    await recordShadowban(puzzleData.created_by, isHard ? 'hard' : 'content');
+  }
 
   return { data, error };
 }
 
 export async function updatePuzzle(id, data) {
+  const { data: profile } = await getProfile(data.created_by);
+  let shouldShadowban = profile?.is_hard_shadowbanned || false;
+  let isHard = false;
+
+  if (checkPuzzleContent(data)) {
+    shouldShadowban = true;
+  }
+
+  if (data.grid_state && detectSwastikaPattern(data.grid_state, data.rows, data.cols)) {
+    shouldShadowban = true;
+    isHard = true;
+  }
+
+  const finalData = {
+    ...data,
+    is_shadowbanned: shouldShadowban
+  };
+
   const { data: updatedData, error } = await supabase
     .from('puzzles')
-    .update(data)
+    .update(finalData)
     .eq('id', id)
     .select()
     .single();
+
+  if (!error && shouldShadowban) {
+    await recordShadowban(data.created_by, isHard ? 'hard' : 'content');
+  }
+
   return { data: updatedData, error };
 }
 
@@ -318,15 +538,23 @@ export async function getComments(puzzleId, sortBy = 'newest') {
 }
 
 export async function addComment(puzzleId, userId, content) {
+  const { data: profile } = await getProfile(userId);
+  const shouldShadowban = profile?.is_hard_shadowbanned || checkProfanity(content, true);
+
   const { data, error } = await supabase
     .from('comments')
     .insert([{
       puzzle_id: puzzleId,
       user_id: userId,
-      content: content
+      content: content,
+      is_shadowbanned: shouldShadowban
     }])
     .select('*, author:profiles!user_id(nickname)')
     .single();
+
+  if (!error && shouldShadowban) {
+    await recordShadowban(userId, 'content');
+  }
 
   return { data, error };
 }

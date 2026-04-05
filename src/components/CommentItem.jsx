@@ -2,7 +2,7 @@ import React from 'react';
 import { Heart, User } from 'lucide-react';
 
 export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
-  const { author, content, created_at, likes_count } = comment;
+  const { author, content, created_at, likes_count, is_shadowbanned } = comment;
 
   const formatDistanceToNow = (date) => {
     const diff = new Date() - new Date(date);
