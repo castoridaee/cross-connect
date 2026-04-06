@@ -39,24 +39,21 @@ export function PuzzleGridEditor({
   return (
     <>
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-black uppercase tracking-widest text-slate-400">Puzzle Title</label>
+        {/* <label className="text-xs font-black uppercase tracking-widest text-slate-400">Puzzle Title</label> */}
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="Title"
-          className="text-3xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
+          placeholder="Enter puzzle title"
+          className="text-2xl font-black border-b-4 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors tracking-tight"
         />
         <p className="text-xs sm:text-sm font-bold text-slate-400 mt-1 italic">
           {('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'Tap' : 'Click'} the black grid below to start adding words.
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-4 mt-4">
-        <div className="w-full relative px-0 mb-4">
-          <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none opacity-50" />
-          <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none opacity-50" />
-
-          <div className="overflow-x-auto pb-4 custom-scrollbar text-center">
+      <div className="flex flex-col items-center gap-0 mt-4">
+        <div className="w-full relative px-0">
+          <div className="overflow-x-auto pb-1 custom-scrollbar text-center">
             <div className="inline-block min-w-max mx-auto">
               <div className="relative">
                 <div className="grid gap-0 border-t-2 border-l-2 border-black relative" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>

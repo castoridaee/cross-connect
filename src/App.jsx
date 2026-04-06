@@ -7,6 +7,7 @@ import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
+import logo from './assets/logo.svg';
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -235,7 +236,7 @@ function App() {
         {/* Left Section: Logo */}
         <div className="flex-1 flex justify-start">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('solve')}>
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-xl">C</div>
+            <img src={logo} alt="Cross Connect Logo" className="w-8 h-8 object-contain" />
             <span className="font-black uppercase tracking-tighter text-sm max-w-[85px] leading-[0.85] hidden sm:block">Cross Connect</span>
           </div>
         </div>

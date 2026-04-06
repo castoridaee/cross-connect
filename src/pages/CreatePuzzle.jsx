@@ -264,9 +264,9 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
       Array.from({ length: cols }, (_, c) => grid[`${r}-${c}`] ? 1 : 0)
     );
 
-    const defaultTitle = new Date().toLocaleString([], { 
-      month: 'short', day: 'numeric', year: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
+    const defaultTitle = new Date().toLocaleString([], {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
 
     const puzzleData = {
@@ -295,9 +295,9 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
           // Regex for full word match
           const regex = new RegExp(`\\b${forbidden}\\b`, 'i');
           if (regex.test(desc)) {
-            setStatusMsg({ 
-              type: 'error', 
-              text: `Category description cannot contain the word "${word}"` 
+            setStatusMsg({
+              type: 'error',
+              text: `Category description cannot contain the word "${word}"`
             });
             setIsSubmitting(false);
             return;
@@ -306,7 +306,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
       }
     }
 
-    const { data, error } = editingId 
+    const { data, error } = editingId
       ? await updatePuzzle(editingId, puzzleData)
       : await createPuzzle(puzzleData);
 
@@ -344,99 +344,99 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
   return (
     <div className="min-h-screen p-4 sm:p-10 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-          {step === 2 ? (
-            <button onClick={() => setStep(1)} className="text-slate-400 hover:text-slate-600 transition-colors">
-              <ChevronLeft size={24} />
-            </button>
+        {step === 2 ? (
+          <button onClick={() => setStep(1)} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <ChevronLeft size={24} />
+          </button>
+        ) : (
+          <div className="w-6" />
+        )}
+        <h2 className="text-2xl font-black uppercase tracking-tight">
+          {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
+        </h2>
+        <div className="w-12 flex justify-end">
+          {isSaving ? (
+            <div className="flex items-center gap-1.5 text-indigo-400">
+              <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Saving</span>
+            </div>
+          ) : lastSavedAt ? (
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <Check size={10} strokeWidth={4} />
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Draft Saved</span>
+            </div>
           ) : (
-            <div className="w-6" />
+            <div className="w-1.5 h-1.5 bg-slate-100 rounded-full" />
           )}
-          <h2 className="text-2xl font-black uppercase tracking-tight">
-            {step === 1 ? 'Design Your Grid' : 'Finalize & Describe'}
-          </h2>
-          <div className="w-12 flex justify-end">
-            {isSaving ? (
-              <div className="flex items-center gap-1.5 text-indigo-400">
-                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Saving</span>
-              </div>
-            ) : lastSavedAt ? (
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Check size={10} strokeWidth={4} />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Draft Saved</span>
-              </div>
-            ) : (
-              <div className="w-1.5 h-1.5 bg-slate-100 rounded-full" />
+        </div>
+      </div>
+
+      {statusMsg.text && (
+        <div className={`mb-6 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
+          }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold uppercase tracking-wide">{statusMsg.text}</span>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {statusMsg.showClaim && (
+              <button
+                onClick={handleGoToAuth}
+                className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+              >
+                Sign In to Claim
+              </button>
             )}
+            <button onClick={() => setStatusMsg({ type: '', text: '' })} className="text-slate-400 hover:text-slate-600 ml-auto">
+              <X size={16} />
+            </button>
           </div>
         </div>
+      )}
 
-        {statusMsg.text && (
-          <div className={`mb-6 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'
-            }`}>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold uppercase tracking-wide">{statusMsg.text}</span>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              {statusMsg.showClaim && (
-                <button
-                  onClick={handleGoToAuth}
-                  className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
-                >
-                  Sign In to Claim
-                </button>
-              )}
-              <button onClick={() => setStatusMsg({ type: '', text: '' })} className="text-slate-400 hover:text-slate-600 ml-auto">
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+      {isPublishSuccess && (
+        <PublishSuccessModal
+          isAnonymous={!user || user.is_anonymous}
+          onSignIn={() => {
+            const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
+            onRequireAuth({ ...data, mode: 'login' });
+          }}
+          onSignUp={() => {
+            const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
+            onRequireAuth({ ...data, mode: 'signup' });
+          }}
+          onClose={handleModalClose}
+        />
+      )}
 
-        {isPublishSuccess && (
-          <PublishSuccessModal
-            isAnonymous={!user || user.is_anonymous}
-            onSignIn={() => {
-              const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
-              onRequireAuth({ ...data, mode: 'login' });
-            }}
-            onSignUp={() => {
-              const data = { step, title, rows, cols, grid, categories, wordOrder, publishedId };
-              onRequireAuth({ ...data, mode: 'signup' });
-            }}
-            onClose={handleModalClose}
+      <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
+        {step === 1 ? (
+          <PuzzleGridEditor
+            title={title}
+            setTitle={setTitle}
+            rows={rows}
+            cols={cols}
+            grid={grid}
+            handleCellClick={handleCellClick}
+            resize={resize}
+            goToStep2={goToStep2}
+          />
+        ) : (
+          <PuzzleCategoryEditor
+            categories={categories}
+            setCategories={setCategories}
+            wordOrder={wordOrder}
+            isSubmitting={isSubmitting}
+            handleSubmit={handleSubmit}
           />
         )}
-
-        <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
-          {step === 1 ? (
-            <PuzzleGridEditor
-              title={title}
-              setTitle={setTitle}
-              rows={rows}
-              cols={cols}
-              grid={grid}
-              handleCellClick={handleCellClick}
-              resize={resize}
-              goToStep2={goToStep2}
-            />
-          ) : (
-            <PuzzleCategoryEditor
-              categories={categories}
-              setCategories={setCategories}
-              wordOrder={wordOrder}
-              isSubmitting={isSubmitting}
-              handleSubmit={handleSubmit}
-            />
+        <DragOverlay>
+          {activeDrag && (
+            <div className="opacity-80 scale-105">
+              <WordTile label={activeDrag.word} variant="active" />
+            </div>
           )}
-          <DragOverlay>
-            {activeDrag && (
-              <div className="opacity-80 scale-105">
-                <WordTile label={activeDrag.word} variant="active" />
-              </div>
-            )}
-          </DragOverlay>
-        </DndContext>
+        </DragOverlay>
+      </DndContext>
       {editingCell && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
