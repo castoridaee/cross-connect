@@ -10,6 +10,7 @@ import { SuccessModal } from '../components/SuccessModal';
 import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
+import Avatar from "boring-avatars";
 
 export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress, onNext }) {
   const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onReset, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
@@ -108,6 +109,15 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">By</span>
+            {puzzle.created_by && (
+              <Avatar
+                size={20}
+                name={puzzle.created_by}
+                variant="beam"
+                colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+                square
+              />
+            )}
             {puzzle.created_by ? (
               <button
                 onClick={() => onAuthorClick(puzzle.created_by)}

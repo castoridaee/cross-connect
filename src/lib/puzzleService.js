@@ -514,16 +514,37 @@ const dailyPuzzlesMapping = parseDailyPuzzles(dailyPuzzlesCsv);
 
 export async function getRecommendedPuzzle(userId) {
   const TUTORIAL_PUZZLE_ID = '1834b762-a70b-4dcc-9403-e40d55f5ab07';
+  const TUTORIAL_PUZZLE_2_ID = '1d8fc212-534a-4fe0-8e40-f7471b752bc7';
   let skipToStandard = false;
   
   // --- STAGE 1: TUTORIAL ---
   if (userId) {
-    const { data: prog } = await getPuzzleProgress(userId, TUTORIAL_PUZZLE_ID);
-    if (prog?.is_skipped) {
-      skipToStandard = true;
-    } else if (prog?.status !== 'solved') {
-      const res = await getPuzzle(TUTORIAL_PUZZLE_ID);
-      if (res.data) return res;
+    // 0. Experience Check: If the user has solved *any* puzzle beside the tutorials, skip Stage 1
+    const { data: history } = await supabase
+      .from('user_progress')
+      .select('puzzle_id')
+      .eq('user_id', userId)
+      .eq('status', 'solved')
+      .not('puzzle_id', 'in', `(${TUTORIAL_PUZZLE_ID},${TUTORIAL_PUZZLE_2_ID})`)
+      .limit(1);
+
+    if (!history || history.length === 0) {
+      const { data: prog1 } = await getPuzzleProgress(userId, TUTORIAL_PUZZLE_ID);
+      
+      // 1. If T1 is not solved AND not skipped -> Show T1
+      if (prog1?.status !== 'solved' && !prog1?.is_skipped) {
+        const res = await getPuzzle(TUTORIAL_PUZZLE_ID);
+        if (res.data) return res;
+      }
+
+      // 2. If T1 is solved/skipped, move to T2
+      const { data: prog2 } = await getPuzzleProgress(userId, TUTORIAL_PUZZLE_2_ID);
+      if (prog2?.is_skipped) {
+        skipToStandard = true;
+      } else if (prog2?.status !== 'solved') {
+        const res = await getPuzzle(TUTORIAL_PUZZLE_2_ID);
+        if (res.data) return res;
+      }
     }
   } else {
     // Guest: Always show tutorial first

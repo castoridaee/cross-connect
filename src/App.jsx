@@ -8,6 +8,7 @@ import AuthorProfile from './pages/AuthorProfile';
 import { generateAnonymousName } from './utils/nameGenerator';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
 import logo from './assets/logo.svg';
+import Avatar from "boring-avatars";
 
 function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -262,6 +263,13 @@ function App() {
           <div className="flex items-center gap-2 sm:gap-2">
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
+                <Avatar
+                  size={32}
+                  name={user.id}
+                  variant="beam"
+                  colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+                  square
+                />
                 <div className="hidden md:flex flex-col items-end">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                     {user.is_anonymous ? 'Playing as' : 'Logged in as'}

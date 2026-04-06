@@ -7,6 +7,7 @@ import { PuzzleCard } from '../components/PuzzleCard';
 import { PuzzleOptionsModal } from '../components/PuzzleOptionsModal';
 import { ProfileSettingsModal } from '../components/ProfileSettingsModal';
 import { CommentItem } from '../components/CommentItem';
+import Avatar from "boring-avatars";
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
   const [profile, setProfile] = useState(null);
@@ -203,9 +204,13 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             <Settings size={18} />
           </button>
         )}
-        <div className="w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
-          <User size={40} />
-        </div>
+        <Avatar
+          size={80}
+          name={authorId}
+          variant="beam"
+          colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+          square
+        />
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 capitalize">
             {profile?.nickname || generateAnonymousName(authorId)}

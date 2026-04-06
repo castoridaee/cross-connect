@@ -1,8 +1,10 @@
 import React from 'react';
-import { Heart, User } from 'lucide-react';
+import Avatar from "boring-avatars";
+import { Heart } from 'lucide-react';
 
 export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
   const { author, content, created_at, likes_count, is_shadowbanned } = comment;
+  const avatarColors = ["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"];
 
   const formatDistanceToNow = (date) => {
     const diff = new Date() - new Date(date);
@@ -35,9 +37,13 @@ export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
     <div className="bg-white p-5 sm:p-4 rounded-3xl sm:rounded-2xl border border-slate-200 shadow-sm mb-4 sm:mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-            <User className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
+          <Avatar
+            size={Math.min(window.innerWidth < 640 ? 48 : 64, 64)}
+            name={author?.id || 'anonymous'}
+            variant="beam"
+            colors={avatarColors}
+            square
+          />
           <div className="flex flex-col justify-center gap-2 sm:gap-2 text-left">
             <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 leading-none">
               {author?.nickname || 'Anonymous'}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { updateProfile } from '../lib/puzzleService';
+import Avatar from "boring-avatars";
 
 export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
   const [preference, setPreference] = useState(profile?.difficulty_preference || 0);
@@ -38,7 +39,16 @@ export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
       <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in duration-200" onClick={onClose} />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-3xl shadow-2xl z-50 p-6 animate-in zoom-in duration-200">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-black tracking-tight text-slate-900">Profile Settings</h2>
+          <div className="flex items-center gap-3">
+            <Avatar
+              size={32}
+              name={profile.id}
+              variant="beam"
+              colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+              square
+            />
+            <h2 className="text-xl font-black tracking-tight text-slate-900">Profile Settings</h2>
+          </div>
           <button
             onClick={onClose}
             className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
