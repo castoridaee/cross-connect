@@ -2,9 +2,10 @@ import React from 'react';
 import Avatar from "boring-avatars";
 import { Heart } from 'lucide-react';
 
-export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
+export const CommentItem = ({ comment, isLiked, onLike, userId }) => {
   const { author, content, created_at, likes_count, is_shadowbanned } = comment;
   const avatarColors = ["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"];
+  const isAuthor = userId && author?.id && userId === author.id;
 
   const formatDistanceToNow = (date) => {
     const diff = new Date() - new Date(date);
@@ -53,15 +54,17 @@ export const CommentItem = ({ comment, isLiked, onLike, currentUsername }) => {
             </span>
           </div>
         </div>
-        <button 
-          onClick={() => onLike(comment.id)}
-          className={`flex items-center gap-2 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-xl transition-all active:scale-95 ${
-            isLiked ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-base sm:text-lg font-black">{likes_count || 0}</span>
-        </button>
+        {!isAuthor && (
+          <button 
+            onClick={() => onLike(comment.id)}
+            className={`flex items-center gap-2 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-xl transition-all active:scale-95 ${
+              isLiked ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-base sm:text-lg font-black">{likes_count || 0}</span>
+          </button>
+        )}
       </div>
       <p className="text-base sm:text-lg font-normal text-slate-600 leading-relaxed">
         {renderContent(content)}

@@ -633,7 +633,7 @@ export async function addComment(puzzleId, userId, content) {
       content: content,
       is_shadowbanned: shouldShadowban
     }])
-    .select('*, author:profiles!user_id(nickname)')
+    .select('*, author:profiles!user_id(id, nickname)')
     .single();
 
   if (!error && shouldShadowban) {

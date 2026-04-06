@@ -178,13 +178,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
         {/* Top-right quick actions */}
         <div className={`absolute right-2 top-2 sm:right-3 sm:top-3 flex gap-1 z-20 transition-all duration-300 ${activeTab === 'comments' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          <button
-            onClick={handleLike}
-            className={`p-2 rounded-xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-600 hover:bg-slate-100'}`}
-            title={isLiked ? "Unlike" : "Like"}
-          >
-            <Heart size={24} fill={isLiked ? "currentColor" : "none"} strokeWidth={2.5} />
-          </button>
+          {user?.id !== puzzle.created_by && (
+            <button
+              onClick={handleLike}
+              className={`p-2 rounded-xl transition-all active:scale-90 ${isLiked ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-600 hover:bg-slate-100'}`}
+              title={isLiked ? "Unlike" : "Like"}
+            >
+              <Heart size={24} fill={isLiked ? "currentColor" : "none"} strokeWidth={2.5} />
+            </button>
+          )}
           <button
             onClick={handleShare}
             className="p-2 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:bg-slate-100 rounded-xl"
@@ -311,6 +313,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                         comment={c}
                         isLiked={likedCommentIds.has(c.id)}
                         onLike={handleToggleCommentLike}
+                        userId={user?.id}
                       />
                     ))}
 
