@@ -314,6 +314,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                         isLiked={likedCommentIds.has(c.id)}
                         onLike={handleToggleCommentLike}
                         userId={user?.id}
+                        puzzleAuthorId={puzzle.created_by}
                       />
                     ))}
 

@@ -17,16 +17,13 @@ export const PublishSuccessModal = ({ isAnonymous, onSignIn, onSignUp, onClose }
         {/* Close button */}
         <button 
           onClick={onClose}
-          className="absolute right-6 top-6 text-slate-400 hover:text-slate-600 transition-colors p-1"
+          className="absolute left-6 top-6 text-slate-400 hover:text-slate-600 transition-colors p-1"
           aria-label="Close"
         >
           <X size={20} strokeWidth={2.5} />
         </button>
 
         <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={32} strokeWidth={2.5} />
-          </div>
 
           <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Puzzle Published!</h2>
           

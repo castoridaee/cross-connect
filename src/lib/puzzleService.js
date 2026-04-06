@@ -654,7 +654,7 @@ export async function toggleCommentLike(commentId, userId) {
 export async function getUserComments(userId) {
   const { data, error } = await supabase
     .from('comments')
-    .select('*, puzzle:puzzles(id, title, description, categories)')
+    .select('*, puzzle:puzzles(id, title, description, categories, created_by)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -665,7 +665,7 @@ export async function getUserMentions(nickname) {
   const mentionPattern = `@${nickname}`;
   const { data, error } = await supabase
     .from('comments')
-    .select('*, author:profiles!user_id(nickname), puzzle:puzzles(id, title, description, categories)')
+    .select('*, author:profiles!user_id(nickname), puzzle:puzzles(id, title, description, categories, created_by)')
     .ilike('content', `%${mentionPattern}%`)
     .order('created_at', { ascending: false });
   return { data, error };

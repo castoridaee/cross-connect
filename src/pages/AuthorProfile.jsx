@@ -334,6 +334,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                     isLiked={likedCommentIds.has(c.id)}
                     onLike={handleToggleCommentLike}
                     userId={currentUser?.id}
+                    puzzleAuthorId={c.puzzle?.created_by}
                   />
                 </div>
               ))
@@ -362,6 +363,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                     isLiked={likedCommentIds.has(c.id)}
                     onLike={handleToggleCommentLike}
                     userId={currentUser?.id}
+                    puzzleAuthorId={c.puzzle?.created_by}
                   />
                 </div>
               ))

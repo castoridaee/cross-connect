@@ -3,7 +3,7 @@ import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay } from '@
 import { WordTile } from '../components/WordTile';
 import { WordBank } from '../components/WordBank';
 
-import { createPuzzle, updatePuzzle, clearPuzzleProgress } from '../lib/puzzleService';
+import { createPuzzle, updatePuzzle, clearPuzzleProgress, addComment } from '../lib/puzzleService';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Plus, Minus, X, Save, Trash2, Check } from 'lucide-react';
 import { PublishSuccessModal } from '../components/PublishSuccessModal';
@@ -28,6 +28,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
   const [publishedId, setPublishedId] = useState(initialData?.publishedId || null);
   const [isPublishSuccess, setIsPublishSuccess] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+  const [initialComment, setInitialComment] = useState('');
   const { editingId, isSaving, lastSavedAt } = usePuzzleDraft({
     user,
     initialData,
@@ -306,9 +307,13 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
       }
     }
 
-    const { data, error } = editingId
+    const { data: result, error } = editingId
       ? await updatePuzzle(editingId, puzzleData)
       : await createPuzzle(puzzleData);
+
+    if (result && !error && initialComment.trim() && user?.id) {
+      await addComment(result.id, user.id, initialComment.trim());
+    }
 
     if (editingId && !error) {
       await clearPuzzleProgress(editingId);
@@ -318,7 +323,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
       setStatusMsg({ type: 'error', text: "Error saving puzzle: " + error.message });
       setIsSubmitting(false);
     } else {
-      if (data) setPublishedId(data.id);
+      if (result) setPublishedId(result.id);
       setIsPublishSuccess(true);
       setIsSubmitting(false);
     }
@@ -427,6 +432,8 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
             wordOrder={wordOrder}
             isSubmitting={isSubmitting}
             handleSubmit={handleSubmit}
+            initialComment={initialComment}
+            setInitialComment={setInitialComment}
           />
         )}
         <DragOverlay>

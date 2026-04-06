@@ -2,10 +2,11 @@ import React from 'react';
 import Avatar from "boring-avatars";
 import { Heart } from 'lucide-react';
 
-export const CommentItem = ({ comment, isLiked, onLike, userId }) => {
+export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }) => {
   const { author, content, created_at, likes_count, is_shadowbanned } = comment;
   const avatarColors = ["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"];
   const isAuthor = userId && author?.id && userId === author.id;
+  const isPuzzleAuthor = puzzleAuthorId && author?.id && author.id === puzzleAuthorId;
 
   const formatDistanceToNow = (date) => {
     const diff = new Date() - new Date(date);
@@ -49,9 +50,16 @@ export const CommentItem = ({ comment, isLiked, onLike, userId }) => {
             <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 leading-none">
               {author?.nickname || 'Anonymous'}
             </span>
-            <span className="text-sm sm:text-base font-bold text-slate-500 tracking-tight leading-none">
-              {formatDistanceToNow(created_at)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm sm:text-base font-bold text-slate-500 tracking-tight leading-none">
+                {formatDistanceToNow(created_at)}
+              </span>
+              {isPuzzleAuthor && (
+                 <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-indigo-200">
+                   Creator
+                 </span>
+              )}
+            </div>
           </div>
         </div>
         {!isAuthor && (
