@@ -66,11 +66,13 @@ export function PuzzleCategoryEditor({
         <div className="space-y-2">
           <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Post a Comment</p>
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3">
-            <textarea
+            <input
+              type="text"
               value={initialComment}
               onChange={e => setInitialComment(e.target.value)}
-              placeholder="Optional: add in a comment to show up after the puzzle is solved. For example, to give any commentary on this puzzle, or to leave a message for the people who solve it."
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-indigo-500 transition-all min-h-[100px] resize-none"
+              maxLength={1000}
+              placeholder="Optional: add in a comment to show up after the puzzle is solved."
+              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-indigo-500 transition-all shadow-inner"
             />
           </div>
         </div>

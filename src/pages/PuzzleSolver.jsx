@@ -123,7 +123,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                 onClick={() => onAuthorClick(puzzle.created_by)}
                 className="text-indigo-600 hover:text-indigo-800 font-bold transition-colors underline decoration-2 underline-offset-4"
               >
-                {puzzle.author?.nickname || generateAnonymousName(puzzle.created_by)}
+                {puzzle.author?.username || generateAnonymousName(puzzle.created_by)}
               </button>
             ) : (
               <span className="text-slate-900 font-bold">{generateAnonymousName(puzzle.id)}</span>

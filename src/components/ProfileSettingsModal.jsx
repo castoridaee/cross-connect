@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { updateProfile } from '../lib/puzzleService';
+import { updateProfile, validateUsername } from '../lib/puzzleService';
 import Avatar from "boring-avatars";
 
 export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
+  const [username, setUsername] = useState(profile?.username || '');
   const [preference, setPreference] = useState(profile?.difficulty_preference || 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,7 +21,13 @@ export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
     setLoading(true);
     setError(null);
     try {
+      if (username !== profile.username) {
+        const validation = await validateUsername(username);
+        if (!validation.valid) throw new Error(validation.error);
+      }
+
       const { data, error: updateErr } = await updateProfile(profile.id, {
+        username,
         difficulty_preference: preference,
       });
       if (updateErr) throw updateErr;
@@ -55,6 +62,20 @@ export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
           >
             <X size={20} />
           </button>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">
+            Username
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 outline-none focus:border-indigo-500 transition-all font-bold text-sm"
+            placeholder="Choose a username"
+          />
+          <p className="text-[9px] text-slate-400 mt-2 ml-1 font-bold">No spaces, 3-30 characters.</p>
         </div>
 
         <div className="mb-6">

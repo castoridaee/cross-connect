@@ -330,34 +330,43 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               {/* Input Area (Fixed inside current flex-grow container) */}
               <div className="mt-4 flex-shrink-0 z-10 pt-2 border-t border-slate-200 bg-slate-100/50 backdrop-blur-[2px]">
                 {user ? (
-                  <form
-                    onSubmit={handlePostComment}
-                    className="flex gap-2 items-stretch"
-                  >
-                    <div className="relative flex-grow">
-                      <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handlePostComment(e);
-                          }
-                        }}
-                        placeholder="Write a comment..."
-                        className="w-full bg-white border border-slate-200 rounded-lg sm:rounded-xl px-4 sm:px-5 text-base sm:text-lg font-normal text-slate-800 outline-none focus:border-indigo-600 transition-all shadow-inner h-[48px] sm:h-[56px]"
-                      />
+                  comments.length >= 100 ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl p-4 text-center">
+                      <p className="text-sm sm:text-base font-black uppercase tracking-widest text-slate-400">
+                        Comment limit reached (100)
+                      </p>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={!newComment.trim() || isSubmitting}
-                      className={`aspect-square rounded-lg sm:rounded-xl text-white transition-all active:scale-95 flex items-center justify-center h-[48px] sm:h-[56px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-xl shadow-indigo-200' : 'bg-slate-200 cursor-not-allowed'
-                        }`}
+                  ) : (
+                    <form
+                      onSubmit={handlePostComment}
+                      className="flex gap-2 items-stretch"
                     >
-                      <Send className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
-                  </form>
+                      <div className="relative flex-grow">
+                        <input
+                          type="text"
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          maxLength={1000}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handlePostComment(e);
+                            }
+                          }}
+                          placeholder="Write a comment..."
+                          className="w-full bg-white border border-slate-200 rounded-lg sm:rounded-xl px-4 sm:px-5 text-base sm:text-lg font-normal text-slate-800 outline-none focus:border-indigo-600 transition-all shadow-inner h-[48px] sm:h-[56px]"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!newComment.trim() || isSubmitting}
+                        className={`aspect-square rounded-lg sm:rounded-xl text-white transition-all active:scale-95 flex items-center justify-center h-[48px] sm:h-[56px] ${newComment.trim() && !isSubmitting ? 'bg-indigo-600 shadow-xl shadow-indigo-200' : 'bg-slate-200 cursor-not-allowed'
+                          }`}
+                      >
+                        <Send className="w-5 h-5 sm:w-6 sm:h-6" />
+                      </button>
+                    </form>
+                  )
                 ) : (
                   <div className="bg-slate-100 border border-slate-200 rounded-[1.25rem] p-6 sm:p-8 text-center">
                     <p className="text-base sm:text-lg font-black uppercase tracking-widest text-slate-500">

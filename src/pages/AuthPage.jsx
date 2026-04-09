@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { validateUsername } from '../lib/puzzleService';
 
 export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }) {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,12 +19,20 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
 
     try {
       if (mode === 'signup') {
-        if (!nickname.trim()) throw new Error("Nickname is required");
+        const validation = await validateUsername(username);
+        if (!validation.valid) throw new Error(validation.error);
+
         const { error: signUpError } = await signUp(email, password, {
-          nickname,
+          username,
           locale: navigator.language || 'en-US'
         });
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          // If Supabase returns a uniqueness constraint error, obfuscate it to the same generic error
+          if (signUpError.message?.toLowerCase().includes('already exists') || signUpError.code === '23505') {
+            throw new Error('This username is unavailable.');
+          }
+          throw signUpError;
+        }
       } else {
         const { error: signInError } = await signIn(email, password);
         if (signInError) throw signInError;
@@ -57,15 +66,15 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nickname</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Username</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                   <input
                     type="text"
                     required
-                    value={nickname}
-                    onChange={e => setNickname(e.target.value)}
-                    placeholder="Your nickname"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Your username"
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500 transition-all font-bold"
                   />
                 </div>

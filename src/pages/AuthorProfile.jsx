@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign } from 'lucide-react';
+import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { generateAnonymousName } from '../utils/nameGenerator';
 import { PuzzleCard } from '../components/PuzzleCard';
 import { PuzzleOptionsModal } from '../components/PuzzleOptionsModal';
@@ -10,6 +11,7 @@ import { CommentItem } from '../components/CommentItem';
 import Avatar from "boring-avatars";
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle }) {
+  const { signOut } = useAuth();
   const [profile, setProfile] = useState(null);
   const [puzzles, setPuzzles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     try {
       const [commentsRes, mentionsRes] = await Promise.all([
         getUserComments(authorId),
-        isOwner ? getUserMentions(profileData.nickname || generateAnonymousName(authorId)) : { data: [] }
+        isOwner ? getUserMentions(profileData.username || generateAnonymousName(authorId)) : { data: [] }
       ]);
 
       setUserComments(commentsRes.data || []);
@@ -196,13 +198,22 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
         </button>
         {isOwner && (
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="absolute right-20 top-8 p-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-slate-100"
-            title="Profile Settings"
-          >
-            <Settings size={18} />
-          </button>
+          <div className="absolute right-20 top-8 flex gap-2">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-indigo-50"
+              title="Profile Settings"
+            >
+              <Settings size={18} />
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="p-3 text-slate-400 hover:text-red-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-red-50"
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         )}
         <Avatar
           size={80}
@@ -213,7 +224,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         />
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 capitalize">
-            {profile?.nickname || generateAnonymousName(authorId)}
+            {profile?.username || generateAnonymousName(authorId)}
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
             {puzzles.length} Puzzles Created • {likedPuzzles.length} Liked

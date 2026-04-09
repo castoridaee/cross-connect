@@ -5,6 +5,8 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
+import NewsPage from './pages/NewsPage';
+import LegalPage from './pages/LegalPage';
 import { generateAnonymousName } from './utils/nameGenerator';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
 import logo from './assets/logo.svg';
@@ -29,10 +31,18 @@ function App() {
 
       // Handle /a/[id] or ?a=[id]
       const profileId = path.startsWith('/a/') ? path.split('/a/')[1] : params.get('a');
+      // Handle /news or ?view=news
+      const isNews = path === '/news' || params.get('view') === 'news';
+      // Handle /legal or ?view=legal
+      const isLegal = path === '/legal' || params.get('view') === 'legal';
       // Handle /p/[id] or ?p=[id]
       const puzzleId = path.startsWith('/p/') ? path.split('/p/')[1] : params.get('p');
 
-      if (profileId) {
+      if (isNews) {
+        setView('news');
+      } else if (isLegal) {
+        setView('legal');
+      } else if (profileId) {
         setAuthorId(profileId);
         setView('author');
       } else if (puzzleId) {
@@ -65,6 +75,10 @@ function App() {
       newPath = '/create';
     } else if (view === 'auth') {
       newPath = '/auth';
+    } else if (view === 'news') {
+      newPath = '/news';
+    } else if (view === 'legal') {
+      newPath = '/legal';
     }
 
     if (window.location.pathname !== newPath) {
@@ -236,9 +250,9 @@ function App() {
       <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-3 flex items-center">
         {/* Left Section: Logo */}
         <div className="flex-1 flex justify-start">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('solve')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('news')}>
             <img src={logo} alt="Cross Connect Logo" className="w-8 h-8 object-contain" />
-            <span className="font-black uppercase tracking-tighter text-sm max-w-[85px] leading-[0.85] hidden sm:block">Cross Connect</span>
+            <span className="font-black uppercase tracking-tighter text-sm max-w-[85px] leading-[0.85] hidden sm:block text-slate-900">Cross Connect</span>
           </div>
         </div>
 
@@ -261,45 +275,39 @@ function App() {
         {/* Right Section: User */}
         <div className="flex-1 flex justify-end">
           <div className="flex items-center gap-2 sm:gap-2">
-            {user ? (
+            {user && !user.is_anonymous ? (
               <div className="flex items-center gap-2 sm:gap-3">
-                <Avatar
-                  size={32}
-                  name={user.id}
-                  variant="beam"
-                  colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
-                  square
-                />
-                <div className="hidden md:flex flex-col items-end">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    {user.is_anonymous ? 'Playing as' : 'Logged in as'}
-                  </span>
-                  <span className="text-xs font-bold">
-                    {user.is_anonymous
-                      ? generateAnonymousName(user.id)
-                      : (user.user_metadata?.nickname || user.email?.split('@')[0])}
-                  </span>
+                <div
+                  className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-slate-50 p-1 rounded-xl transition-all"
+                  onClick={() => {
+                    setAuthorId(user.id);
+                    setView('author');
+                  }}
+                >
+                  <Avatar
+                    size={32}
+                    name={user.id}
+                    variant="beam"
+                    colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+                    square
+                  />
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-xs font-black">
+                      {user.user_metadata?.username || user.email?.split('@')[0]}
+                    </span>
+                  </div>
                 </div>
-                {user.is_anonymous ? (
-                  <button
-                    onClick={() => setView('auth')}
-                    className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
-                  >
-                    SIGN IN
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => signOut()}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
-                  >
-                    LOGOUT
-                  </button>
-                )}
+                <button
+                  onClick={() => signOut()}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
+                >
+                  LOGOUT
+                </button>
               </div>
             ) : (
               <button
                 onClick={() => setView('auth')}
-                className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
+                className="bg-slate-900 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold tracking-widest hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap shadow-xl shadow-slate-100"
               >
                 SIGN IN
               </button>
@@ -331,7 +339,7 @@ function App() {
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
               <h2 className="font-black text-xl text-slate-800 uppercase tracking-tight">No puzzles available</h2>
               <p className="text-slate-500 max-w-xs text-sm leading-relaxed">
-                We couldn't fetch a puzzle for you. This might be a temporary connection issue.
+                This might be a temporary connection issue, or maybe my code is bad.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mt-4">
                 <button
@@ -349,6 +357,16 @@ function App() {
               </div>
             </div>
           )
+        ) : view === 'news' ? (
+          <NewsPage
+            onBack={() => setView('solve')}
+            onNavigateToSolve={() => setView('solve')}
+            onNavigateToLegal={() => setView('legal')}
+          />
+        ) : view === 'legal' ? (
+          <LegalPage
+            onBack={() => setView('news')}
+          />
         ) : view === 'author' ? (
           <AuthorProfile
             authorId={authorId}

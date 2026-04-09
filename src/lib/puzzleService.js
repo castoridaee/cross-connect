@@ -302,7 +302,7 @@ export async function clearPuzzleProgress(puzzleId) {
 export async function getPuzzlesByAuthor(authorId) {
   const { data, error } = await supabase
     .from('puzzles')
-    .select('*, author:profiles!created_by(nickname)')
+    .select('*, author:profiles!created_by(username)')
     .eq('created_by', authorId)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -330,7 +330,7 @@ export async function updateProfile(id, data) {
 export async function getPuzzle(id) {
   const { data, error } = await supabase
     .from('puzzles')
-    .select('*, author:profiles!created_by(nickname)')
+    .select('*, author:profiles!created_by(username)')
     .eq('id', id)
     .single();
   return { data, error };
@@ -580,7 +580,7 @@ export async function getRecommendedPuzzle(userId) {
 
   const fetchFn = () => supabase.rpc(rpcName, {
     p_user_id: userId || null
-  }).select('*, author:profiles!created_by(nickname)');
+  }).select('*, author:profiles!created_by(username)');
 
   let { data, error } = await fetchFn();
   
@@ -608,7 +608,7 @@ export async function getRecommendedPuzzle(userId) {
 export async function getComments(puzzleId, sortBy = 'newest') {
   let query = supabase
     .from('comments')
-    .select('*, author:profiles!user_id(id, nickname)')
+    .select('*, author:profiles!user_id(id, username)')
     .eq('puzzle_id', puzzleId);
 
   if (sortBy === 'liked') {
@@ -622,6 +622,15 @@ export async function getComments(puzzleId, sortBy = 'newest') {
 }
 
 export async function addComment(puzzleId, userId, content) {
+  // Check comment count limit (100 total per puzzle)
+  const { count, error: countError } = await supabase
+    .from('comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('puzzle_id', puzzleId);
+
+  if (countError) return { data: null, error: countError };
+  if (count >= 100) return { data: null, error: { message: "Maximum comment limit (100) reached for this puzzle." } };
+
   const { data: profile } = await getProfile(userId);
   const shouldShadowban = profile?.is_hard_shadowbanned || checkProfanity(content, true);
 
@@ -633,7 +642,7 @@ export async function addComment(puzzleId, userId, content) {
       content: content,
       is_shadowbanned: shouldShadowban
     }])
-    .select('*, author:profiles!user_id(id, nickname)')
+    .select('*, author:profiles!user_id(id, username)')
     .single();
 
   if (!error && shouldShadowban) {
@@ -660,15 +669,33 @@ export async function getUserComments(userId) {
   return { data, error };
 }
 
-export async function getUserMentions(nickname) {
-  // Simple mention check using @nickname
-  const mentionPattern = `@${nickname}`;
+export async function getUserMentions(username) {
+  // Simple mention check using @username
+  const mentionPattern = `@${username}`;
   const { data, error } = await supabase
     .from('comments')
-    .select('*, author:profiles!user_id(nickname), puzzle:puzzles(id, title, description, categories, created_by)')
+    .select('*, author:profiles!user_id(username), puzzle:puzzles(id, title, description, categories, created_by)')
     .ilike('content', `%${mentionPattern}%`)
     .order('created_at', { ascending: false });
   return { data, error };
+}
+
+export async function validateUsername(username) {
+  if (!username || username.length < 3 || username.length > 30) {
+    return { valid: false, error: 'Username must be between 3 and 30 characters.' };
+  }
+  
+  if (/\s/.test(username)) {
+    return { valid: false, error: 'Username cannot contain spaces.' };
+  }
+
+  // Obscenity check
+  if (matcher.hasMatch(username)) {
+    // Return generic error as requested to obfuscate
+    return { valid: false, error: 'This username is unavailable.' };
+  }
+
+  return { valid: true };
 }
 
 export async function getCommentLikes(userId, commentIds) {

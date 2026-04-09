@@ -48,7 +48,7 @@ export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }
           />
           <div className="flex flex-col justify-center gap-2 sm:gap-2 text-left">
             <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 leading-none">
-              {author?.nickname || 'Anonymous'}
+              {author?.username || 'Anonymous'}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm sm:text-base font-bold text-slate-500 tracking-tight leading-none">
