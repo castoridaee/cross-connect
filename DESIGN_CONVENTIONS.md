@@ -36,7 +36,7 @@ Prioritize information density over excessive whitespace. The interface should f
 - **Tracking**: Use tight tracking for headings (`tracking-tighter` or `tracking-tight`) to maintain high-density visual flow.
 
 **Interaction**
-- **Micro-animations**: Keep transitions fast (e.g., `duration-150` or `duration-200`) to maintain a snappy feel. Transitions should only be used as an affordance to help the user understand state changes, not for decoration.
+- **Micro-animations**: Transitions should only be used as an affordance to help the user understand state changes, not for decoration.
 - **Compact Components**: Cards and modals should contain information without unnecessary space.
 
 ### Encourage a Good Community with Minimal Moderation
