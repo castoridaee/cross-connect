@@ -5,8 +5,6 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
-import NewsPage from './pages/NewsPage';
-import LegalPage from './pages/LegalPage';
 import { generateAnonymousName } from './utils/nameGenerator';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
 import logo from './assets/logo.svg';
@@ -31,18 +29,10 @@ function App() {
 
       // Handle /a/[id] or ?a=[id]
       const profileId = path.startsWith('/a/') ? path.split('/a/')[1] : params.get('a');
-      // Handle /news or ?view=news
-      const isNews = path === '/news' || params.get('view') === 'news';
-      // Handle /legal or ?view=legal
-      const isLegal = path === '/legal' || params.get('view') === 'legal';
       // Handle /p/[id] or ?p=[id]
       const puzzleId = path.startsWith('/p/') ? path.split('/p/')[1] : params.get('p');
 
-      if (isNews) {
-        setView('news');
-      } else if (isLegal) {
-        setView('legal');
-      } else if (profileId) {
+      if (profileId) {
         setAuthorId(profileId);
         setView('author');
       } else if (puzzleId) {
@@ -75,10 +65,6 @@ function App() {
       newPath = '/create';
     } else if (view === 'auth') {
       newPath = '/auth';
-    } else if (view === 'news') {
-      newPath = '/news';
-    } else if (view === 'legal') {
-      newPath = '/legal';
     }
 
     if (window.location.pathname !== newPath) {
@@ -250,7 +236,7 @@ function App() {
       <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-3 flex items-center">
         {/* Left Section: Logo */}
         <div className="flex-1 flex justify-start">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('news')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={handleNext}>
             <img src={logo} alt="Cross Connect Logo" className="w-8 h-8 object-contain" />
             <span className="font-black uppercase tracking-tighter text-sm max-w-[85px] leading-[0.85] hidden sm:block text-slate-900">Cross Connect</span>
           </div>
@@ -357,16 +343,6 @@ function App() {
               </div>
             </div>
           )
-        ) : view === 'news' ? (
-          <NewsPage
-            onBack={() => setView('solve')}
-            onNavigateToSolve={() => setView('solve')}
-            onNavigateToLegal={() => setView('legal')}
-          />
-        ) : view === 'legal' ? (
-          <LegalPage
-            onBack={() => setView('news')}
-          />
         ) : view === 'author' ? (
           <AuthorProfile
             authorId={authorId}
