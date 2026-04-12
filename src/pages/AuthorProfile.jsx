@@ -259,24 +259,6 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
           </button>
         )}
-        <button
-          onClick={() => setActiveTab('comments')}
-          className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'comments' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-            }`}
-        >
-          Comments
-          {activeTab === 'comments' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-        </button>
-        {isOwner && (
-          <button
-            onClick={() => setActiveTab('mentions')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'mentions' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Mentions
-            {activeTab === 'mentions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />}
-          </button>
-        )}
       </div>
 
       {(activeTab === 'puzzles' || activeTab === 'unpublished') && (
@@ -325,66 +307,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       )}
 
       <div className="grid grid-cols-1 gap-6 mb-12">
-        {activeTab === 'comments' ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {userComments.length > 0 ? (
-              userComments.map(c => (
-                <div key={c.id} className="relative group">
-                  <div className="absolute -left-3 top-4 bottom-4 w-1 bg-slate-100 rounded-full group-hover:bg-indigo-100 transition-colors" />
-                  <div className="mb-1 ml-2">
-                     <button 
-                        onClick={() => onNavigateToPuzzle(c.puzzle_id)}
-                        className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
-                     >
-                       <MessageSquare size={10} /> Puzzle: {c.puzzle?.title || 'Unknown'}
-                     </button>
-                  </div>
-                  <CommentItem 
-                    comment={c} 
-                    isLiked={likedCommentIds.has(c.id)}
-                    onLike={handleToggleCommentLike}
-                    userId={currentUser?.id}
-                    puzzleAuthorId={c.puzzle?.created_by}
-                  />
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                <p className="font-bold text-slate-400">No comments found.</p>
-              </div>
-            )}
-          </div>
-        ) : activeTab === 'mentions' ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-             {userMentions.length > 0 ? (
-              userMentions.map(c => (
-                <div key={c.id} className="relative group">
-                  <div className="absolute -left-3 top-4 bottom-4 w-1 bg-indigo-100 rounded-full" />
-                  <div className="mb-1 ml-2">
-                     <button 
-                        onClick={() => onNavigateToPuzzle(c.puzzle_id)}
-                        className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
-                     >
-                       <AtSign size={10} /> Mentioned in: {c.puzzle?.title || 'Unknown'}
-                     </button>
-                  </div>
-                  <CommentItem 
-                    comment={c} 
-                    isLiked={likedCommentIds.has(c.id)}
-                    onLike={handleToggleCommentLike}
-                    userId={currentUser?.id}
-                    puzzleAuthorId={c.puzzle?.created_by}
-                  />
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                <p className="font-bold text-slate-400">No mentions found yet.</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          (
+          {(
             activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
               activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
                 likedPuzzles
@@ -417,7 +340,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               onActionClick={isOwner ? () => setDeletingPuzzle(p) : null}
             />
           ))
-        )}
+        }
       </div>
 
       {deletingPuzzle && (
@@ -450,7 +373,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
             activeTab === 'liked' ? likedPuzzles :
             []
-      ).length === 0 && activeTab !== 'comments' && activeTab !== 'mentions' && (
+      ).length === 0 && (
           <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
             <p className="font-bold text-slate-400">
               {activeTab === 'unpublished'

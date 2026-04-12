@@ -52,8 +52,19 @@ export function AuthProvider({ children }) {
     initializeAuth();
 
     // Listener for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (mounted) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT' && !newSession) {
+        setLoading(true);
+        // Instantly replace the dead session with a fresh anonymous one
+        const { data } = await supabase.auth.signInAnonymously();
+        if (mounted && data) {
+          setSession(data.session);
+          setUser(data.user);
+        }
+        if (mounted) setLoading(false);
+      } else {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
@@ -70,7 +81,23 @@ export function AuthProvider({ children }) {
     session,
     user,
     loading,
-    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    signIn: async (email, password) => {
+      // Capture the old guest ID before the session gets swapped out
+      const oldGuestId = session?.user?.is_anonymous ? session.user.id : null;
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      // If login succeeded and we were previously an anonymous guest
+      if (!error && data?.user && oldGuestId) {
+        // Migrate all their guest data (puzzles, progress, etc.) over to their destination account
+        await supabase.rpc('sync_guest_progress', {
+          guest_id: oldGuestId,
+          p_user_id: data.user.id
+        });
+      }
+
+      return { data, error };
+    },
     signUp: async (email, password, metadata) => {
       // If we're an anonymous guest, UPGRADE the user rather than creating a new identity
       if (session?.user?.is_anonymous) {

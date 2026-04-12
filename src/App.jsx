@@ -274,12 +274,6 @@ function App() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => signOut()}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-bold transition-colors"
-                >
-                  LOGOUT
-                </button>
               </div>
             ) : (
               <button

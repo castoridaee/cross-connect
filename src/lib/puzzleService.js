@@ -308,6 +308,7 @@ export async function getPuzzlesByAuthor(authorId) {
 }
 
 export async function getProfile(id) {
+  if (!id) return { data: null, error: null };
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
