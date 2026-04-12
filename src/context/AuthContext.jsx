@@ -71,11 +71,34 @@ export function AuthProvider({ children }) {
     user,
     loading,
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-    signUp: (email, password, metadata) => supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata }
-    }),
+    signUp: async (email, password, metadata) => {
+      // If we're an anonymous guest, UPGRADE the user rather than creating a new identity
+      if (session?.user?.is_anonymous) {
+        const { data, error } = await supabase.auth.updateUser({
+          email,
+          password,
+          data: metadata
+        });
+
+        // The PG trigger `handle_new_user` ONLY fires on row INSERT. Because `updateUser`
+        // simply alters the row, we must manually apply our chosen username into `profiles`.
+        if (!error && data?.user) {
+          await supabase.from('profiles').update({
+            username: metadata.username,
+            locale: metadata.locale
+          }).eq('id', data.user.id);
+        }
+
+        return { data, error };
+      }
+
+      // Standard fallback (e.g. if their session fully expired)
+      return supabase.auth.signUp({
+        email,
+        password,
+        options: { data: metadata }
+      });
+    },
     signOut: () => supabase.auth.signOut(),
   };
 
