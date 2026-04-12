@@ -8,7 +8,6 @@ import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
 import { Plus, Share2, Check, SkipForward } from 'lucide-react';
-import { generateAnonymousName } from '../utils/nameGenerator';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import Avatar from "boring-avatars";
 
@@ -123,10 +122,10 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
                 onClick={() => onAuthorClick(puzzle.created_by)}
                 className="text-indigo-600 hover:text-indigo-800 font-bold transition-colors underline decoration-2 underline-offset-4"
               >
-                {puzzle.author?.username || generateAnonymousName(puzzle.created_by)}
+                {puzzle.author?.username}
               </button>
             ) : (
-              <span className="text-slate-900 font-bold">{generateAnonymousName(puzzle.id)}</span>
+              <span className="text-slate-900 font-bold">System</span>
             )}
           </div>
         </div>

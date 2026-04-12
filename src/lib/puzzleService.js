@@ -86,9 +86,8 @@ function checkProfanity(text, isComment = false) {
 }
 
 function checkPuzzleContent(puzzleData) {
-  // 1. Check Title and Description
+  // 1. Check Title
   if (checkProfanity(puzzleData.title)) return true;
-  if (checkProfanity(puzzleData.description)) return true;
 
   // 2. Check Categories JSONB
   if (puzzleData.categories && Array.isArray(puzzleData.categories)) {
@@ -663,7 +662,7 @@ export async function toggleCommentLike(commentId, userId) {
 export async function getUserComments(userId) {
   const { data, error } = await supabase
     .from('comments')
-    .select('*, puzzle:puzzles(id, title, description, categories, created_by)')
+    .select('*, puzzle:puzzles(id, title, categories, created_by)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -674,7 +673,7 @@ export async function getUserMentions(username) {
   const mentionPattern = `@${username}`;
   const { data, error } = await supabase
     .from('comments')
-    .select('*, author:profiles!user_id(username), puzzle:puzzles(id, title, description, categories, created_by)')
+    .select('*, author:profiles!user_id(username), puzzle:puzzles(id, title, categories, created_by)')
     .ilike('content', `%${mentionPattern}%`)
     .order('created_at', { ascending: false });
   return { data, error };

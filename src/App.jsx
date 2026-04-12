@@ -5,7 +5,6 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
-import { generateAnonymousName } from './utils/nameGenerator';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
 import logo from './assets/logo.svg';
 import Avatar from "boring-avatars";
@@ -129,10 +128,6 @@ function App() {
         setProgress(progData);
         setPuzzle(data);
         setView('solve');
-
-        if (user) {
-          recordPuzzlePlay(user.id, data.id);
-        }
       } else {
         throw new Error("Puzzle not found");
       }
@@ -168,10 +163,6 @@ function App() {
         }
         setProgress(progData);
         setPuzzle(data);
-
-        if (user) {
-          recordPuzzlePlay(user.id, data.id);
-        }
       } else {
         // No more puzzles available
         setPuzzle(null);

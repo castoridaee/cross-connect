@@ -3,7 +3,6 @@ import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getU
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { generateAnonymousName } from '../utils/nameGenerator';
 import { PuzzleCard } from '../components/PuzzleCard';
 import { PuzzleOptionsModal } from '../components/PuzzleOptionsModal';
 import { ProfileSettingsModal } from '../components/ProfileSettingsModal';
@@ -129,7 +128,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     try {
       const [commentsRes, mentionsRes] = await Promise.all([
         getUserComments(authorId),
-        isOwner ? getUserMentions(profileData.username || generateAnonymousName(authorId)) : { data: [] }
+        isOwner ? getUserMentions(profileData.username) : { data: [] }
       ]);
 
       setUserComments(commentsRes.data || []);
@@ -224,7 +223,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         />
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 capitalize">
-            {profile?.username || generateAnonymousName(authorId)}
+            {profile?.username}
           </h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
             {puzzles.length} Puzzles Created • {likedPuzzles.length} Liked
