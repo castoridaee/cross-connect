@@ -38,6 +38,7 @@ Public user profiles linked to Supabase Auth users.
 - `difficulty_preference` (int4): Player difficulty offset (-5 for easier, +5 for harder).
 - `author_reputation` (float8): Bayesian average (0-100) of the quality of all puzzles published by this user.
 - `is_hard_shadowbanned` (boolean): Flag for repeat/severe offenders. When `true`, all their content is automatically shadowbanned.
+- `is_anonymous` (boolean): Inherited from auth.users mapping; denotes dynamically generated guest accounts.
 - `shadowban_total` (int4): Total count of shadowbanned content (puzzles/comments) associated with this user.
 - `updated_at` (timestamp with time zone): Last updated timestamp.
 - `locale` (text): The user's preferred browser locale.

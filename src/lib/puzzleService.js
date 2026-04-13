@@ -301,7 +301,7 @@ export async function clearPuzzleProgress(puzzleId) {
 export async function getPuzzlesByAuthor(authorId) {
   const { data, error } = await supabase
     .from('puzzles')
-    .select('*, author:profiles!created_by(username)')
+    .select('*, author:profiles!created_by(username, is_anonymous)')
     .eq('created_by', authorId)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -330,7 +330,7 @@ export async function updateProfile(id, data) {
 export async function getPuzzle(id) {
   const { data, error } = await supabase
     .from('puzzles')
-    .select('*, author:profiles!created_by(username)')
+    .select('*, author:profiles!created_by(username, is_anonymous)')
     .eq('id', id)
     .single();
   return { data, error };
@@ -580,7 +580,7 @@ export async function getRecommendedPuzzle(userId) {
 
   const fetchFn = () => supabase.rpc(rpcName, {
     p_user_id: userId || null
-  }).select('*, author:profiles!created_by(username)');
+  }).select('*, author:profiles!created_by(username, is_anonymous)');
 
   let { data, error } = await fetchFn();
   
@@ -608,7 +608,7 @@ export async function getRecommendedPuzzle(userId) {
 export async function getComments(puzzleId, sortBy = 'newest') {
   let query = supabase
     .from('comments')
-    .select('*, author:profiles!user_id(id, username)')
+    .select('*, author:profiles!user_id(id, username, is_anonymous)')
     .eq('puzzle_id', puzzleId);
 
   if (sortBy === 'liked') {
@@ -672,7 +672,7 @@ export async function getUserComments(userId) {
 export async function getUserMentions(userId) {
   const { data, error } = await supabase
     .from('comment_mentions')
-    .select('is_read, comment:comments(*, author:profiles!user_id(username), puzzle:puzzles(*, author:profiles!created_by(username)))')
+    .select('is_read, comment:comments(*, author:profiles!user_id(username, is_anonymous), puzzle:puzzles(*, author:profiles!created_by(username, is_anonymous)))')
     .eq('mentioned_user_id', userId)
     .order('created_at', { ascending: false });
 

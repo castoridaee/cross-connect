@@ -25,6 +25,40 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   const [unreadMentionIds, setUnreadMentionIds] = useState(new Set());
   const [isSortOpen, setIsSortOpen] = useState(false);
 
+  // Mention Autocomplete Engine
+  const mentionMatch = newComment.match(/(?:^|\s)@([a-zA-Z0-9_-]*)$/);
+  const isMentioning = mentionMatch !== null;
+  const mentionSearch = isMentioning ? mentionMatch[1].toLowerCase() : '';
+
+  const mentionOptions = React.useMemo(() => {
+    if (!isMentioning) return [];
+    const options = new Set();
+    
+    if (puzzle?.author?.username && !puzzle.author.is_anonymous) {
+      options.add(puzzle.author.username);
+    }
+
+    comments.forEach(c => {
+      if (c.author?.username && !c.author.is_anonymous) {
+        options.add(c.author.username);
+      }
+    });
+
+    return Array.from(options)
+      .filter(opt => opt.toLowerCase().startsWith(mentionSearch))
+      .slice(0, 5); 
+  }, [isMentioning, mentionSearch, puzzle, comments]);
+
+  const handleSelectMention = (username) => {
+    const replacement = newComment.replace(/(?:^|\s)@([a-zA-Z0-9_-]*)$/, ` @${username} `);
+    setNewComment(replacement.replace(/^\s+/, ''));
+    
+    // Defer focus slightly so React completes render cycle
+    setTimeout(() => {
+      document.getElementById('comment-input')?.focus();
+    }, 10);
+  };
+
   // Fetch Unread Mentions
   useEffect(() => {
     if (user && puzzle?.id) {
@@ -393,15 +427,42 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                       className="flex gap-2 items-stretch"
                     >
                       <div className="relative flex-grow">
+                        {isMentioning && mentionOptions.length > 0 && (
+                          <div className="absolute bottom-[calc(100%+8px)] left-0 w-full sm:w-auto min-w-[200px] bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Mention a User
+                            </div>
+                            <div className="max-h-[160px] overflow-y-auto no-scrollbar pointer-events-auto">
+                              {mentionOptions.map(opt => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => handleSelectMention(opt)}
+                                  className="w-full text-left px-4 py-3 text-sm font-black text-slate-700 hover:bg-slate-900 hover:text-white transition-colors border-b border-slate-50 last:border-0"
+                                >
+                                  @{opt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <input
+                          id="comment-input"
                           type="text"
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           maxLength={1000}
+                          autoComplete="off"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              handlePostComment(e);
+                              // Stop submission if autocomplete is active but let them resolve it via click for now
+                              // Or simply allow posting if they actually hit enter
+                              if (isMentioning && mentionOptions.length > 0) {
+                                handleSelectMention(mentionOptions[0]);
+                              } else {
+                                handlePostComment(e);
+                              }
                             }
                           }}
                           placeholder="Write a comment..."
