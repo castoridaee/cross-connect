@@ -64,7 +64,7 @@ export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }
         </div>
         {!isAuthor && (
           <button 
-            onClick={() => onLike(comment.id)}
+            onClick={(e) => { e.stopPropagation(); onLike && onLike(comment.id); }}
             className={`flex items-center gap-2 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-xl transition-all active:scale-95 ${
               isLiked ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
             }`}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes } from '../lib/puzzleService';
+import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes, markMentionsRead } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -51,7 +51,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         const profileRes = await getProfile(authorId);
         if (profileRes.data) {
           setProfile(profileRes.data);
-          
+
           // If we have a profile, fetch comments and mentions
           loadExtras(profileRes.data);
         }
@@ -178,7 +178,20 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     // Update in both lists if present
     const updater = c => c.id === commentId ? { ...c, likes_count: (c.likes_count || 0) + (isCurrentlyLiked ? -1 : 1) } : c;
     setUserComments(prev => prev.map(updater));
-    setUserMentions(prev => prev.map(updater));
+
+    // Check if it's an unread mention
+    const targetMention = userMentions.find(m => m.id === commentId);
+    if (targetMention && !targetMention.is_read) {
+      // Mark as read natively
+      setUserMentions(prev => prev.map(m => m.id === commentId ? { ...updater(m), is_read: true } : updater(m)));
+      try {
+        await markMentionsRead([targetMention.mention_id]);
+      } catch (err) {
+        console.error("Failed to mark read on interactive tick:", err);
+      }
+    } else {
+      setUserMentions(prev => prev.map(updater));
+    }
 
     try {
       await toggleCommentLike(commentId, currentUser.id);
@@ -307,7 +320,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         </div>
       )}
 
-      {(isOwner || activeTab === 'puzzles') && (
+      {(isOwner || activeTab === 'puzzles') && activeTab !== 'mentions' && (
         <div className="flex justify-end mb-6">
           <div className="relative">
             <button
@@ -388,19 +401,21 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               currentUser={currentUser}
               onNavigateToPuzzle={onNavigateToPuzzle}
               onEditPuzzle={onEditPuzzle}
-              onActionClick={isOwner ? () => setDeletingPuzzle(p) : null}
+              onActionClick={currentUser && p.created_by === currentUser.id ? () => setDeletingPuzzle(p) : null}
             />
           ))
         ) : (
           userMentions.map(mention => (
             <div key={mention.id} onClick={() => onNavigateToPuzzle(mention.puzzle)} className="cursor-pointer relative">
               {!mention.is_read && (
-                 <div className="absolute top-2 right-2 flex items-center justify-center p-1 bg-red-500 rounded-full border border-white z-10 w-3 h-3"></div>
+                <div className="absolute top-2 right-2 flex items-center justify-center p-1 bg-red-500 rounded-full border border-white z-10 w-3 h-3"></div>
               )}
-              <CommentItem 
-                comment={mention} 
-                userId={currentUser?.id} 
-                puzzleAuthorId={mention.puzzle?.created_by} 
+              <CommentItem
+                comment={mention}
+                userId={currentUser?.id}
+                puzzleAuthorId={mention.puzzle?.created_by}
+                onLike={handleToggleCommentLike}
+                isLiked={likedCommentIds.has(mention.id)}
               />
             </div>
           ))
@@ -446,13 +461,13 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               {activeTab === 'unpublished'
                 ? "No drafts found."
                 : activeTab === 'puzzles'
-                  ? "This user hasn't published any puzzles yet."
+                  ? "No published puzzles found."
                   : activeTab === 'played'
-                    ? "You haven't solved any puzzles yet."
+                    ? "No solved puzzles found."
                     : activeTab === 'skipped'
-                      ? "You haven't skipped any puzzles."
+                      ? "No skipped puzzles found."
                       : activeTab === 'mentions'
-                        ? "You haven't been mentioned anywhere yet."
+                        ? "No mentions found."
                         : "No liked puzzles found."}
             </p>
           </div>

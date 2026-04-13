@@ -18,7 +18,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   // Comments State
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
-  const [commentSort, setCommentSort] = useState('newest'); // 'newest' or 'liked'
+  const [commentSort, setCommentSort] = useState('new'); // 'new' or 'liked' or 'mentions'
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [likedCommentIds, setLikedCommentIds] = useState(new Set());
@@ -33,7 +33,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   const mentionOptions = React.useMemo(() => {
     if (!isMentioning) return [];
     const options = new Set();
-    
+
     if (puzzle?.author?.username && !puzzle.author.is_anonymous) {
       options.add(puzzle.author.username);
     }
@@ -46,13 +46,13 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
     return Array.from(options)
       .filter(opt => opt.toLowerCase().startsWith(mentionSearch))
-      .slice(0, 5); 
+      .slice(0, 5);
   }, [isMentioning, mentionSearch, puzzle, comments]);
 
   const handleSelectMention = (username) => {
     const replacement = newComment.replace(/(?:^|\s)@([a-zA-Z0-9_-]*)$/, ` @${username} `);
     setNewComment(replacement.replace(/^\s+/, ''));
-    
+
     // Defer focus slightly so React completes render cycle
     setTimeout(() => {
       document.getElementById('comment-input')?.focus();
@@ -336,7 +336,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                     onClick={() => setIsSortOpen(!isSortOpen)}
                     className="flex items-center gap-2 p-2 sm:p-2 text-base sm:text-base font-black uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors bg-white rounded-xl shadow-sm border border-slate-200"
                   >
-                    <Filter size={12} className="w-4 h-4" /> {commentSort === 'newest' ? 'Newest' : commentSort === 'mentions' ? 'Mentions' : 'Most Liked'}
+                    <Filter size={12} className="w-4 h-4" /> {commentSort === 'new' ? 'New' : commentSort === 'mentions' ? 'Mentions' : 'Liked'}
                     <ChevronDown size={12} className={`w-4 h-4 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
                   </button>
 
@@ -345,16 +345,16 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                       <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)} />
                       <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-2 border-t-slate-900 animate-in fade-in zoom-in duration-200">
                         <button
-                          onClick={() => { setCommentSort('newest'); setIsSortOpen(false); }}
-                          className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'newest' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
+                          onClick={() => { setCommentSort('new'); setIsSortOpen(false); }}
+                          className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'new' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
-                          Newest
+                          New
                         </button>
                         <button
                           onClick={() => { setCommentSort('liked'); setIsSortOpen(false); }}
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'liked' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
-                          Most Liked
+                          Liked
                         </button>
                         <button
                           onClick={() => { setCommentSort('mentions'); setIsSortOpen(false); }}

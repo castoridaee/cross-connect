@@ -672,14 +672,15 @@ export async function getUserComments(userId) {
 export async function getUserMentions(userId) {
   const { data, error } = await supabase
     .from('comment_mentions')
-    .select('is_read, comment:comments(*, author:profiles!user_id(username, is_anonymous), puzzle:puzzles(*, author:profiles!created_by(username, is_anonymous)))')
+    .select('id, is_read, comment:comments(*, author:profiles!user_id(username, is_anonymous), puzzle:puzzles(*, author:profiles!created_by(username, is_anonymous)))')
     .eq('mentioned_user_id', userId)
     .order('created_at', { ascending: false });
 
   if (data) {
     const mapped = data.map(m => ({
       ...m.comment,
-      is_read: m.is_read
+      is_read: m.is_read,
+      mention_id: m.id
     }));
     return { data: mapped, error };
   }
