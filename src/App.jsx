@@ -34,12 +34,16 @@ function App() {
       if (profileId) {
         setAuthorId(profileId);
         setView('author');
+        setLoading(false);
       } else if (puzzleId) {
         loadSpecificPuzzle(puzzleId);
       } else if (view === 'solve' && !puzzle) {
         loadPuzzles();
       } else if (view === 'solve' && puzzle) {
         refreshCurrentProgress(puzzle.id);
+        setLoading(false);
+      } else {
+        setLoading(false);
       }
     };
 
@@ -297,7 +301,22 @@ function App() {
             <PuzzleSolver
               puzzle={puzzle}
               user={user}
-              initialProgress={progress}
+              initialProgress={
+                user && puzzle && user.id === puzzle.created_by
+                  ? {
+                      ...progress,
+                      status: 'solved',
+                      grid_state: puzzle.layout.reduce((acc, row, r) => {
+                        row.forEach((active, c) => {
+                          if (active) {
+                            acc[`${r}-${c}`] = puzzle.word_order[Object.keys(acc).length];
+                          }
+                        });
+                        return acc;
+                      }, {})
+                    }
+                  : progress
+              }
               onNavigateToCreate={() => setView('create')}
               onAuthorClick={(id) => {
                 setAuthorId(id);

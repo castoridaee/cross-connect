@@ -8,9 +8,12 @@ export function PuzzleCard({
   likeStatus,
   tab, 
   onNavigateToPuzzle, 
-  onActionClick 
+  onActionClick,
+  currentUser,
+  onEditPuzzle
 }) {
   const isAuthor = !!onActionClick || tab === 'unpublished';
+  const isPuzzleOwner = currentUser?.id === puzzle.created_by;
   const hasPopulatedStats = puzzle.solve_count > 0;
   
   // Format the date
@@ -94,12 +97,14 @@ export function PuzzleCard({
                   </div>
                 </StatTooltip>
 
-                <StatTooltip label="Solve Rate">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs shadow-sm hover:bg-emerald-100 transition-colors border border-emerald-100/50">
-                    <Check size={14} strokeWidth={3} className="text-emerald-500" />
-                    <span>{Math.round((puzzle.solve_count / puzzle.play_count) * 100)}%</span>
-                  </div>
-                </StatTooltip>
+                {isPuzzleOwner && (
+                  <StatTooltip label="Solve Rate">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs shadow-sm hover:bg-emerald-100 transition-colors border border-emerald-100/50">
+                      <Check size={14} strokeWidth={3} className="text-emerald-500" />
+                      <span>{Math.round((puzzle.solve_count / puzzle.play_count) * 100)}%</span>
+                    </div>
+                  </StatTooltip>
+                )}
 
                 {diffBadge && (
                   <StatTooltip label={`Difficulty Score\n${Math.round(diffScore)} / 100`}>
@@ -110,7 +115,7 @@ export function PuzzleCard({
                   </StatTooltip>
                 )}
 
-                {timeStr && (
+                {isPuzzleOwner && timeStr && (
                   <StatTooltip label="Median Solve Time">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs shadow-sm hover:bg-blue-100 transition-colors border border-blue-100/50">
                       <Clock size={14} className="opacity-70" />
@@ -119,7 +124,7 @@ export function PuzzleCard({
                   </StatTooltip>
                 )}
 
-                {puzzle.trimmean_attempts_to_solve != null && (
+                {isPuzzleOwner && puzzle.trimmean_attempts_to_solve != null && (
                   <StatTooltip label="Average Number of Attempts (Guesses + Hints)">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-xs shadow-sm hover:bg-purple-100 transition-colors border border-purple-100/50">
                       <BarChart2 size={14} className="opacity-70" />
@@ -138,21 +143,23 @@ export function PuzzleCard({
         
         {/* Right section: Action */}
         <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
-          <button 
-            onClick={() => onNavigateToPuzzle(puzzle)}
-            disabled={!puzzle.is_published && !isAuthor}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[140px] ${
-              puzzle.is_published 
-                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200' 
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-            }`}
-          >
-            {puzzle.is_published ? (
-              <><Play size={16} fill="currentColor" /> Play</>
-            ) : (
-              <><EyeOff size={16} /> Draft</>
-            )}
-          </button>
+          {puzzle.is_published && (
+            <button 
+              onClick={() => onNavigateToPuzzle(puzzle)}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[140px] bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200`}
+            >
+              <Play size={16} fill="currentColor" /> {isPuzzleOwner ? 'View' : 'Play'}
+            </button>
+          )}
+
+          {isPuzzleOwner && !puzzle.is_published && (
+            <button 
+              onClick={() => onEditPuzzle?.(puzzle)}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[140px] bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200`}
+            >
+              <EyeOff size={16} /> Edit Draft
+            </button>
+          )}
           
           {/* Options button (Only for Author Profiles) */}
           {isAuthor && onActionClick && (
@@ -165,11 +172,6 @@ export function PuzzleCard({
             </button>
           )}
         </div>
-      </div>
-      
-      {/* Background flair */}
-      <div className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full translate-x-16 -translate-y-16 group-hover:bg-indigo-100/50 transition-colors duration-500" />
       </div>
     </div>
   );
