@@ -33,6 +33,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [loadingExtras, setLoadingExtras] = useState(false);
 
   const isOwner = currentUser?.id === authorId;
+  const unreadMentionsCount = userMentions.filter(m => !m.is_read).length;
 
 
 
@@ -142,7 +143,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     try {
       const [commentsRes, mentionsRes] = await Promise.all([
         getUserComments(authorId),
-        isOwner ? getUserMentions(profileData.username) : { data: [] }
+        isOwner ? getUserMentions(authorId) : { data: [] }
       ]);
 
       setUserComments(commentsRes.data || []);
@@ -261,6 +262,25 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             {activeTab === 'puzzles' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
           </button>
           <button
+            onClick={() => setActiveTab('unpublished')}
+            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            Unpublished
+            {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+          </button>
+          <button
+            onClick={() => setActiveTab('mentions')}
+            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'mentions' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            Mentions
+            {unreadMentionsCount > 0 && (
+              <span className="absolute top-0 right-0 -mr-2 bg-red-500 w-2 h-2 rounded-full border border-white" />
+            )}
+            {activeTab === 'mentions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+          </button>
+          <button
             onClick={() => setActiveTab('liked')}
             className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'liked' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
               }`}
@@ -283,14 +303,6 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           >
             Skipped
             {activeTab === 'skipped' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('unpublished')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Unpublished
-            {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
           </button>
         </div>
       )}
@@ -341,7 +353,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       )}
 
       <div className="grid grid-cols-1 gap-6 mb-12">
-          {(
+        {activeTab !== 'mentions' ? (
+          (
             activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
               activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
                 activeTab === 'played' ? playedPuzzles :
@@ -378,7 +391,20 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               onActionClick={isOwner ? () => setDeletingPuzzle(p) : null}
             />
           ))
-        }
+        ) : (
+          userMentions.map(mention => (
+            <div key={mention.id} onClick={() => onNavigateToPuzzle(mention.puzzle)} className="cursor-pointer relative">
+              {!mention.is_read && (
+                 <div className="absolute top-2 right-2 flex items-center justify-center p-1 bg-red-500 rounded-full border border-white z-10 w-3 h-3"></div>
+              )}
+              <CommentItem 
+                comment={mention} 
+                userId={currentUser?.id} 
+                puzzleAuthorId={mention.puzzle?.created_by} 
+              />
+            </div>
+          ))
+        )}
       </div>
 
       {deletingPuzzle && (
@@ -412,7 +438,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             activeTab === 'played' ? playedPuzzles :
               activeTab === 'skipped' ? skippedPuzzles :
                 activeTab === 'liked' ? likedPuzzles :
-                  []
+                  activeTab === 'mentions' ? userMentions :
+                    []
       ).length === 0 && (
           <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
             <p className="font-bold text-slate-400">
@@ -424,7 +451,9 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                     ? "You haven't solved any puzzles yet."
                     : activeTab === 'skipped'
                       ? "You haven't skipped any puzzles."
-                      : "No liked puzzles found."}
+                      : activeTab === 'mentions'
+                        ? "You haven't been mentioned anywhere yet."
+                        : "No liked puzzles found."}
             </p>
           </div>
         )}

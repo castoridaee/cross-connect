@@ -2,7 +2,7 @@ import { Trophy, Heart, Share2, Check, User, X, MessageSquare, List, Send, Filte
 import React, { useState, useRef, useEffect } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import { useAuth } from '../context/AuthContext';
-import { getComments, addComment, toggleCommentLike, getCommentLikes } from '../lib/puzzleService';
+import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markMentionsRead } from '../lib/puzzleService';
 import { CommentItem } from './CommentItem';
 
 export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false }) => {
@@ -22,7 +22,31 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [likedCommentIds, setLikedCommentIds] = useState(new Set());
+  const [unreadMentionIds, setUnreadMentionIds] = useState(new Set());
   const [isSortOpen, setIsSortOpen] = useState(false);
+
+  // Fetch Unread Mentions
+  useEffect(() => {
+    if (user && puzzle?.id) {
+      getPuzzleUnreadMentions(user.id, puzzle.id).then(({ data }) => {
+        if (data && data.length > 0) {
+          setUnreadMentionIds(new Set(data.map(d => d.comment_id)));
+          setCommentSort('mentions');
+        }
+      });
+    }
+  }, [user, puzzle?.id]);
+
+  // Mark Mentions Read when entering Comments Tab
+  useEffect(() => {
+    if (activeTab === 'comments' && unreadMentionIds.size > 0 && user && puzzle?.id) {
+      markMentionsRead(user.id, puzzle.id).then(() => {
+        // We do not clear the local state immediately because we want the UI indicator
+        // to persist on the specific comments for the duration of this viewing session
+        // so the user knows which ones were new!
+      });
+    }
+  }, [activeTab, unreadMentionIds.size, user, puzzle?.id]);
 
   // Sync state if prop changes (e.g. late fetch)
   useEffect(() => {
@@ -58,7 +82,18 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     try {
       const { data, error } = await getComments(puzzle.id, commentSort);
       if (error) throw error;
-      setComments(data || []);
+      let sortedData = data || [];
+      if (commentSort === 'mentions' && user) {
+        const usernameStr = `@${user.user_metadata?.username}`;
+        sortedData.sort((a, b) => {
+          const aMention = a.content.includes(usernameStr);
+          const bMention = b.content.includes(usernameStr);
+          if (aMention && !bMention) return -1;
+          if (!aMention && bMention) return 1;
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+      }
+      setComments(sortedData);
 
       // If user is logged in, fetch their likes for these comments
       if (user && data?.length > 0) {
@@ -219,9 +254,12 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           </button>
           <button
             onClick={() => setActiveTab('comments')}
-            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 relative ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Comments
+            {unreadMentionIds.size > 0 && (
+              <span className="absolute top-0 right-0 -mr-3 -mt-1 bg-red-500 w-2 h-2 rounded-full border border-white" />
+            )}
           </button>
         </div>
 
@@ -264,7 +302,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                     onClick={() => setIsSortOpen(!isSortOpen)}
                     className="flex items-center gap-2 p-2 sm:p-2 text-base sm:text-base font-black uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors bg-white rounded-xl shadow-sm border border-slate-200"
                   >
-                    <Filter size={12} className="w-4 h-4" /> {commentSort === 'newest' ? 'Newest' : 'Most Liked'}
+                    <Filter size={12} className="w-4 h-4" /> {commentSort === 'newest' ? 'Newest' : commentSort === 'mentions' ? 'Mentions' : 'Most Liked'}
                     <ChevronDown size={12} className={`w-4 h-4 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
                   </button>
 
@@ -283,6 +321,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'liked' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           Most Liked
+                        </button>
+                        <button
+                          onClick={() => { setCommentSort('mentions'); setIsSortOpen(false); }}
+                          className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${commentSort === 'mentions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
+                        >
+                          Mentions
+                          {unreadMentionIds.size > 0 && (
+                            <span className="bg-red-500 w-2 h-2 rounded-full border border-white" />
+                          )}
                         </button>
                       </div>
                     </>
@@ -308,14 +355,18 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                     className="h-full overflow-y-auto pr-1 custom-scrollbar scroll-smooth touch-pan-y overscroll-contain"
                   >
                     {comments.map(c => (
-                      <CommentItem
-                        key={c.id}
-                        comment={c}
-                        isLiked={likedCommentIds.has(c.id)}
-                        onLike={handleToggleCommentLike}
-                        userId={user?.id}
-                        puzzleAuthorId={puzzle.created_by}
-                      />
+                      <div key={c.id} className="relative">
+                        {unreadMentionIds.has(c.id) && (
+                          <div className="absolute top-2 right-2 sm:top-2 sm:right-2 flex items-center justify-center p-1 bg-red-500 rounded-full border border-white z-10 w-3 h-3"></div>
+                        )}
+                        <CommentItem
+                          comment={c}
+                          isLiked={likedCommentIds.has(c.id)}
+                          onLike={handleToggleCommentLike}
+                          userId={user?.id}
+                          puzzleAuthorId={puzzle.created_by}
+                        />
+                      </div>
                     ))}
 
                     {/* Dummy pad to ensure last item clears the gradient */}

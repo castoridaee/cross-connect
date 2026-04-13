@@ -669,15 +669,39 @@ export async function getUserComments(userId) {
   return { data, error };
 }
 
-export async function getUserMentions(username) {
-  // Simple mention check using @username
-  const mentionPattern = `@${username}`;
+export async function getUserMentions(userId) {
   const { data, error } = await supabase
-    .from('comments')
-    .select('*, author:profiles!user_id(username), puzzle:puzzles(id, title, categories, created_by)')
-    .ilike('content', `%${mentionPattern}%`)
+    .from('comment_mentions')
+    .select('is_read, comment:comments(*, author:profiles!user_id(username), puzzle:puzzles(*, author:profiles!created_by(username)))')
+    .eq('mentioned_user_id', userId)
     .order('created_at', { ascending: false });
+
+  if (data) {
+    const mapped = data.map(m => ({
+      ...m.comment,
+      is_read: m.is_read
+    }));
+    return { data: mapped, error };
+  }
   return { data, error };
+}
+
+export async function getPuzzleUnreadMentions(userId, puzzleId) {
+  const { data, error } = await supabase
+    .from('comment_mentions')
+    .select('id, comment_id')
+    .eq('mentioned_user_id', userId)
+    .eq('puzzle_id', puzzleId)
+    .eq('is_read', false);
+  return { data, error };
+}
+
+export async function markMentionsRead(userId, puzzleId) {
+  const { error } = await supabase.rpc('mark_mentions_read', {
+    p_user_id: userId,
+    p_puzzle_id: puzzleId
+  });
+  return { error };
 }
 
 export async function validateUsername(username) {

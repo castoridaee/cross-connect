@@ -33,7 +33,7 @@ The core table storing puzzle data, layouts, and metadata.
 ### `profiles`
 Public user profiles linked to Supabase Auth users.
 - `id` (uuid, references `auth.users`): Primary key.
-- `nickname` (text): The public display name of the user.
+- `username` (text): The public display name of the user (Min 3 / Max 30 chars, no spaces).
 - `skill_score` (float8): Calculated player skill based on their last 50 solves.
 - `difficulty_preference` (int4): Player difficulty offset (-5 for easier, +5 for harder).
 - `author_reputation` (float8): Bayesian average (0-100) of the quality of all puzzles published by this user.
@@ -57,6 +57,15 @@ Tracks which users liked which comments.
 - `comment_id` (uuid, references `comments`).
 - `user_id` (uuid, references `profiles`).
 - **Unique Constraint:** `(comment_id, user_id)`.
+
+### `comment_mentions`
+Tracks @mentions within comments and their unread status.
+- `id` (uuid, primary key).
+- `comment_id` (uuid, references `comments`).
+- `puzzle_id` (uuid, references `puzzles`).
+- `mentioned_user_id` (uuid, references `profiles`).
+- `is_read` (boolean): Whether the mentioned user has opened the comment tab for this puzzle.
+- `created_at` (timestamp with time zone).
 
 ### `user_progress`
 Tracks user performance and "Skip" status on specific puzzles.
@@ -99,8 +108,14 @@ Tracks user performance and "Skip" status on specific puzzles.
 ### `user_progress`
 - **Users** can view/insert/update/delete their own progress.
 
+### `comment_mentions`
+- **Anyone** can insert mentions (facilitated by the `parse_mentions_trigger` bypass).
+- **Users** can view and update their own mentions tracking data (`is_read`).
+
 ## Triggers and Automation
 
+- **Mentions Tracker:** (`parse_mentions_trigger`) Intercepts text strings matching @username when new comments are inserted, and verifies the identity to pipe it to the `comment_mentions` table.
+- **Profile Cascade Sync:** (`cascade_profile_delete_progress`) Triggers `BEFORE DELETE` to drop any related `user_progress` directly off a shadow deletion.
 - **Skill Sync:** (`on_user_progress_solved_sync_skill`) Updates a user's `skill_score`.
 - **Stats Sync:** (`on_user_progress_sync_v3`) Recalculates puzzle difficulty, medians, and quality scores.
 - **Content Change Reset:** (`handle_puzzle_content_change`) Flushes progress if puzzle structure is edited.
@@ -113,3 +128,4 @@ Tracks user performance and "Skip" status on specific puzzles.
 - `toggle_comment_like(p_comment_id, p_user_id)`: Toggles comment like status and increments/decrements `likes_count` atomically.
 - `record_puzzle_play(userId, puzzleId)`: Upserts `user_progress` to trigger global play count increments.
 - `sync_guest_progress(guest_id, p_user_id)`: Migrates progress and puzzles from an anonymous session to a registered user account after signup.
+- `mark_mentions_read(userId, puzzleId)`: Automatically maps all associated mentions within a specific puzzle object to `is_read = true` for the active user.
