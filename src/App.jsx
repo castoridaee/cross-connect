@@ -325,6 +325,7 @@ function App() {
             </div>
           ) : puzzle ? (
             <PuzzleSolver
+              key={puzzle.id}
               puzzle={puzzle}
               user={user}
               initialProgress={
@@ -384,6 +385,7 @@ function App() {
             }}
             onBack={() => setView('solve')}
             onNavigateToPuzzle={(p) => {
+              setProgress(null);
               setPuzzle(p);
               setView('solve');
             }}

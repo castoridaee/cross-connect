@@ -62,7 +62,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         // Fetch author's puzzles
         let puzzlesQuery = supabase
           .from('puzzles')
-          .select('*')
+          .select('*, author:profiles!created_by(username, is_anonymous)')
           .eq('created_by', authorId);
 
         // If not the owner, only show published puzzles
@@ -79,7 +79,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         if (currentUser) {
           const { data: progressPuzzles } = await supabase
             .from('puzzles')
-            .select('*, user_progress!inner(status, is_liked, is_skipped, grid_state)')
+            .select('*, author:profiles!created_by(username, is_anonymous), user_progress!inner(status, is_liked, is_skipped, grid_state)')
             .eq('user_progress.user_id', currentUser.id)
             .order('created_at', { ascending: false });
 
