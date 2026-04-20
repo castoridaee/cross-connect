@@ -62,14 +62,18 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             .eq('is_published', true);
           setAuthorPuzzleCount(pCount || 0);
 
-          const { count: lCount } = await supabase
-            .from('user_progress')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', authorId)
-            .eq('is_liked', true);
-          setAuthorLikedCount(lCount || 0);
-
-          setAuthorLikedCount(lCount || 0);
+          // Get visitor's likes on this author's puzzles
+          let lCount = 0;
+          if (currentUser?.id) {
+            const { count } = await supabase
+              .from('user_progress')
+              .select('puzzle_id!inner(created_by)', { count: 'exact', head: true })
+              .eq('user_id', currentUser.id)
+              .eq('is_liked', true)
+              .eq('puzzle_id.created_by', authorId);
+            lCount = count || 0;
+          }
+          setAuthorLikedCount(lCount);
 
           // Get global unread mentions count using service
           const { count: mCount } = await getUserUnreadMentionsCount(authorId);
@@ -82,7 +86,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       }
     }
     if (authorId) loadProfile();
-  }, [authorId]);
+  }, [authorId, currentUser?.id]);
 
   // 2. Data Fetching & Page Reset Logic
   const prevTabRef = React.useRef(activeTab);
