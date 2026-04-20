@@ -62,17 +62,24 @@ export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }
             </div>
           </div>
         </div>
-        {!isAuthor && (
-          <button 
-            onClick={(e) => { e.stopPropagation(); onLike && onLike(comment.id); }}
-            className={`flex items-center gap-2 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-xl transition-all active:scale-95 ${
-              isLiked ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-base sm:text-lg font-black">{likes_count || 0}</span>
-          </button>
-        )}
+        <button 
+          onClick={(e) => { 
+            if (!isAuthor) {
+              e.stopPropagation(); 
+              onLike && onLike(comment.id); 
+            }
+          }}
+          disabled={isAuthor}
+          className={`flex items-center gap-2 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-xl transition-all ${
+            !isAuthor ? 'active:scale-95 hover:text-slate-700 cursor-pointer' : 'cursor-default opacity-70'
+          } ${
+            isLiked ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
+          }`}
+          title={isAuthor ? "You cannot like your own comment" : isLiked ? "Unlike" : "Like"}
+        >
+          <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-base sm:text-lg font-black">{likes_count || 0}</span>
+        </button>
       </div>
       <p className="text-base sm:text-lg font-normal text-slate-600 leading-relaxed">
         {renderContent(content)}

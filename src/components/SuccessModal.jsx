@@ -100,12 +100,14 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   }, []);
 
 
-  // Track animation state to fully hide elements out of the DOM
-  useEffect(() => {
+  // Handle Tab Change with coordinated animation
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
     setIsAnimating(true);
-    const timer = setTimeout(() => setIsAnimating(false), 500);
-    return () => clearTimeout(timer);
-  }, [activeTab]);
+    setActiveTab(tab);
+    // Sync the animation state reset with the CSS duration (800ms)
+    setTimeout(() => setIsAnimating(false), 300);
+  };
 
   // Fetch comments
   useEffect(() => {
@@ -236,7 +238,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center p-2 sm:p-6 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300">
       <div
         ref={modalRef}
-        className="w-full max-w-md sm:max-w-3xl bg-white rounded-[1.5rem] shadow-2xl px-2 pt-4 pb-2 sm:px-4 sm:pt-5 sm:pb-4 text-center flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-500 h-full max-h-[96dvh] sm:max-h-[90dvh]"
+        className="w-full max-w-md sm:max-w-3xl bg-white rounded-[1.5rem] shadow-2xl px-2 pt-4 pb-2 sm:px-4 sm:pt-5 sm:pb-4 text-center flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-300 h-full max-h-[96dvh] sm:max-h-[90dvh]"
       >
 
         {/* Top-left Admire/Close action */}
@@ -268,9 +270,9 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           </button>
         </div>
 
-        <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? 'hidden' : ''}`}>
+        <div className={`flex-shrink-0 grid transition-all duration-300 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? '' : ''}`}>
           <div className="overflow-hidden">
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500 mt-1 sm:mt-0">
+            <div className="animate-in fade-in slide-in-from-top-4 duration-300 mt-1 sm:mt-0">
               <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-slate-900 leading-none">Solved</h1>
               <div className="flex justify-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 mb-2 sm:mb-3">
                 <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-60">Attempts: {attempts}</p>
@@ -282,15 +284,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
         </div>
 
         {/* Tab Switcher */}
-        <div className={`flex-shrink-0 flex justify-center gap-6 sm:gap-8 mb-4 sm:mb-6 w-fit mx-auto h-fit transition-all duration-500 z-30 ${activeTab === 'results' ? 'mt-1 sm:mt-2' : 'mt-0.5 sm:mt-1'}`}>
+        <div className={`flex-shrink-0 flex justify-center gap-6 sm:gap-8 mb-4 sm:mb-6 w-fit mx-auto h-fit transition-all duration-300 z-30 ${activeTab === 'results' ? 'mt-1 sm:mt-2' : 'mt-0.5 sm:mt-1'}`}>
           <button
-            onClick={() => setActiveTab('results')}
+            onClick={() => handleTabChange('results')}
             className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 ${activeTab === 'results' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Result
           </button>
           <button
-            onClick={() => setActiveTab('comments')}
+            onClick={() => handleTabChange('comments')}
             className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 relative ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Comments
@@ -301,12 +303,12 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
         </div>
 
         {/* Action Panel Section */}
-        <div className={`bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-[1.25rem] p-3 sm:p-4 relative text-left overflow-hidden flex-grow flex flex-col min-h-0 min-w-0 transition-all duration-500 ${activeTab === 'comments' ? 'mt-0 mb-0' : 'mb-2 sm:mb-3'}`}>
+        <div className={`bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-[1.25rem] p-3 sm:p-4 relative text-left overflow-hidden flex-grow flex flex-col min-h-0 min-w-0 transition-all duration-300 ${activeTab === 'comments' ? 'mt-0 mb-0' : 'mb-2 sm:mb-3'}`}>
           {activeTab === 'results' ? (
             <div className="relative flex-grow min-h-0 flex flex-col">
               <div
                 ref={scrollRef}
-                className="space-y-3 sm:space-y-3 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-both touch-pan-y overscroll-contain"
+                className="space-y-3 sm:space-y-3 overflow-y-auto pr-1 custom-scrollbar scroll-smooth flex-grow min-h-0 h-full animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both touch-pan-y overscroll-contain"
               >
                 {categories.map((cat, i) => (
                   <div key={i} className="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
@@ -327,7 +329,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               )}
             </div>
           ) : (
-            <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both overflow-hidden">
+            <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300 fill-mode-both overflow-hidden">
               {/* Comments Header & Sort */}
               <div className="flex justify-between items-center mb-6 sm:mb-6 px-2 flex-shrink-0">
                 <span className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-500">
@@ -494,9 +496,9 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
           )}
         </div>
 
-        <div className={`flex-shrink-0 grid transition-all duration-500 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? 'hidden' : ''}`}>
+        <div className={`flex-shrink-0 grid transition-all duration-300 ease-in-out ${activeTab === 'results' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'} ${activeTab === 'comments' && !isAnimating ? '' : ''}`}>
           <div className="overflow-hidden">
-            <div className={`space-y-2 sm:space-y-3 pb-0 transition-all duration-500 ${activeTab === 'results' ? 'mt-0' : 'mt-2'}`}>
+            <div className={`space-y-2 sm:space-y-3 pb-0 transition-all duration-300 ${activeTab === 'results' ? 'mt-0' : 'mt-2'}`}>
               <button onClick={handleAuthorClick} className="w-full bg-slate-200 text-slate-900 py-3.5 sm:py-3.5 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-300 transition-all active:scale-95 text-lg sm:text-sm flex items-center justify-center gap-2">
                 <User className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" /> More from this Creator
               </button>
