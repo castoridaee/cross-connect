@@ -20,7 +20,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 3;
+  const ITEMS_PER_PAGE = 10;
 
   // Paginated Data State
   const [items, setItems] = useState([]);
@@ -32,7 +32,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [authorPuzzleCount, setAuthorPuzzleCount] = useState(0);
   const [authorLikedCount, setAuthorLikedCount] = useState(0);
   const [globalUnreadCount, setGlobalUnreadCount] = useState(0);
-  const [showTabGradient, setShowTabGradient] = useState(true);
+  const [showRightGradient, setShowRightGradient] = useState(true);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
   const tabContainerRef = React.useRef(null);
 
   const isOwner = currentUser?.id === authorId;
@@ -69,7 +70,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
           setAuthorLikedCount(lCount || 0);
 
           setAuthorLikedCount(lCount || 0);
-  
+
           // Get global unread mentions count using service
           const { count: mCount } = await getUserUnreadMentionsCount(authorId);
           setGlobalUnreadCount(mCount || 0);
@@ -262,8 +263,12 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const handleTabScroll = () => {
     if (!tabContainerRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = tabContainerRef.current;
-    // If we're within 10px of the end, hide the gradient
-    setShowTabGradient(scrollLeft + clientWidth < scrollWidth - 10);
+    
+    // Left gradient: if scrolled more than 10px
+    setShowLeftGradient(scrollLeft > 10);
+    
+    // Right gradient: if not within 10px of end
+    setShowRightGradient(scrollLeft + clientWidth < scrollWidth - 10);
   };
 
   // Initial check for gradient
@@ -342,76 +347,77 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
 
       {isOwner && (
         <div className="relative mb-8 pt-2 overflow-hidden">
-          {/* Scroll fade indicator */}
-          <div className={`absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none transition-opacity duration-300 ${showTabGradient ? 'opacity-100' : 'opacity-0'}`} />
+          {/* Scroll fade indicators */}
+          <div className={`absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none transition-opacity duration-300 ${showLeftGradient ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none transition-opacity duration-300 ${showRightGradient ? 'opacity-100' : 'opacity-0'}`} />
           
-          <div 
+          <div
             ref={tabContainerRef}
             onScroll={handleTabScroll}
             className="flex gap-4 sm:gap-8 border-b border-slate-100 overflow-x-auto no-scrollbar pb-1"
           >
-          <button
-            onClick={() => setActiveTab('puzzles')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'puzzles' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Puzzles
-            {activeTab === 'puzzles' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('unpublished')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Unpublished
-            {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('mentions')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'mentions' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Mentions
-            {globalUnreadCount > 0 && (
-              <span className="absolute top-0 -right-2 bg-red-500 w-2 h-2 rounded-full border border-white shadow-sm" />
-            )}
-            {activeTab === 'mentions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('in_progress')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'in_progress' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            In Progress
-            {activeTab === 'in_progress' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('liked')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'liked' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Liked
-            {activeTab === 'liked' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('played')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'played' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Solved
-            {activeTab === 'played' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('skipped')}
-            className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'skipped' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-          >
-            Skipped
-            {activeTab === 'skipped' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
-          </button>
+            <button
+              onClick={() => setActiveTab('puzzles')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'puzzles' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Puzzles
+              {activeTab === 'puzzles' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('unpublished')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'unpublished' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Unpublished
+              {activeTab === 'unpublished' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('mentions')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'mentions' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Mentions
+              {globalUnreadCount > 0 && (
+                <span className="absolute top-0 -right-2 bg-red-500 w-2 h-2 rounded-full border border-white shadow-sm" />
+              )}
+              {activeTab === 'mentions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('in_progress')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'in_progress' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              In Progress
+              {activeTab === 'in_progress' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('liked')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'liked' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Liked
+              {activeTab === 'liked' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('played')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'played' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Solved
+              {activeTab === 'played' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('skipped')}
+              className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'skipped' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              Skipped
+              {activeTab === 'skipped' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-t-full" />}
+            </button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {(isOwner || activeTab === 'puzzles') && activeTab !== 'mentions' && (
         <div className="flex justify-end mb-6">

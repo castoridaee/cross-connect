@@ -189,7 +189,7 @@ export function PuzzleCard({
           {isAuthor && onActionClick && (
             <button
               onClick={() => onActionClick(puzzle)}
-              className="flex items-center justify-center px-2.5 py-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95 border border-slate-100"
+              className="flex items-center justify-center px-2.5 py-2.5 rounded-xl transition-all bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 active:scale-95 shadow-sm"
               aria-label="Manage puzzle"
             >
               <MoreVertical size={16} />
