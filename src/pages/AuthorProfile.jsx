@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes, markSpecificMentionsRead, markMentionsRead } from '../lib/puzzleService';
+import { getProfile, getUserProgressForPuzzles, deletePuzzle, updatePuzzle, getUserComments, getUserMentions, toggleCommentLike, getCommentLikes, markSpecificMentionsRead, markMentionsRead, togglePuzzleLike } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,8 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   const [sortBy, setSortBy] = useState('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // New Comments/Mentions State
   const [userComments, setUserComments] = useState([]);
@@ -91,9 +93,9 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             skipped = progressPuzzles.filter(p => p.user_progress?.[0]?.status === 'skipped' && p.created_by !== currentUser.id);
             // "In progress" = unskipped, unsolved, but has progress (status='started' or just exists)
             // MUST have at least one tile placed
-            const inProgress = progressPuzzles.filter(p => 
-              p.user_progress?.[0]?.status !== 'solved' && 
-              p.user_progress?.[0]?.status !== 'skipped' && 
+            const inProgress = progressPuzzles.filter(p =>
+              p.user_progress?.[0]?.status !== 'solved' &&
+              p.user_progress?.[0]?.status !== 'skipped' &&
               !p.user_progress?.[0]?.is_skipped &&
               p.created_by !== currentUser.id &&
               p.user_progress?.[0]?.grid_state &&
@@ -131,6 +133,11 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     if (authorId) loadData();
     else setLoading(false);
   }, [authorId, currentUser]);
+
+  // Reset page when tab or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, sortBy]);
 
   const handleDeleteClick = async () => {
     if (!deletingPuzzle) return;
@@ -196,7 +203,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     if (targetMention && !targetMention.is_read) {
       // Mark as read natively
       setUserMentions(prev => prev.map(m => m.id === commentId ? { ...updater(m), is_read: true } : updater(m)));
-      
+
       // Persist to DB
       markSpecificMentionsRead([targetMention.mention_id]).then(() => {
         if (onMentionsRead) onMentionsRead();
@@ -211,6 +218,36 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       console.error("Error liking comment:", err);
       // Revert if needed
       setLikedCommentIds(likedCommentIds);
+    }
+  };
+
+  const handleTogglePuzzleLike = async (puzzleId) => {
+    if (!currentUser) return;
+    const isLiking = !likeStatus[puzzleId];
+
+    // Optimistic update
+    setLikeStatus(prev => ({ ...prev, [puzzleId]: isLiking }));
+
+    const updateList = (list) => list.map(p =>
+      p.id === puzzleId ? { ...p, likes_count: (p.likes_count || 0) + (isLiking ? 1 : -1) } : p
+    );
+
+    setSolvedPuzzles(prev => updateList(prev));
+    setLikedPuzzles(prev => {
+      if (isLiking) {
+        const p = solvedPuzzles.find(x => x.id === puzzleId) || puzzles.find(x => x.id === puzzleId);
+        return p ? [{ ...p, likes_count: (p.likes_count || 0) + 1 }, ...prev] : prev;
+      }
+      return prev.filter(x => x.id !== puzzleId);
+    });
+
+    try {
+      const { error } = await togglePuzzleLike(puzzleId, currentUser.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error toggling puzzle like:", err);
+      // Revert optimistic update
+      setLikeStatus(prev => ({ ...prev, [puzzleId]: !isLiking }));
     }
   };
 
@@ -268,28 +305,28 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         <div className="flex items-center gap-2 mt-4 sm:mt-0 self-center sm:self-auto w-full sm:w-auto justify-center sm:justify-end flex-wrap">
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
+            className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
             title="Share Profile"
           >
-            {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
-            <span className="text-[10px] font-black uppercase tracking-widest break-words">{showCopied ? 'Copied' : 'Share'}</span>
+            {showCopied ? <Check size={16} className="text-green-500" /> : <Share2 size={16} />}
+            <span className="text-[10px] sm:text-[10px] font-black uppercase tracking-widest break-words">{showCopied ? 'Copied' : 'Share'}</span>
           </button>
           {isOwner && (
             <>
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
                 title="Profile Settings"
               >
-                <Settings size={18} />
+                <Settings size={16} />
                 <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>
               </button>
               <button
                 onClick={() => signOut()}
-                className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-red-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-red-50 hover:border-red-100"
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-3 text-slate-500 hover:text-red-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-red-50 hover:border-red-100"
                 title="Logout"
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
                 <span className="text-[10px] font-black uppercase tracking-widest break-words">Logout</span>
               </button>
             </>
@@ -433,19 +470,22 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               return scoreA - scoreB;
             }
             return new Date(b.created_at) - new Date(a.created_at);
-          }).map(p => (
-            <PuzzleCard
-              key={p.id}
-              puzzle={p}
-              solveStatus={solveStatus}
-              likeStatus={likeStatus}
-              tab={activeTab}
-              currentUser={currentUser}
-              onNavigateToPuzzle={onNavigateToPuzzle}
-              onEditPuzzle={onEditPuzzle}
-              onActionClick={currentUser && p.created_by === currentUser.id ? () => setDeletingPuzzle(p) : null}
-            />
-          ))
+          })
+            .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+            .map(p => (
+              <PuzzleCard
+                key={p.id}
+                puzzle={p}
+                solveStatus={solveStatus}
+                likeStatus={likeStatus}
+                tab={activeTab}
+                currentUser={currentUser}
+                onNavigateToPuzzle={onNavigateToPuzzle}
+                onEditPuzzle={onEditPuzzle}
+                onLike={handleTogglePuzzleLike}
+                onActionClick={currentUser && p.created_by === currentUser.id ? () => setDeletingPuzzle(p) : null}
+              />
+            ))
         ) : (
           <div className="space-y-6">
             {userMentions.some(m => !m.is_read) && (
@@ -458,23 +498,63 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
                 </button>
               </div>
             )}
-            {userMentions.map(mention => (
-              <div key={mention.id} onClick={() => handleMentionClick(mention)} className="cursor-pointer relative group">
-                {!mention.is_read && (
-                  <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white z-10"></div>
-                )}
-                <CommentItem
-                  comment={mention}
-                  userId={currentUser?.id}
-                  puzzleAuthorId={mention.puzzle?.created_by}
-                  onLike={handleToggleCommentLike}
-                  isLiked={likedCommentIds.has(mention.id)}
-                />
-              </div>
-            ))}
+            {userMentions
+              .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+              .map(mention => (
+                <div key={mention.id} onClick={() => handleMentionClick(mention)} className="cursor-pointer relative group">
+                  {!mention.is_read && (
+                    <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white z-10"></div>
+                  )}
+                  <CommentItem
+                    comment={mention}
+                    userId={currentUser?.id}
+                    puzzleAuthorId={mention.puzzle?.created_by}
+                    onLike={handleToggleCommentLike}
+                    isLiked={likedCommentIds.has(mention.id)}
+                  />
+                </div>
+              ))}
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {(() => {
+        const fullList = activeTab === 'mentions' ? userMentions : (
+          activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
+            activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
+              activeTab === 'played' ? solvedPuzzles :
+                activeTab === 'skipped' ? skippedPuzzles :
+                  activeTab === 'in_progress' ? inProgressPuzzles :
+                    likedPuzzles
+        );
+        const totalItems = fullList.length;
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+        if (totalPages <= 1) return null;
+
+        return (
+          <div className="flex items-center justify-center gap-4 mb-12">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Previous
+            </button>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Page <span className="text-slate-900">{currentPage}</span> of {totalPages}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Next
+            </button>
+          </div>
+        );
+      })()}
 
       {deletingPuzzle && (
         <PuzzleOptionsModal
@@ -506,7 +586,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       )}
 
       {(
-          activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
+        activeTab === 'unpublished' ? puzzles.filter(p => !p.is_published) :
           activeTab === 'puzzles' ? puzzles.filter(p => p.is_published) :
             activeTab === 'played' ? solvedPuzzles :
               activeTab === 'skipped' ? skippedPuzzles :

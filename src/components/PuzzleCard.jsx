@@ -11,9 +11,9 @@ function PuzzleGridPreview({ layout }) {
   const maxDim = Math.max(numRows, numCols);
 
   return (
-    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-slate-950 rounded-2xl flex items-center justify-center p-2.5 sm:p-3 shrink-0 shadow-sm border border-slate-800">
+    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-950 rounded-sm flex items-center justify-center p-2.5 sm:p-3 shrink-0 shadow-sm border border-slate-800">
       <div
-        className="grid gap-0.5 sm:gap-1"
+        className="grid gap-[1px]"
         style={{
           gridTemplateColumns: `repeat(${numCols}, 1fr)`,
           width: numCols >= numRows ? '100%' : `${(numCols / numRows) * 100}%`,
@@ -23,7 +23,7 @@ function PuzzleGridPreview({ layout }) {
         {layout.flat().map((active, i) => (
           <div
             key={i}
-            className={`rounded-[1.5px] sm:rounded-[2px] aspect-square ${active ? 'bg-gray-100' : 'bg-slate-800'}`}
+            className={`aspect-square ${active ? 'bg-gray-100' : 'bg-slate-800'}`}
           />
         ))}
       </div>
@@ -39,7 +39,8 @@ export function PuzzleCard({
   onNavigateToPuzzle,
   onActionClick,
   currentUser,
-  onEditPuzzle
+  onEditPuzzle,
+  onLike
 }) {
   const [showCopied, setShowCopied] = React.useState(false);
   const isAuthor = !!onActionClick || tab === 'unpublished';
@@ -110,9 +111,9 @@ export function PuzzleCard({
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap px-1">
           {hasPopulatedStats && (
             <>
-              <StatTooltip label="Community Likes">
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight text-pink-600 cursor-help">
-                  <Heart size={14} className="fill-current" />
+              <StatTooltip label="Total Community Likes">
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight text-slate-400 cursor-help">
+                  <Heart size={13} className="opacity-70" />
                   <span>{puzzle.likes_count || 0}</span>
                 </div>
               </StatTooltip>
@@ -141,7 +142,21 @@ export function PuzzleCard({
         </div>
 
         {/* Bottom Section: Actions */}
-        <div className="grid grid-cols-2 sm:flex sm:justify-end gap-2 pt-1 border-t border-slate-50">
+        <div className="flex flex-row justify-end items-center gap-2 pt-1 border-t border-slate-50">
+          {(tab === 'played' || tab === 'liked') && currentUser && onLike && (
+            <button
+              onClick={() => onLike(puzzle.id)}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border shadow-sm active:scale-95 ${
+                likeStatus[puzzle.id] 
+                ? 'bg-pink-50 text-pink-500 border-pink-100' 
+                : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+              }`}
+              title={likeStatus[puzzle.id] ? "Unlike" : "Like"}
+            >
+              <Heart size={14} fill={likeStatus[puzzle.id] ? 'currentColor' : 'none'} />
+              <span>{likeStatus[puzzle.id] ? 'Liked' : 'Like'}</span>
+            </button>
+          )}
           {puzzle.is_published && (
             <>
               <button
@@ -155,14 +170,14 @@ export function PuzzleCard({
                     await recordPuzzleShare(currentUser.id, puzzle.id);
                   }
                 }}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 active:scale-95 shadow-sm"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 active:scale-95 shadow-sm"
               >
                 {showCopied ? <Check size={14} className="text-green-600" /> : <Share2 size={14} />}
                 <span>{showCopied ? 'Copied' : 'Share'}</span>
               </button>
               <button
                 onClick={() => onNavigateToPuzzle(puzzle)}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 active:scale-95 shadow-lg shadow-slate-200"
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 active:scale-95 shadow-lg shadow-slate-200"
               >
                 <Play size={14} fill="currentColor" />
                 <span>
@@ -175,7 +190,7 @@ export function PuzzleCard({
           {isPuzzleOwner && !puzzle.is_published && (
             <button
               onClick={() => onEditPuzzle?.(puzzle)}
-              className="col-span-2 sm:col-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 active:scale-95 shadow-lg shadow-slate-200"
+              className="col-span-2 sm:col-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 active:scale-95 shadow-lg shadow-slate-200"
             >
               <EyeOff size={14} /> Edit Draft
             </button>
@@ -184,7 +199,7 @@ export function PuzzleCard({
           {isAuthor && onActionClick && (
             <button
               onClick={() => onActionClick(puzzle)}
-              className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95 border border-slate-100"
+              className="flex items-center justify-center px-2.5 py-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95 border border-slate-100"
               aria-label="Manage puzzle"
             >
               <MoreVertical size={16} />
