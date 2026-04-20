@@ -11,7 +11,7 @@ import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import Avatar from "boring-avatars";
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress, onNext }) {
+export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress, onNext, onMentionsRead }) {
   const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onReset, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
@@ -247,6 +247,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             }}
             onLikeTrack={onToggleLike}
             initialIsLiked={isLiked}
+            onMentionsRead={onMentionsRead}
           />
         )}
 

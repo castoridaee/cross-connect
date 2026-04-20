@@ -1,6 +1,8 @@
 import React from 'react';
-import { Calendar, Gauge, Play, EyeOff, MoreVertical, Heart, Clock, BarChart2, Check, SkipForward } from 'lucide-react';
+import { Calendar, Gauge, Play, EyeOff, MoreVertical, Heart, Clock, BarChart2, Check, SkipForward, Share2 } from 'lucide-react';
 import { StatTooltip } from './StatTooltip';
+import { recordPuzzleShare } from '../lib/puzzleService';
+import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 
 export function PuzzleCard({ 
   puzzle, 
@@ -12,6 +14,7 @@ export function PuzzleCard({
   currentUser,
   onEditPuzzle
 }) {
+  const [showCopied, setShowCopied] = React.useState(false);
   const isAuthor = !!onActionClick || tab === 'unpublished';
   const isPuzzleOwner = currentUser?.id === puzzle.created_by;
   const hasPopulatedStats = puzzle.solve_count > 0;
@@ -142,14 +145,35 @@ export function PuzzleCard({
         </div>
         
         {/* Right section: Action */}
-        <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
+        <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100 flex-wrap sm:flex-nowrap">
           {puzzle.is_published && (
-            <button 
-              onClick={() => onNavigateToPuzzle(puzzle)}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[140px] bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200`}
-            >
-              <Play size={16} fill="currentColor" /> {isPuzzleOwner ? 'View' : 'Play'}
-            </button>
+            <>
+              <button 
+                onClick={async () => {
+                  const text = generateShareText(puzzle);
+                  copyToClipboard(text, () => {
+                    setShowCopied(true);
+                    setTimeout(() => setShowCopied(false), 2000);
+                  });
+                  if (currentUser) {
+                    await recordPuzzleShare(currentUser.id, puzzle.id);
+                  }
+                }}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[100px] bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200"
+              >
+                {showCopied ? <Check size={16} className="text-green-600" /> : <Share2 size={16} />}
+                <span className="break-words">{showCopied ? 'Copied' : 'Share'}</span>
+              </button>
+              <button 
+                onClick={() => onNavigateToPuzzle(puzzle)}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-4 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg min-w-[140px] bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-slate-200`}
+              >
+                <Play size={16} fill="currentColor" /> 
+                <span className="break-words">
+                  {isPuzzleOwner || ['played', 'liked', 'skipped'].includes(tab) ? 'View' : 'Play'}
+                </span>
+              </button>
+            </>
           )}
 
           {isPuzzleOwner && !puzzle.is_published && (
@@ -165,7 +189,7 @@ export function PuzzleCard({
           {isAuthor && onActionClick && (
             <button
               onClick={() => onActionClick(puzzle)}
-              className="flex items-center justify-center w-12 sm:w-14 rounded-2xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors shadow-sm"
+              className="flex items-center justify-center w-12 sm:w-14 py-4 sm:py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shadow-lg active:scale-95"
               aria-label="Manage puzzle"
             >
               <MoreVertical size={20} />

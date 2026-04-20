@@ -2,10 +2,10 @@ import { Trophy, Heart, Share2, Check, User, X, MessageSquare, List, Send, Filte
 import React, { useState, useRef, useEffect } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import { useAuth } from '../context/AuthContext';
-import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markMentionsRead } from '../lib/puzzleService';
+import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markMentionsRead, markSpecificMentionsRead } from '../lib/puzzleService';
 import { CommentItem } from './CommentItem';
 
-export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false }) => {
+export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false, onMentionsRead }) => {
   const { user } = useAuth();
   const [showCopied, setShowCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -22,7 +22,8 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [likedCommentIds, setLikedCommentIds] = useState(new Set());
-  const [unreadMentionIds, setUnreadMentionIds] = useState(new Set());
+  const [unreadMentionCommentIds, setUnreadMentionCommentIds] = useState(new Set());
+  const [unreadMentionRecordIds, setUnreadMentionRecordIds] = useState(new Set());
   const [isSortOpen, setIsSortOpen] = useState(false);
 
   // Mention Autocomplete Engine
@@ -64,7 +65,8 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     if (user && puzzle?.id) {
       getPuzzleUnreadMentions(user.id, puzzle.id).then(({ data }) => {
         if (data && data.length > 0) {
-          setUnreadMentionIds(new Set(data.map(d => d.comment_id)));
+          setUnreadMentionCommentIds(new Set(data.map(d => d.comment_id)));
+          setUnreadMentionRecordIds(new Set(data.map(d => d.id)));
           setCommentSort('mentions');
         }
       });
@@ -73,14 +75,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
   // Mark Mentions Read when entering Comments Tab
   useEffect(() => {
-    if (activeTab === 'comments' && unreadMentionIds.size > 0 && user && puzzle?.id) {
-      markMentionsRead(user.id, puzzle.id).then(() => {
+    if (activeTab === 'comments' && unreadMentionRecordIds.size > 0 && user && puzzle?.id) {
+      markSpecificMentionsRead(Array.from(unreadMentionRecordIds)).then(() => {
         // We do not clear the local state immediately because we want the UI indicator
         // to persist on the specific comments for the duration of this viewing session
         // so the user knows which ones were new!
+        if (onMentionsRead) onMentionsRead();
       });
     }
-  }, [activeTab, unreadMentionIds.size, user, puzzle?.id]);
+  }, [activeTab, unreadMentionRecordIds.size, user, puzzle?.id]);
 
   // Sync state if prop changes (e.g. late fetch)
   useEffect(() => {
@@ -291,7 +294,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
             className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 relative ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Comments
-            {unreadMentionIds.size > 0 && (
+            {unreadMentionCommentIds.size > 0 && (
               <span className="absolute top-0 right-0 -mr-3 -mt-1 bg-red-500 w-2 h-2 rounded-full border border-white" />
             )}
           </button>
@@ -361,7 +364,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${commentSort === 'mentions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           Mentions
-                          {unreadMentionIds.size > 0 && (
+                          {unreadMentionCommentIds.size > 0 && (
                             <span className="bg-red-500 w-2 h-2 rounded-full border border-white" />
                           )}
                         </button>
@@ -390,7 +393,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                   >
                     {comments.map(c => (
                       <div key={c.id} className="relative">
-                        {unreadMentionIds.has(c.id) && (
+                        {unreadMentionCommentIds.has(c.id) && (
                           <div className="absolute top-2 right-2 sm:top-2 sm:right-2 flex items-center justify-center p-1 bg-red-500 rounded-full border border-white z-10 w-3 h-3"></div>
                         )}
                         <CommentItem

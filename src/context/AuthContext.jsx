@@ -6,6 +6,7 @@ const AuthContext = createContext({
   user: null,
   loading: true,
   signOut: () => { },
+  refreshUser: async () => { },
 });
 
 export function AuthProvider({ children }) {
@@ -13,9 +14,10 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const initializingRef = useRef(false);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     async function initializeAuth() {
       if (initializingRef.current) return;
@@ -28,7 +30,7 @@ export function AuthProvider({ children }) {
         if (sessionError) throw sessionError;
 
         if (currentSession) {
-          if (mounted) {
+          if (mountedRef.current) {
             setSession(currentSession);
             setUser(currentSession.user);
           }
@@ -37,7 +39,7 @@ export function AuthProvider({ children }) {
           const { data, error: anonError } = await supabase.auth.signInAnonymously();
           if (anonError) throw anonError;
 
-          if (mounted && data) {
+          if (mountedRef.current && data) {
             setSession(data.session);
             setUser(data.user);
           }
@@ -45,7 +47,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error("Auth Initialization Error:", err.message);
       } finally {
-        if (mounted) setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     }
 
@@ -53,17 +55,17 @@ export function AuthProvider({ children }) {
 
     // Listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
 
       if (event === 'SIGNED_OUT' && !newSession) {
         setLoading(true);
         // Instantly replace the dead session with a fresh anonymous one
         const { data } = await supabase.auth.signInAnonymously();
-        if (mounted && data) {
+        if (mountedRef.current && data) {
           setSession(data.session);
           setUser(data.user);
         }
-        if (mounted) setLoading(false);
+        if (mountedRef.current) setLoading(false);
       } else {
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -72,7 +74,7 @@ export function AuthProvider({ children }) {
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -127,6 +129,13 @@ export function AuthProvider({ children }) {
       });
     },
     signOut: () => supabase.auth.signOut(),
+    refreshUser: async () => {
+      const { data: { user: updatedUser }, error } = await supabase.auth.getUser();
+      if (!error && updatedUser && mountedRef.current) {
+        setUser(updatedUser);
+      }
+      return { data: updatedUser, error };
+    }
   };
 
   return (

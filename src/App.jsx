@@ -5,7 +5,7 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
-import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle, getUserUnreadMentionsCount } from './lib/puzzleService';
 import logo from './assets/logo.svg';
 import Avatar from "boring-avatars";
 
@@ -17,6 +17,20 @@ function App() {
   const [pendingData, setPendingData] = useState(null);
   const [authorId, setAuthorId] = useState(null);
   const [progress, setProgress] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  const refreshUnreadCount = async () => {
+    if (user && !user.is_anonymous) {
+      const { count } = await getUserUnreadMentionsCount(user.id);
+      setUnreadCount(count || 0);
+    } else {
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    refreshUnreadCount();
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -184,6 +198,13 @@ function App() {
       console.warn("Skip failed: No puzzle or user", { puzzle, user });
       return;
     }
+
+    // If already solved, just go to next without recording a skip
+    if (progress?.status === 'solved' || progress?.is_solved) {
+      loadPuzzles();
+      return;
+    }
+
     setLoading(true);
     console.log("Recording skip for puzzle:", puzzle.id, "user:", user.id);
     const { error } = await recordPuzzleSkip(user.id, puzzle.id);
@@ -265,13 +286,18 @@ function App() {
                     setView('author');
                   }}
                 >
-                  <Avatar
-                    size={32}
-                    name={user.id}
-                    variant="beam"
-                    colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
-                    square
-                  />
+                  <div className="relative">
+                    <Avatar
+                      size={32}
+                      name={user.id}
+                      variant="beam"
+                      colors={["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"]}
+                      square
+                    />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 w-2.5 h-2.5 rounded-full border border-white shadow-sm" />
+                    )}
+                  </div>
                   <div className="hidden md:flex flex-col items-end">
                     <span className="text-xs font-black">
                       {user.user_metadata?.username || user.email?.split('@')[0]}
@@ -324,6 +350,7 @@ function App() {
               }}
               onSkip={handleSkip}
               onNext={handleNext}
+              onMentionsRead={refreshUnreadCount}
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
@@ -360,6 +387,7 @@ function App() {
               setPuzzle(p);
               setView('solve');
             }}
+            onMentionsRead={refreshUnreadCount}
           />
         ) : (
           <CreatePuzzle

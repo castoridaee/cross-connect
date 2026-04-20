@@ -318,12 +318,25 @@ export async function getProfile(id) {
 }
 
 export async function updateProfile(id, data) {
+  // 1. Update the profiles table
   const { data: updatedData, error } = await supabase
     .from('profiles')
     .update(data)
     .eq('id', id)
     .select()
     .single();
+
+  // 2. If username changed, sync with auth metadata so head/nav updates
+  if (!error && data.username) {
+    try {
+      await supabase.auth.updateUser({
+        data: { username: data.username }
+      });
+    } catch (authErr) {
+      console.warn("Failed to sync auth metadata:", authErr);
+    }
+  }
+
   return { data: updatedData, error };
 }
 
@@ -697,12 +710,55 @@ export async function getPuzzleUnreadMentions(userId, puzzleId) {
   return { data, error };
 }
 
+export async function getUserUnreadMentionsCount(userId) {
+  if (!userId) return { count: 0, error: null };
+  const { count, error } = await supabase
+    .from('comment_mentions')
+    .select('*', { count: 'exact', head: true })
+    .eq('mentioned_user_id', userId)
+    .eq('is_read', false);
+  return { count: count || 0, error };
+}
+
 export async function markMentionsRead(userId, puzzleId) {
   const { error } = await supabase.rpc('mark_mentions_read', {
     p_user_id: userId,
     p_puzzle_id: puzzleId
   });
   return { error };
+}
+
+export async function markSpecificMentionsRead(mentionIds) {
+  if (!mentionIds || mentionIds.length === 0) return { error: null };
+  const { error } = await supabase.rpc('mark_specific_mentions_read', {
+    p_mention_ids: mentionIds
+  });
+  return { error };
+}
+
+export async function recordPuzzleShare(userId, puzzleId) {
+  if (!userId) return { error: 'Not signed in' };
+  
+  // 1. Update user progress to mark as shared
+  const { error: progError } = await supabase
+    .from('user_progress')
+    .upsert({
+      user_id: userId,
+      puzzle_id: puzzleId,
+      has_shared: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, puzzle_id' });
+
+  if (progError) return { error: progError };
+
+  // 2. Increment global share count on puzzle
+  const { error: puzzleError } = await supabase.rpc('record_puzzle_engagement', {
+    p_id: puzzleId,
+    u_id: userId,
+    metric: 'share'
+  });
+
+  return { error: puzzleError };
 }
 
 export async function validateUsername(username) {
