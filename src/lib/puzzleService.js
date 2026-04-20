@@ -640,6 +640,121 @@ export async function getComments(puzzleId, sortBy = 'newest', page = 1, pageSiz
   return { data, error, count };
 }
 
+export async function getPaginatedProfilePuzzles({ userId, visitorId, type, page = 1, pageSize = 10, sortBy = 'newest' }) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query;
+  const commonSelect = '*, author:profiles!created_by(username, is_anonymous)';
+
+  // 1. Initialize query based on type
+  if (type === 'author_published') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!left(*)`, { count: 'exact' })
+      .eq('created_by', userId)
+      .eq('is_published', true);
+    if (visitorId) query = query.eq('user_progress.user_id', visitorId);
+  } 
+  else if (type === 'author_unpublished') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!left(*)`, { count: 'exact' })
+      .eq('created_by', userId)
+      .eq('is_published', false);
+    if (visitorId) query = query.eq('user_progress.user_id', visitorId);
+  } 
+  else if (type === 'liked') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!inner(*)`, { count: 'exact' })
+      .eq('user_progress.user_id', userId)
+      .eq('user_progress.is_liked', true)
+      .eq('is_published', true);
+  } 
+  else if (type === 'solved') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!inner(*)`, { count: 'exact' })
+      .eq('user_progress.user_id', userId)
+      .eq('user_progress.status', 'solved')
+      .eq('is_published', true);
+  } 
+  else if (type === 'skipped') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!inner(*)`, { count: 'exact' })
+      .eq('user_progress.user_id', userId)
+      .eq('user_progress.status', 'skipped')
+      .eq('is_published', true);
+  } 
+  else if (type === 'in_progress') {
+    query = supabase
+      .from('puzzles')
+      .select(`${commonSelect}, user_progress!inner(*)`, { count: 'exact' })
+      .eq('user_progress.user_id', userId)
+      .neq('user_progress.status', 'solved')
+      .neq('user_progress.status', 'skipped')
+      .not('user_progress.grid_state', 'is', null)
+      .neq('user_progress.grid_state', '{}')
+      .eq('is_published', true);
+  } 
+  else {
+    // Fallback
+    query = supabase.from('puzzles').select(`${commonSelect}, user_progress!left(*)`, { count: 'exact' });
+    if (visitorId) query = query.eq('user_progress.user_id', visitorId);
+  }
+
+  // 2. Apply Sorting
+  if (sortBy === 'likes') {
+    query = query.order('likes_count', { ascending: false });
+  } else if (sortBy === 'solves') {
+    query = query.order('play_count', { ascending: false });
+  } else if (sortBy === 'difficulty_desc') {
+    query = query.order('difficulty_score', { ascending: false, nullsFirst: false });
+  } else if (sortBy === 'difficulty_asc') {
+    query = query.order('difficulty_score', { ascending: true, nullsFirst: false });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const { data, error, count } = await query.range(from, to);
+
+  if (error) return { data: null, count: 0, error };
+
+  // 3. Handle secondary visitor status for activity tabs
+  const isActivityTab = ['liked', 'solved', 'skipped', 'in_progress'].includes(type);
+  let visitorProgressMap = {};
+  if (isActivityTab && visitorId && visitorId !== userId && data?.length > 0) {
+    const { data: vProgress } = await supabase
+      .from('user_progress')
+      .select('puzzle_id, status, is_liked')
+      .eq('user_id', visitorId)
+      .in('puzzle_id', data.map(p => p.id));
+    
+    if (vProgress) {
+      vProgress.forEach(vp => {
+        visitorProgressMap[vp.puzzle_id] = vp;
+      });
+    }
+  }
+
+  // 4. Map data for PuzzleCard
+  const mappedData = data?.map(p => {
+    const ownerProgress = p.user_progress?.[0] || null;
+    const progressToUse = (isActivityTab && visitorId && visitorId !== userId)
+      ? visitorProgressMap[p.id] || null
+      : ownerProgress;
+
+    return {
+      ...p,
+      user_progress: progressToUse
+    };
+  });
+
+  return { data: mappedData, count, error };
+}
+
 export async function addComment(puzzleId, userId, content) {
 
   const { data: profile } = await getProfile(userId);
@@ -680,22 +795,28 @@ export async function getUserComments(userId) {
   return { data, error };
 }
 
-export async function getUserMentions(userId) {
-  const { data, error } = await supabase
+export async function getUserMentions(userId, page = 1, pageSize = 10) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
     .from('comment_mentions')
-    .select('id, is_read, comment:comments(*, author:profiles!user_id(username, is_anonymous), puzzle:puzzles(*, author:profiles!created_by(username, is_anonymous)))')
+    .select('id, is_read, comment:comments(*, author:profiles!user_id(username, is_anonymous), puzzle:puzzles(*, author:profiles!created_by(username, is_anonymous)))', { count: 'exact' })
     .eq('mentioned_user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (data) {
-    const mapped = data.map(m => ({
-      ...m.comment,
-      is_read: m.is_read,
-      mention_id: m.id
-    }));
-    return { data: mapped, error };
+    const mapped = data
+      .filter(m => m.comment !== null)
+      .map(m => ({
+        ...m.comment,
+        is_read: m.is_read,
+        mention_id: m.id
+      }));
+    return { data: mapped, error, count };
   }
-  return { data, error };
+  return { data: null, error, count: 0 };
 }
 
 export async function getPuzzleUnreadMentions(userId, puzzleId) {

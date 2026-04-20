@@ -21,6 +21,7 @@ export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }
   };
 
   const renderContent = (text) => {
+    if (!text) return '';
     // Regex to find @mentions (now matches any non-space characters)
     const parts = text.split(/(@\S+)/g);
     return parts.map((part, i) => {

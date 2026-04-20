@@ -97,17 +97,15 @@ export function PuzzleCard({
                     onLike(puzzle.id);
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${
-                  !isPuzzleOwner ? 'active:scale-95 hover:text-slate-700 cursor-pointer' : 'cursor-default opacity-70'
-                } ${
-                  likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${!isPuzzleOwner ? 'active:scale-95 hover:text-slate-700 cursor-pointer' : 'cursor-default opacity-70'
+                  } ${likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
+                  }`}
                 title={isPuzzleOwner ? "You cannot like your own puzzle" : likeStatus?.[puzzle.id] ? "Unlike" : "Like"}
               >
-                <Heart 
-                  size={18} 
-                  fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'} 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                <Heart
+                  size={18}
+                  fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'}
+                  className="w-4 h-4 sm:w-5 sm:h-5"
                 />
                 <span className="text-base sm:text-lg font-black">{puzzle.likes_count || 0}</span>
               </button>
@@ -127,7 +125,7 @@ export function PuzzleCard({
               <StatTooltip label={`${puzzle.play_count || 0} users have started this puzzle`}>
                 <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight text-slate-500 cursor-help">
                   <Play size={14} fill="currentColor" />
-                  <span>{puzzle.play_count || 0} plays</span>
+                  <span>{puzzle.play_count || 0}</span>
                 </div>
               </StatTooltip>
               {diffBadge && (
