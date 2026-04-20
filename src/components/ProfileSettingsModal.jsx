@@ -34,8 +34,17 @@ export function ProfileSettingsModal({ profile, onClose, onUpdated }) {
       onUpdated(data);
       onClose();
     } catch (err) {
-      console.error('Error updating profile:', err);
-      setError('Failed to update settings. Please try again.');
+      const isUniquenessError = err.message?.toLowerCase().includes('already exists') ||
+        err.code === '23505' ||
+        err.message?.toLowerCase().includes('unique constraint') ||
+        err.message === 'This username is unavailable.';
+
+      if (isUniquenessError) {
+        setError('This username is unavailable.');
+      } else {
+        console.error('Error updating profile:', err);
+        setError(err.message || 'Failed to update settings. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

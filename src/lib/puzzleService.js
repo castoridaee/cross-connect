@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
-import { 
-  RegExpMatcher, 
-  englishDataset, 
+import {
+  RegExpMatcher,
+  englishDataset,
   englishRecommendedTransformers,
   DataSet,
   pattern as obscenityPattern
@@ -12,8 +12,8 @@ const dataset = new DataSet().addAll(englishDataset);
 
 // Terms to allow (remove from profanity list)
 const allowedTerms = [
-  'boob', 'boobs', 'butt', 'booty', 'chest', 'nipple', 'nipples', 
-  'crotch', 'rear', 'anus', 'pubic', 'ass', 'tit', 'hell', 
+  'boob', 'boobs', 'butt', 'booty', 'chest', 'nipple', 'nipples',
+  'crotch', 'rear', 'anus', 'pubic', 'ass', 'tit', 'hell',
   'damn', 'darn', 'crap', 'piss'
 ];
 
@@ -28,7 +28,7 @@ const extraSlurs = [
 ];
 
 extraSlurs.forEach(word => {
-  dataset.addPhrase(phrase => 
+  dataset.addPhrase(phrase =>
     phrase.setMetadata({ originalWord: word }).addPattern(obscenityPattern`|${word}|`)
   );
 });
@@ -52,10 +52,10 @@ const directedInsultPatterns = [
 // Uses obscenity engine to catch variations (leet-speak) of mildly toxic standalone words.
 const singleWordDataset = new DataSet();
 [
-  'sucks', 'gay', 'damn', 'crap', 'stupid', 'idiot', 'dumb', 
+  'sucks', 'gay', 'damn', 'crap', 'stupid', 'idiot', 'dumb',
   'trash', 'garbage', 'awful', 'terrible', 'bad', 'worst', 'lame', 'boring', 'sux'
 ].forEach(word => {
-  singleWordDataset.addPhrase(phrase => 
+  singleWordDataset.addPhrase(phrase =>
     phrase.setMetadata({ originalWord: word }).addPattern(obscenityPattern`|${word}|`)
   );
 });
@@ -67,7 +67,7 @@ const singleWordMatcher = new RegExpMatcher({
 
 function checkProfanity(text, isComment = false) {
   if (!text) return false;
-  
+
   const trimmed = text.trim();
 
   // 1. Aggressive single-word check (only for standalone comments)
@@ -94,7 +94,7 @@ function checkPuzzleContent(puzzleData) {
     for (const cat of puzzleData.categories) {
       // Descriptions get full check
       if (checkProfanity(cat.description)) return true;
-      
+
       // Individual words only get slurry check (allow "sux", "lame", etc. on tiles)
       if (cat.words && Array.isArray(cat.words)) {
         for (const word of cat.words) {
@@ -109,13 +109,6 @@ function checkPuzzleContent(puzzleData) {
 function detectSwastikaPattern(grid, rows, cols) {
   if (!grid || rows < 5 || cols < 5) return false;
 
-  // Standard right-facing swastika pattern (5x5)
-  // 1 = occupied, 0 = empty
-  // 1 0 1 1 1
-  // 1 0 1 0 0
-  // 1 1 1 1 1
-  // 0 0 1 0 1
-  // 1 1 1 0 1
   const pattern = [
     [1, 0, 1, 1, 1],
     [1, 0, 1, 0, 0],
@@ -149,7 +142,7 @@ function detectSwastikaPattern(grid, rows, cols) {
 
 async function recordShadowban(userId, severity = 'content') {
   if (!userId) return;
-  
+
   const updates = {
     shadowban_total: supabase.rpc('increment', { row_id: userId, table_name: 'profiles', column_name: 'shadowban_total' })
   };
@@ -165,7 +158,7 @@ async function recordShadowban(userId, severity = 'content') {
 
   await supabase
     .from('profiles')
-    .update({ 
+    .update({
       shadowban_total: newCount,
       is_hard_shadowbanned: isHard
     })
@@ -365,7 +358,7 @@ export async function recordPuzzleSkip(userId, puzzleId) {
       is_skipped: true,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
-  
+
   if (error) console.error("DB Error in recordPuzzleSkip:", error);
   return { error };
 }
@@ -387,7 +380,7 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
       guess_history: progress.history || [],
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id, puzzle_id' });
-  
+
   if (error && error.message === 'Load failed') {
     // Retry once for Safari transient issues
     const { error: retryError } = await supabase.from('user_progress').upsert({
@@ -404,10 +397,10 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
     if (retryError) console.error(`[savePuzzleProgress] Persistent DB Error:`, retryError.message);
     return { error: retryError };
   }
-  
+
   if (error) console.error(`[savePuzzleProgress] DB Error:`, error.message);
   else console.log(`[savePuzzleProgress] Auto-saved progress for ${puzzleId}`);
-  
+
   return { error };
 }
 
@@ -465,9 +458,9 @@ export async function recordPuzzlePlay(userId, puzzleId) {
     console.warn(`[recordPuzzlePlay] Missing IDs: userId=${userId}, puzzleId=${puzzleId}`);
     return { error: 'Missing IDs' };
   }
-  
+
   console.log(`[recordPuzzlePlay] Start: user=${userId}, puzzle=${puzzleId}`);
-  
+
   // 1. Upsert to ensure the row exists. This will trigger the global play_count increment.
   const { data, error } = await supabase
     .from('user_progress')
@@ -484,7 +477,7 @@ export async function recordPuzzlePlay(userId, puzzleId) {
   } else {
     console.log(`[recordPuzzlePlay] Success: Row ${data.id} is present. Status: ${data.status}`);
   }
-  
+
   return { data, error };
 }
 
@@ -537,7 +530,7 @@ export async function getRecommendedPuzzle(userId) {
   const TUTORIAL_PUZZLE_ID = '1834b762-a70b-4dcc-9403-e40d55f5ab07';
   const TUTORIAL_PUZZLE_2_ID = '1d8fc212-534a-4fe0-8e40-f7471b752bc7';
   let skipToStandard = false;
-  
+
   // --- STAGE 1: TUTORIAL ---
   if (userId) {
     // 0. Experience Check: If the user has solved *any* puzzle beside the tutorials, skip Stage 1
@@ -551,7 +544,7 @@ export async function getRecommendedPuzzle(userId) {
 
     if (!history || history.length === 0) {
       const { data: prog1 } = await getPuzzleProgress(userId, TUTORIAL_PUZZLE_ID);
-      
+
       // 1. If T1 is not solved AND not skipped -> Show T1
       if (prog1?.status !== 'solved' && !prog1?.is_skipped) {
         const res = await getPuzzle(TUTORIAL_PUZZLE_ID);
@@ -577,7 +570,7 @@ export async function getRecommendedPuzzle(userId) {
   if (!skipToStandard) {
     const today = new Date().toISOString().split('T')[0];
     const calendarId = dailyPuzzlesMapping[today];
-    
+
     if (calendarId) {
       if (userId) {
         const { data: prog } = await getPuzzleProgress(userId, calendarId);
@@ -604,7 +597,7 @@ export async function getRecommendedPuzzle(userId) {
   }).select('*, author:profiles!created_by(username, is_anonymous)');
 
   let { data, error } = await fetchFn();
-  
+
   // Safari "Load failed" retry
   if (error && error.message === 'Load failed') {
     console.warn(`Safari Load failed for ${rpcName}, retrying...`);
@@ -622,7 +615,7 @@ export async function getRecommendedPuzzle(userId) {
     if (fallbackError) return { data: null, error: fallbackError };
     return { data: fallbackData?.[0] || null, error: null };
   }
-  
+
   return { data: data?.[0] || null, error: null };
 }
 
@@ -743,7 +736,7 @@ export async function markSpecificMentionsRead(mentionIds) {
 
 export async function recordPuzzleShare(userId, puzzleId) {
   if (!userId) return { error: 'Not signed in' };
-  
+
   // 1. Update user progress to mark as shared
   const { error: progError } = await supabase
     .from('user_progress')
@@ -770,14 +763,31 @@ export async function validateUsername(username) {
   if (!username || username.length < 3 || username.length > 30) {
     return { valid: false, error: 'Username must be between 3 and 30 characters.' };
   }
-  
+
   if (/\s/.test(username)) {
     return { valid: false, error: 'Username cannot contain spaces.' };
   }
 
   // Obscenity check
   if (matcher.hasMatch(username)) {
-    // Return generic error as requested to obfuscate
+    // Return generic error to obfuscate
+    return { valid: false, error: 'This username is unavailable.' };
+  }
+
+  // Uniqueness check
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking username uniqueness:', error.message);
+    // On DB error, we stay safe and block just in case
+    return { valid: false, error: 'Could not verify username at this time.' };
+  }
+
+  if (data) {
     return { valid: false, error: 'This username is unavailable.' };
   }
 
