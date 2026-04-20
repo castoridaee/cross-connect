@@ -241,9 +241,16 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     );
 
     setSolvedPuzzles(prev => updateList(prev));
+    setSkippedPuzzles(prev => updateList(prev));
+    setInProgressPuzzles(prev => updateList(prev));
+    setPuzzles(prev => updateList(prev));
+
     setLikedPuzzles(prev => {
       if (isLiking) {
-        const p = solvedPuzzles.find(x => x.id === puzzleId) || puzzles.find(x => x.id === puzzleId);
+        const p = solvedPuzzles.find(x => x.id === puzzleId) || 
+                  puzzles.find(x => x.id === puzzleId) || 
+                  skippedPuzzles.find(x => x.id === puzzleId) || 
+                  inProgressPuzzles.find(x => x.id === puzzleId);
         return p ? [{ ...p, likes_count: (p.likes_count || 0) + 1 }, ...prev] : prev;
       }
       return prev.filter(x => x.id !== puzzleId);
@@ -256,6 +263,13 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
       console.error("Error toggling puzzle like:", err);
       // Revert optimistic update
       setLikeStatus(prev => ({ ...prev, [puzzleId]: !isLiking }));
+      const revertUpdate = (list) => list.map(p =>
+        p.id === puzzleId ? { ...p, likes_count: (p.likes_count || 0) + (!isLiking ? 1 : -1) } : p
+      );
+      setSolvedPuzzles(prev => revertUpdate(prev));
+      setSkippedPuzzles(prev => revertUpdate(prev));
+      setInProgressPuzzles(prev => revertUpdate(prev));
+      setPuzzles(prev => revertUpdate(prev));
     }
   };
 
