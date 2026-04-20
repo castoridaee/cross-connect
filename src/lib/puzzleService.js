@@ -626,31 +626,28 @@ export async function getRecommendedPuzzle(userId) {
   return { data: data?.[0] || null, error: null };
 }
 
-export async function getComments(puzzleId, sortBy = 'newest') {
+export async function getComments(puzzleId, sortBy = 'newest', page = 1, pageSize = 20, mentionUser = null) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   let query = supabase
     .from('comments')
-    .select('*, author:profiles!user_id(id, username, is_anonymous)')
+    .select('*, author:profiles!user_id(id, username, is_anonymous)', { count: 'exact' })
     .eq('puzzle_id', puzzleId);
 
   if (sortBy === 'liked') {
     query = query.order('likes_count', { ascending: false });
+  } else if (sortBy === 'mentions' && mentionUser) {
+    query = query.ilike('content', `%@${mentionUser}%`).order('created_at', { ascending: false });
   } else {
     query = query.order('created_at', { ascending: false });
   }
 
-  const { data, error } = await query;
-  return { data, error };
+  const { data, error, count } = await query.range(from, to);
+  return { data, error, count };
 }
 
 export async function addComment(puzzleId, userId, content) {
-  // Check comment count limit (100 total per puzzle)
-  const { count, error: countError } = await supabase
-    .from('comments')
-    .select('*', { count: 'exact', head: true })
-    .eq('puzzle_id', puzzleId);
-
-  if (countError) return { data: null, error: countError };
-  if (count >= 100) return { data: null, error: { message: "Maximum comment limit (100) reached for this puzzle." } };
 
   const { data: profile } = await getProfile(userId);
   const shouldShadowban = profile?.is_hard_shadowbanned || checkProfanity(content, true);

@@ -25,6 +25,9 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
   const [unreadMentionCommentIds, setUnreadMentionCommentIds] = useState(new Set());
   const [unreadMentionRecordIds, setUnreadMentionRecordIds] = useState(new Set());
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalComments, setTotalComments] = useState(0);
+  const COMMENTS_PER_PAGE = 10;
 
   // Mention Autocomplete Engine
   const mentionMatch = newComment.match(/(?:^|\s)@([a-zA-Z0-9_-]*)$/);
@@ -107,6 +110,9 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     setActiveTab(tab);
     // Sync the animation state reset with the CSS duration (800ms)
     setTimeout(() => setIsAnimating(false), 300);
+    if (tab === 'comments' && currentPage !== 1) {
+      setCurrentPage(1);
+    }
   };
 
   // Fetch comments
@@ -114,25 +120,21 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     if (activeTab === 'comments' && puzzle?.id) {
       loadComments();
     }
-  }, [activeTab, puzzle?.id, commentSort]);
+  }, [activeTab, puzzle?.id, commentSort, currentPage]);
 
   async function loadComments() {
     setLoadingComments(true);
     try {
-      const { data, error } = await getComments(puzzle.id, commentSort);
+      const { data, error, count } = await getComments(
+        puzzle.id,
+        commentSort,
+        currentPage,
+        COMMENTS_PER_PAGE,
+        user?.user_metadata?.username
+      );
       if (error) throw error;
-      let sortedData = data || [];
-      if (commentSort === 'mentions' && user) {
-        const usernameStr = `@${user.user_metadata?.username}`;
-        sortedData.sort((a, b) => {
-          const aMention = a.content.includes(usernameStr);
-          const bMention = b.content.includes(usernameStr);
-          if (aMention && !bMention) return -1;
-          if (!aMention && bMention) return 1;
-          return new Date(b.created_at) - new Date(a.created_at);
-        });
-      }
-      setComments(sortedData);
+      setTotalComments(count || 0);
+      setComments(data || []);
 
       // If user is logged in, fetch their likes for these comments
       if (user && data?.length > 0) {
@@ -158,8 +160,10 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
       if (error) throw error;
 
       // Update local state
-      setComments(prev => [data, ...prev]);
+      setComments(prev => [data, ...prev].slice(0, COMMENTS_PER_PAGE));
+      setTotalComments(prev => prev + 1);
       setNewComment('');
+      if (currentPage !== 1) setCurrentPage(1);
     } catch (err) {
       console.error("Error posting comment:", err);
     } finally {
@@ -333,7 +337,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               {/* Comments Header & Sort */}
               <div className="flex justify-between items-center mb-6 sm:mb-6 px-2 flex-shrink-0">
                 <span className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-500">
-                  {comments.length} Comments
+                  {totalComments} Comments
                 </span>
 
                 <div className="relative">
@@ -350,19 +354,19 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                       <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)} />
                       <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden border-t-2 border-t-slate-900 animate-in fade-in zoom-in duration-200">
                         <button
-                          onClick={() => { setCommentSort('new'); setIsSortOpen(false); }}
+                          onClick={() => { setCommentSort('new'); setCurrentPage(1); setIsSortOpen(false); }}
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'new' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           New
                         </button>
                         <button
-                          onClick={() => { setCommentSort('liked'); setIsSortOpen(false); }}
+                          onClick={() => { setCommentSort('liked'); setCurrentPage(1); setIsSortOpen(false); }}
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors ${commentSort === 'liked' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           Liked
                         </button>
                         <button
-                          onClick={() => { setCommentSort('mentions'); setIsSortOpen(false); }}
+                          onClick={() => { setCommentSort('mentions'); setCurrentPage(1); setIsSortOpen(false); }}
                           className={`w-full text-left px-5 py-4 sm:px-6 sm:py-5 rounded-xl text-base sm:text-lg font-bold uppercase tracking-widest transition-colors flex items-center justify-between ${commentSort === 'mentions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`}
                         >
                           Mentions
@@ -408,6 +412,29 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                       </div>
                     ))}
 
+                    {/* Pagination Controls */}
+                    {totalComments > COMMENTS_PER_PAGE && (
+                      <div className="flex items-center justify-between gap-4 py-6 px-2 flex-shrink-0">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1 || loadingComments}
+                          className="flex-1 bg-white border border-slate-200 text-slate-600 py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                        >
+                          Previous
+                        </button>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
+                          {currentPage} / {Math.ceil(totalComments / COMMENTS_PER_PAGE)}
+                        </div>
+                        <button
+                          onClick={() => setCurrentPage(p => p + 1)}
+                          disabled={currentPage >= Math.ceil(totalComments / COMMENTS_PER_PAGE) || loadingComments}
+                          className="flex-1 bg-white border border-slate-200 text-slate-600 py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+
                     {/* Dummy pad to ensure last item clears the gradient */}
                     <div className="h-12 flex-shrink-0" />
                   </div>
@@ -420,13 +447,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
               {/* Input Area (Fixed inside current flex-grow container) */}
               <div className="mt-4 flex-shrink-0 z-10 pt-2 border-t border-slate-200 bg-slate-100/50 backdrop-blur-[2px]">
                 {user ? (
-                  comments.length >= 100 ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl p-4 text-center">
-                      <p className="text-sm sm:text-base font-black uppercase tracking-widest text-slate-400">
-                        Comment limit reached (100)
-                      </p>
-                    </div>
-                  ) : (
+                  (
                     <form
                       onSubmit={handlePostComment}
                       className="flex gap-2 items-stretch"
