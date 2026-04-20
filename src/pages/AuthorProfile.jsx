@@ -223,6 +223,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
 
   const handleTogglePuzzleLike = async (puzzleId) => {
     if (!currentUser) return;
+    
+    // Safety check: Don't allow creators to like their own puzzles (extra layer)
+    const allPuzzles = [...puzzles, ...solvedPuzzles, ...likedPuzzles, ...skippedPuzzles, ...inProgressPuzzles];
+    const targetPuzzle = allPuzzles.find(p => p.id === puzzleId);
+    if (targetPuzzle && targetPuzzle.created_by === currentUser.id) {
+      return;
+    }
+
     const isLiking = !likeStatus[puzzleId];
 
     // Optimistic update

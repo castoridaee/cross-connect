@@ -87,21 +87,34 @@ export function PuzzleCard({
             </div>
           </div>
 
-          {/* Top Right Badges (Solved/Liked/etc) */}
+          {/* Top Right: Unified Like Button */}
           <div className="flex flex-col items-end gap-1.5 shrink-0">
-            {solveStatus && solveStatus[puzzle.id] === 'solved' && (
-              <div className="bg-green-50 text-green-600 p-2 rounded-xl border border-green-100 shadow-sm" title="Solved">
-                <Check size={18} strokeWidth={3} />
-              </div>
+            {puzzle.is_published && (
+              <button
+                onClick={(e) => {
+                  if (!isPuzzleOwner && onLike) {
+                    e.stopPropagation();
+                    onLike(puzzle.id);
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${
+                  !isPuzzleOwner ? 'active:scale-95 hover:text-slate-700 cursor-pointer' : 'cursor-default opacity-70'
+                } ${
+                  likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
+                }`}
+                title={isPuzzleOwner ? "You cannot like your own puzzle" : likeStatus?.[puzzle.id] ? "Unlike" : "Like"}
+              >
+                <Heart 
+                  size={18} 
+                  fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'} 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                />
+                <span className="text-base sm:text-lg font-black">{puzzle.likes_count || 0}</span>
+              </button>
             )}
             {solveStatus && solveStatus[puzzle.id] === 'skipped' && (
               <div className="bg-slate-50 text-slate-400 p-2 rounded-xl border border-slate-100 shadow-sm" title="Skipped">
                 <SkipForward size={18} strokeWidth={3} />
-              </div>
-            )}
-            {!isAuthor && likeStatus && likeStatus[puzzle.id] && (
-              <div className="bg-pink-50 text-pink-500 p-2 rounded-xl border border-pink-100 shadow-sm" title="You liked this">
-                <Heart size={18} fill="currentColor" />
               </div>
             )}
           </div>
@@ -111,13 +124,6 @@ export function PuzzleCard({
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap px-1">
           {hasPopulatedStats && (
             <>
-              <StatTooltip label="Total Community Likes">
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight text-slate-400 cursor-help">
-                  <Heart size={13} className="opacity-70" />
-                  <span>{puzzle.likes_count || 0}</span>
-                </div>
-              </StatTooltip>
-              <div className="w-1 h-1 bg-slate-200 rounded-full" />
               <StatTooltip label={`${puzzle.play_count || 0} users have started this puzzle`}>
                 <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight text-slate-500 cursor-help">
                   <Play size={14} fill="currentColor" />
@@ -143,20 +149,6 @@ export function PuzzleCard({
 
         {/* Bottom Section: Actions */}
         <div className="flex flex-row justify-end items-center gap-2 pt-1 border-t border-slate-50">
-          {(tab === 'played' || tab === 'liked') && currentUser && onLike && (
-            <button
-              onClick={() => onLike(puzzle.id)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border shadow-sm active:scale-95 ${
-                likeStatus[puzzle.id] 
-                ? 'bg-pink-50 text-pink-500 border-pink-100' 
-                : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
-              }`}
-              title={likeStatus[puzzle.id] ? "Unlike" : "Like"}
-            >
-              <Heart size={14} fill={likeStatus[puzzle.id] ? 'currentColor' : 'none'} />
-              <span>{likeStatus[puzzle.id] ? 'Liked' : 'Like'}</span>
-            </button>
-          )}
           {puzzle.is_published && (
             <>
               <button

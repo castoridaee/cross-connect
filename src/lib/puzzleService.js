@@ -489,6 +489,14 @@ export async function recordPuzzlePlay(userId, puzzleId) {
 }
 
 export async function togglePuzzleLike(puzzleId, userId) {
+  if (!userId) return { error: 'Not signed in' };
+
+  // Safety check: Don't allow creators to like their own puzzles
+  const { data: puzzle } = await getPuzzle(puzzleId);
+  if (puzzle && puzzle.created_by === userId) {
+    return { data: null, error: 'Cannot like your own puzzle' };
+  }
+
   const { data, error } = await supabase.rpc('toggle_puzzle_like', {
     p_id: puzzleId,
     u_id: userId
