@@ -246,7 +246,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
         <ChevronLeft size={16} /> Back to Game
       </button>
 
-      <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100 mb-8 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-6 relative">
+      <div className="mb-12 flex flex-col sm:flex-row items-center sm:justify-between gap-6 sm:gap-8 px-2 relative">
         <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6">
           <Avatar
             size={80}
@@ -256,19 +256,19 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             square
           />
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 break-all">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-slate-900 break-all leading-none">
               {profile?.username}
             </h1>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
-              {puzzles.length} Puzzles Created {!isOwner ? `• ${likedPuzzles.length} Liked` : ''}
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">
+              {puzzles.length} Puzzles Created {isOwner ? '' : `• ${likedPuzzles.length} Liked`}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 mt-4 sm:mt-0 self-end sm:self-auto w-full sm:w-auto justify-end flex-wrap">
+        <div className="flex items-center gap-2 mt-4 sm:mt-0 self-center sm:self-auto w-full sm:w-auto justify-center sm:justify-end flex-wrap">
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2.5 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-slate-100"
+            className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
             title="Share Profile"
           >
             {showCopied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
@@ -278,7 +278,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
             <>
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="flex items-center gap-2 px-4 py-3 text-slate-400 hover:text-indigo-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-indigo-50"
+                className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-indigo-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-indigo-100"
                 title="Profile Settings"
               >
                 <Settings size={18} />
@@ -286,7 +286,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
               </button>
               <button
                 onClick={() => signOut()}
-                className="flex items-center gap-2 px-4 py-2.5 text-slate-400 hover:text-red-600 transition-all active:scale-90 bg-slate-50 rounded-xl hover:bg-red-50"
+                className="flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-red-600 transition-all active:scale-90 bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-red-50 hover:border-red-100"
                 title="Logout"
               >
                 <LogOut size={18} />
