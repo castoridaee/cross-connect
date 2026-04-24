@@ -438,7 +438,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
         )}
         <DragOverlay>
           {activeDrag && (
-            <div className="opacity-80 scale-105">
+            <div className="scale-105">
               <WordTile label={activeDrag.word} variant="active" />
             </div>
           )}

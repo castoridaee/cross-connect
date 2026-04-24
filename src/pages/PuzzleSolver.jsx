@@ -224,7 +224,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
 
         <DragOverlay>
           {activeId && (
-            <div className="opacity-80 scale-105 rotate-2 shadow-2xl">
+            <div className="scale-105 rotate-2 shadow-2xl">
               <WordTile label={activeId} variant="active" />
             </div>
           )}

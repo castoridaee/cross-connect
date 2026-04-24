@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { WordTile } from './WordTile';
 
 export const DraggableTile = ({ id, label, inGrid, isError, isDraggingOverlay }) => {
-  const { attributes, listeners, setNodeRef } = useDraggable({ id });
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
 
   const variant = isDraggingOverlay || (inGrid && !isError) ? 'active' : (isError ? 'error' : 'default');
 
@@ -11,7 +11,7 @@ export const DraggableTile = ({ id, label, inGrid, isError, isDraggingOverlay })
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="cursor-grab active:cursor-grabbing"
+      className={`cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-0' : 'opacity-100'}`}
       style={{ touchAction: 'none' }}
     >
       <WordTile label={label} variant={variant} inGrid={inGrid} />
