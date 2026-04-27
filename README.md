@@ -1,18 +1,24 @@
-# React + Vite
+# Cross Connect
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is my game that combines Connections and Crossword puzzles.
+It is designed to be populated with user generated content. I put a few social features (discussions/comments/likes), which is designed to make it feel like a community.
+Sort of inspired by the comments section on the NYT connections game, but in a more distributed way (since not everyone gets the same puzzle each day).
 
-Currently, two official plugins are available:
+## Puzzles
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The puzzles are easy and fun to make, I bootstrapped the database with a few that I made.
+Actually, to be more precise: it is easy to make mediocre puzzles, and hard to make good ones.
+Some stuff I noticed:
+- It is really hard to make dense puzzles. I tried to make a 3x3 but I couldn't quite get it working.
+- The shape of the puzzle matters somewhat... it is harder to solve a long "snaking" puzzle than it is to solve a circular one. For example, a snaking puzzle and a circular puzzle may have the same categories, but with the snaking puzzle you also have to know which the "start" and "end" categories are, which is a little arbitary. I'm inclined to think it's bad design to do that.
+- Putting one word in a category by itself makes the puzzle harder, since the solver has to know which one of the words doesn't belong in any category.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+Uses Supabase, React, and Vite.
 
-Note: This will impact Vite dev & build performances.
+## Future Plans
 
-## Expanding the ESLint configuration
+I don't really want to make any more changes, but I think the puzzle selection algorithm should be improved. (I currently don't have a real database to base it off of, so it is hard to figure out how to do this well). Currently, it doesn't take into account the quality score of the puzzle when picking the next one in the queue. Ideally, it should follow the general procedure it has now, but also factor in the puzzle quality.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Since the discussions are distributed, it might need some improvements there to allow for discussions. I put in some @ functionality, but I think it's not quite enough.
