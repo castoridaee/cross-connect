@@ -1,0 +1,16 @@
+# Allow all crawlers to access the site
+User-agent: *
+Allow: /
+
+# Disallow routes that do not need to be indexed
+Disallow: /create
+
+# Block AI scrapers from using user-generated content for training
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+# Reference sitemap
+Sitemap: https://cross-connect.app/sitemap.xml
