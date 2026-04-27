@@ -30,6 +30,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   // Robust Safety Net: Ensure play is recorded whenever we have a user and puzzle
   React.useEffect(() => {
     if (user && puzzle) {
+      console.log("🧩 Latest Version Running: Touch Delay Fix");
       logger.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
       import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
     }
