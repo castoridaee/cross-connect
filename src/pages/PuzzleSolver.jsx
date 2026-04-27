@@ -45,7 +45,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 3 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 5 } })
   );
 
   const allWords = puzzle.word_order?.length > 0
@@ -225,7 +225,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
 
         <DragOverlay>
           {activeId && (
-            <div className="scale-105 rotate-2 shadow-2xl">
+            <div className="scale-110 rotate-3 shadow-2xl">
               <WordTile label={activeId} variant="active" />
             </div>
           )}
