@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, deletePuzzle, updatePuzzle, getUserMentions, getPaginatedProfilePuzzles, toggleCommentLike, getCommentLikes, markSpecificMentionsRead, markMentionsRead, togglePuzzleLike, getUserUnreadMentionsCount } from '../lib/puzzleService';
+import { getProfile, deletePuzzle, updatePuzzle, getUserMentions, getPaginatedProfilePuzzles, toggleCommentLike, getCommentLikes, markSpecificMentionsRead, togglePuzzleLike, getUserUnreadMentionsCount } from '../lib/puzzleService';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, User, Share2, Check, ChevronDown, Filter, Settings, MessageSquare, AtSign, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -161,7 +161,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     }
 
     return () => { isCancelled = true; };
-  }, [authorId, activeTab, currentPage, sortBy, currentUser?.id, ITEMS_PER_PAGE]);
+  }, [authorId, activeTab, currentPage, sortBy, currentUser, ITEMS_PER_PAGE]);
 
   const handleDeleteClick = async () => {
     if (!deletingPuzzle) return;
@@ -290,7 +290,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     );
   }
 
-  const unreadMentionsCount = activeTab === 'mentions' ? items.filter(m => !m.is_read).length : 0;
+
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-8">

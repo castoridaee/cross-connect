@@ -166,19 +166,6 @@ async function recordShadowban(userId, severity = 'content') {
     .eq('id', userId);
 }
 
-// Helper to retry transient Safari/Networking errors (Load failed)
-const withRetry = async (fn, retries = 1) => {
-  try {
-    return await fn();
-  } catch (err) {
-    if (retries > 0 && err.message === 'Load failed') {
-      console.warn(`Retrying fetch after transient Safari error...`);
-      await new Promise(r => setTimeout(r, 500));
-      return withRetry(fn, retries - 1);
-    }
-    throw err;
-  }
-};
 
 export async function recordPuzzleSolve(userId, puzzleId, stats) {
   const { attempts, moves, seconds, grid, hints, history } = stats;
@@ -307,7 +294,18 @@ export async function getProfile(id) {
     .from('profiles')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
+
+  if (!data && !error) {
+    // Attempt to self-heal missing profile
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert([{ id, username: `Guest${id.substring(0, 8)}`, is_anonymous: true }])
+      .select()
+      .maybeSingle();
+    return { data: newProfile, error: insertError };
+  }
+
   return { data, error };
 }
 

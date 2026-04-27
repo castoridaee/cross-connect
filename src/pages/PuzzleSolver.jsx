@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
 import { WordTile } from '../components/WordTile';
-import { recordPuzzleEngagement, togglePuzzleLike, getPuzzleProgress } from '../lib/puzzleService';
+import { recordPuzzleEngagement } from '../lib/puzzleService';
 import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
@@ -12,8 +12,8 @@ import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import Avatar from "boring-avatars";
 
-export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAuthorClick, onSkip, initialProgress, onNext, onMentionsRead }) {
-  const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onReset, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
+export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, initialProgress, onNext, onMentionsRead, onAuthRequested }) {
+  const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -33,7 +33,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
       logger.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
       import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
     }
-  }, [user?.id, puzzle?.id]);
+  }, [user, user?.id, puzzle, puzzle?.id]);
 
   const handleShare = () => {
     const text = generateShareText(puzzle);
@@ -249,6 +249,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
             onLikeTrack={onToggleLike}
             initialIsLiked={isLiked}
             onMentionsRead={onMentionsRead}
+            onAuthRequested={onAuthRequested}
           />
         )}
 

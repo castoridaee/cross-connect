@@ -8,7 +8,6 @@ function PuzzleGridPreview({ layout }) {
   if (!layout || !layout.length) return null;
   const numRows = layout.length;
   const numCols = layout[0].length;
-  const maxDim = Math.max(numRows, numCols);
 
   return (
     <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-950 rounded-sm flex items-center justify-center p-2.5 sm:p-3 shrink-0 shadow-sm border border-slate-800">
@@ -50,7 +49,6 @@ export function PuzzleCard({
   // Format the date
   const dateObj = new Date(puzzle.created_at);
   const formattedDate = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  const fullDate = dateObj.toLocaleString();
 
   // Difficulty formatting
   const rawDiff = puzzle.difficulty_score;
@@ -62,9 +60,7 @@ export function PuzzleCard({
     else diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
   }
 
-  // Time formatting
-  const timeStr = puzzle.median_time_to_solve ?
-    `${Math.floor(puzzle.median_time_to_solve / 60)}m ${Math.round(puzzle.median_time_to_solve % 60)}s` : null;
+  // Time formatting (unused currently)
 
   return (
     <div key={puzzle.id} className="group relative bg-white p-5 sm:p-4 rounded-3xl sm:rounded-2xl border border-slate-200 shadow-sm mb-4 sm:mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 hover:shadow-md transition-all">

@@ -15,7 +15,7 @@ export function EditorDraggableTile({ id, label, r, c, onEdit }) {
       {...attributes}
       className={`w-full h-full relative group ${isDragging ? 'opacity-0' : 'opacity-100'}`}
       style={{ touchAction: 'none' }}
-      onClick={(e) => {
+      onClick={() => {
         // Prevent trigger if it's just a click (DnD handles drag)
         // In dnd-kit, click is distinct from drag start
         onEdit(r, c);

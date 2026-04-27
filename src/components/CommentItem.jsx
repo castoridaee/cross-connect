@@ -3,7 +3,7 @@ import Avatar from "boring-avatars";
 import { Heart } from 'lucide-react';
 
 export const CommentItem = ({ comment, isLiked, onLike, userId, puzzleAuthorId }) => {
-  const { author, content, created_at, likes_count, is_shadowbanned } = comment;
+  const { author, content, created_at, likes_count } = comment;
   const avatarColors = ["#5cacc4", "#8cd19d", "#cee879", "#fcb653", "#ff5254"];
   const isAuthor = userId && author?.id && userId === author.id;
   const isPuzzleAuthor = puzzleAuthorId && author?.id && author.id === puzzleAuthorId;

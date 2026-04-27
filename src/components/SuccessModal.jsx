@@ -2,10 +2,10 @@ import { Trophy, Heart, Share2, Check, User, X, MessageSquare, List, Send, Filte
 import React, { useState, useRef, useEffect } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import { useAuth } from '../context/AuthContext';
-import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markMentionsRead, markSpecificMentionsRead } from '../lib/puzzleService';
+import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markSpecificMentionsRead } from '../lib/puzzleService';
 import { CommentItem } from './CommentItem';
 
-export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false, onMentionsRead }) => {
+export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false, onMentionsRead, onAuthRequested }) => {
   const { user } = useAuth();
   const [showCopied, setShowCopied] = useState(false);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -86,7 +86,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
         if (onMentionsRead) onMentionsRead();
       });
     }
-  }, [activeTab, unreadMentionRecordIds.size, user, puzzle?.id]);
+  }, [activeTab, unreadMentionRecordIds, unreadMentionRecordIds.size, user, puzzle?.id, onMentionsRead]);
 
   // Sync state if prop changes (e.g. late fetch)
   useEffect(() => {
@@ -115,14 +115,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     }
   };
 
-  // Fetch comments
-  useEffect(() => {
-    if (activeTab === 'comments' && puzzle?.id) {
-      loadComments();
-    }
-  }, [activeTab, puzzle?.id, commentSort, currentPage]);
-
-  async function loadComments() {
+  const loadComments = React.useCallback(async () => {
     setLoadingComments(true);
     try {
       const { data, error, count } = await getComments(
@@ -148,7 +141,14 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
     } finally {
       setLoadingComments(false);
     }
-  }
+  }, [puzzle?.id, commentSort, currentPage, user]);
+
+  // Fetch comments
+  useEffect(() => {
+    if (activeTab === 'comments' && puzzle?.id) {
+      loadComments();
+    }
+  }, [activeTab, puzzle?.id, commentSort, currentPage, loadComments]);
 
   const handlePostComment = async (e) => {
     e.preventDefault();
@@ -446,7 +446,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
 
               {/* Input Area (Fixed inside current flex-grow container) */}
               <div className="mt-4 flex-shrink-0 z-10 pt-2 border-t border-slate-200 bg-slate-100/50 backdrop-blur-[2px]">
-                {user ? (
+                {(user && !user.is_anonymous) ? (
                   (
                     <form
                       onSubmit={handlePostComment}
@@ -506,10 +506,16 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                     </form>
                   )
                 ) : (
-                  <div className="bg-slate-100 border border-slate-200 rounded-[1.25rem] p-6 sm:p-8 text-center">
+                  <div className="bg-slate-100 border border-slate-200 rounded-[1.25rem] p-6 sm:p-8 text-center flex flex-col items-center gap-3">
                     <p className="text-base sm:text-lg font-black uppercase tracking-widest text-slate-500">
-                      Sign in to join the conversation
+                      Sign in to add a comment
                     </p>
+                    <button
+                      onClick={onAuthRequested}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-colors active:scale-95 shadow-md"
+                    >
+                      Sign In / Sign Up
+                    </button>
                   </div>
                 )}
               </div>

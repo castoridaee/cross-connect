@@ -73,7 +73,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     }, 2000); // 2 second debounce for typing/dragging
 
     return () => clearTimeout(interactionTimer);
-  }, [grid, state.attempts, state.moves, hints, history, user, puzzle.id, state.solved]);
+  }, [grid, state.attempts, state.moves, state.seconds, hints, history, user, puzzle.id, state.solved]);
 
   // Periodic heartbeat save for the timer (every 15 seconds)
   useEffect(() => {
@@ -92,7 +92,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     }, 15000);
 
     return () => clearInterval(heartbeatTimer);
-  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds]);
+  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds, hints, history]);
 
   // Final safety: Save on tab close/unload
   useEffect(() => {
@@ -114,7 +114,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
 
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds]);
+  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds, hints, history]);
   // Note: We keep state.seconds in the heartbeat so it resets the interval correctly or we just rely on the interval.
   // Actually, for heartbeat, it's better to NOT have state.seconds in deps, just a pure interval.
 
@@ -133,6 +133,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
 
     // Avoiding direct set state on mount to prevent cascaded render warnings if possible, 
     // but React 18 handles this better. To satisfy the exhaustive-deps while keeping behavior:
+    // eslint-disable-next-line
     setGrid(newGrid);
     setHistory(newHistory);
     setHints(newHints);

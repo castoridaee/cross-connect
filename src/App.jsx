@@ -5,13 +5,13 @@ import PuzzleSolver from './pages/PuzzleSolver';
 import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
-import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle, getUserUnreadMentionsCount } from './lib/puzzleService';
+import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, getRecommendedPuzzle, getUserUnreadMentionsCount } from './lib/puzzleService';
 import { logger } from './utils/logger';
 import logo from './assets/logo.svg';
 import Avatar from "boring-avatars";
 
 function App() {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [puzzle, setPuzzle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('solve'); // 'solve', 'create', 'auth', 'author'
@@ -20,18 +20,18 @@ function App() {
   const [progress, setProgress] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   
-  const refreshUnreadCount = async () => {
+  const refreshUnreadCount = React.useCallback(async () => {
     if (user && !user.is_anonymous) {
       const { count } = await getUserUnreadMentionsCount(user.id);
       setUnreadCount(count || 0);
     } else {
       setUnreadCount(0);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     refreshUnreadCount();
-  }, [user]);
+  }, [refreshUnreadCount]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -68,6 +68,7 @@ function App() {
     // 3. Listen for back/forward navigation
     window.addEventListener('popstate', syncStateWithUrl);
     return () => window.removeEventListener('popstate', syncStateWithUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading]); // Removed view/user dependencies to avoid loops, syncStateWithUrl handles internal logic
 
   // Update URL whenever view or specific IDs change
@@ -95,6 +96,7 @@ function App() {
     if (view === 'solve' && puzzle?.id && !authLoading) {
       refreshCurrentProgress(puzzle.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, puzzle?.id, user?.id, authLoading]);
 
   async function refreshCurrentProgress(puzzleId) {
@@ -353,6 +355,7 @@ function App() {
               onSkip={handleSkip}
               onNext={handleNext}
               onMentionsRead={refreshUnreadCount}
+              onAuthRequested={() => setView('auth')}
             />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
@@ -394,7 +397,7 @@ function App() {
           />
         ) : (
           <CreatePuzzle
-            onComplete={(data) => {
+            onComplete={() => {
               const isRealUser = user && !user.is_anonymous;
               if (isRealUser) {
                 setAuthorId(user.id);

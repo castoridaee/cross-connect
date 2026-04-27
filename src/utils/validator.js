@@ -2,7 +2,7 @@ import { getPuzzleStructure } from './layoutParser';
 
 export const validatePuzzle = (grid, puzzle) => {
   const { categories, layout } = puzzle;
-  const { hGroups, vGroups, intersections, allGroups } = getPuzzleStructure(layout);
+  const { intersections, allGroups } = getPuzzleStructure(layout);
 
   const errors = new Set();
   const messages = [];
