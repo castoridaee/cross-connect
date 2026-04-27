@@ -7,6 +7,7 @@ import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
+import { logger } from '../utils/logger';
 import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import Avatar from "boring-avatars";
@@ -29,7 +30,7 @@ export default function PuzzleSolver({ puzzle, user, onNavigateToCreate, onAutho
   // Robust Safety Net: Ensure play is recorded whenever we have a user and puzzle
   React.useEffect(() => {
     if (user && puzzle) {
-      console.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
+      logger.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
       import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
     }
   }, [user?.id, puzzle?.id]);

@@ -6,6 +6,7 @@ import {
   DataSet,
   pattern as obscenityPattern
 } from 'obscenity';
+import { logger } from '../utils/logger';
 
 // 1. Configure the dataset with our custom whitelist
 const dataset = new DataSet().addAll(englishDataset);
@@ -343,10 +344,10 @@ export async function getPuzzle(id) {
 }
 
 export async function recordPuzzleSkip(userId, puzzleId) {
-  console.log("DB: Recording skip for", { userId, puzzleId });
+    logger.log("DB: Recording skip for", { userId, puzzleId });
   const { data: current } = await getPuzzleProgress(userId, puzzleId);
   if (current?.is_solved || current?.status === 'solved') {
-    console.log("[recordPuzzleSkip] Ignoring skip: Puzzle already solved.");
+    logger.log("[recordPuzzleSkip] Ignoring skip: Puzzle already solved.");
     return { error: null };
   }
 
@@ -399,7 +400,7 @@ export async function savePuzzleProgress(userId, puzzleId, progress) {
   }
 
   if (error) console.error(`[savePuzzleProgress] DB Error:`, error.message);
-  else console.log(`[savePuzzleProgress] Auto-saved progress for ${puzzleId}`);
+  else logger.log(`[savePuzzleProgress] Auto-saved progress for ${puzzleId}`);
 
   return { error };
 }
@@ -459,7 +460,7 @@ export async function recordPuzzlePlay(userId, puzzleId) {
     return { error: 'Missing IDs' };
   }
 
-  console.log(`[recordPuzzlePlay] Start: user=${userId}, puzzle=${puzzleId}`);
+  logger.log(`[recordPuzzlePlay] Start: user=${userId}, puzzle=${puzzleId}`);
 
   // 1. Upsert to ensure the row exists. This will trigger the global play_count increment.
   const { data, error } = await supabase
@@ -475,7 +476,7 @@ export async function recordPuzzlePlay(userId, puzzleId) {
   if (error) {
     console.error(`[recordPuzzlePlay] DB Error:`, error.message, error.details);
   } else {
-    console.log(`[recordPuzzlePlay] Success: Row ${data.id} is present. Status: ${data.status}`);
+    logger.log(`[recordPuzzlePlay] Success: Row ${data.id} is present. Status: ${data.status}`);
   }
 
   return { data, error };

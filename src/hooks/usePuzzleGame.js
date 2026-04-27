@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { validatePuzzle } from '../utils/validator';
 import { recordPuzzleSolve, savePuzzleProgress, togglePuzzleLike } from '../lib/puzzleService';
 import { getPuzzleStructure } from '../utils/layoutParser';
+import { logger } from '../utils/logger';
 
 export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   // 1. Initialize state from saved progress if available
@@ -59,7 +60,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     if (currentInteractionState === lastSavedState.current) return;
 
     const interactionTimer = setTimeout(async () => {
-      console.log("Auto-saving interaction progress (with hints/history)...");
+      logger.log("Auto-saving interaction progress (with hints/history)...");
       await savePuzzleProgress(user.id, puzzle.id, {
         grid,
         attempts: state.attempts,
@@ -79,7 +80,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     if (!user || state.solved) return;
 
     const heartbeatTimer = setInterval(async () => {
-      console.log("Heartbeat: Saving play time...");
+      logger.log("Heartbeat: Saving play time...");
       await savePuzzleProgress(user.id, puzzle.id, {
         grid,
         attempts: state.attempts,

@@ -6,6 +6,7 @@ import CreatePuzzle from './pages/CreatePuzzle';
 import AuthPage from './pages/AuthPage';
 import AuthorProfile from './pages/AuthorProfile';
 import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, recordPuzzlePlay, getRecommendedPuzzle, getUserUnreadMentionsCount } from './lib/puzzleService';
+import { logger } from './utils/logger';
 import logo from './assets/logo.svg';
 import Avatar from "boring-avatars";
 
@@ -127,7 +128,7 @@ function App() {
         // Direct Access Security Check: Owners go to creator, others get "not found"
         if (data.is_published === false) {
           if (data.created_by === user?.id) {
-            console.info("Redirecting owner to draft editor.");
+            logger.info("Redirecting owner to draft editor.");
             setPendingData(data);
             setView('create');
             return; // Exit early since we're switching views
@@ -166,7 +167,7 @@ function App() {
       if (error) {
         console.error("Load Error:", error);
         if (retryCount < 1) {
-          console.log("Retrying loadPuzzles in 1s...");
+          logger.log("Retrying loadPuzzles in 1s...");
           setTimeout(() => loadPuzzles(retryCount + 1), 1000);
           return;
         }
@@ -206,12 +207,12 @@ function App() {
     }
 
     setLoading(true);
-    console.log("Recording skip for puzzle:", puzzle.id, "user:", user.id);
+    logger.log("Recording skip for puzzle:", puzzle.id, "user:", user.id);
     const { error } = await recordPuzzleSkip(user.id, puzzle.id);
     if (error) {
       console.error("Failed to record skip in DB:", error);
     } else {
-      console.log("Skip recorded successfully");
+      logger.log("Skip recorded successfully");
     }
     loadPuzzles();
   };
