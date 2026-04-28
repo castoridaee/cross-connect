@@ -51,6 +51,12 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     };
   }, [state.solved]);
 
+  // Keep track of latest seconds without triggering useEffects
+  const secondsRef = useRef(state.seconds);
+  useEffect(() => {
+    secondsRef.current = state.seconds;
+  }, [state.seconds]);
+
   // Auto-save logic for interactions (grid, moves, attempts, hints, history)
   const lastSavedState = useRef(JSON.stringify({ grid, attempts: state.attempts, moves: state.moves, hints, history }));
   useEffect(() => {
@@ -65,7 +71,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
         grid,
         attempts: state.attempts,
         moves: state.moves,
-        seconds: state.seconds,
+        seconds: secondsRef.current,
         hints,
         history
       });
@@ -73,7 +79,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
     }, 2000); // 2 second debounce for typing/dragging
 
     return () => clearTimeout(interactionTimer);
-  }, [grid, state.attempts, state.moves, state.seconds, hints, history, user, puzzle.id, state.solved]);
+  }, [grid, state.attempts, state.moves, hints, history, user, puzzle.id, state.solved]);
 
   // Periodic heartbeat save for the timer (every 15 seconds)
   useEffect(() => {
@@ -85,14 +91,14 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
         grid,
         attempts: state.attempts,
         moves: state.moves,
-        seconds: state.seconds,
+        seconds: secondsRef.current,
         hints,
         history
       });
     }, 15000);
 
     return () => clearInterval(heartbeatTimer);
-  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, state.seconds, hints, history]);
+  }, [user, puzzle.id, state.solved, grid, state.attempts, state.moves, hints, history]);
 
   // Final safety: Save on tab close/unload
   useEffect(() => {
