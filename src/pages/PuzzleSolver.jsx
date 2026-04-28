@@ -225,7 +225,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
 
         <DragOverlay>
           {activeId && (
-            <div className="scale-110 rotate-3 shadow-2xl">
+            <div className="scale-105 rotate-3 shadow-2xl">
               <WordTile label={activeId} variant="active" />
             </div>
           )}
