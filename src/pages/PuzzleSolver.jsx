@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
 import { WordTile } from '../components/WordTile';
 import { recordPuzzleEngagement } from '../lib/puzzleService';
@@ -19,6 +20,19 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   const [showSuccess, setShowSuccess] = useState(false);
   const [tapHint, setTapHint] = useState({ show: false, x: 0, y: 0 });
   const hintTimeoutRef = React.useRef(null);
+
+  const allWords = React.useMemo(() => {
+    return puzzle.word_order?.length > 0
+      ? puzzle.word_order
+      : [...new Set(puzzle.categories.flatMap(cat => cat.words))];
+  }, [puzzle]);
+
+  const [displayOrder, setDisplayOrder] = useState(allWords);
+
+  // Reset displayOrder when puzzle changes
+  React.useEffect(() => {
+    setDisplayOrder(allWords);
+  }, [allWords]);
 
   // Show success modal when puzzle is solved
   React.useEffect(() => {
@@ -48,11 +62,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 5 } })
   );
 
-  const allWords = puzzle.word_order?.length > 0
-    ? puzzle.word_order
-    : [...new Set(puzzle.categories.flatMap(cat => cat.words))];
-
-  const bankWords = allWords.filter(w => !Object.values(grid).includes(w));
+  const bankWords = displayOrder.filter(w => !Object.values(grid).includes(w));
   const isGridFull = Object.values(grid).filter(Boolean).length === allWords.length;
 
   const handleDragEnd = ({ active, over }) => {
@@ -60,11 +70,39 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     const word = active.id;
     const sourceCoord = Object.keys(grid).find(k => grid[k] === word);
 
-    if (!over || over.id === 'word-bank') {
-      handleMove(sourceCoord, null, word);
+    if (!over) {
+      if (sourceCoord) handleMove(sourceCoord, null, word);
+      return;
+    }
+
+    if (over.id === 'word-bank') {
+      // Drop to an open location or past the end in the bank
+      if (sourceCoord) {
+        handleMove(sourceCoord, null, word);
+      }
+      // Move to the end of the bank
+      setDisplayOrder(prev => {
+        const filtered = prev.filter(w => w !== word);
+        return [...filtered, word];
+      });
     } else if (over.id.startsWith('cell-')) {
       const targetCoord = over.id.replace('cell-', '');
       handleMove(sourceCoord, targetCoord, word);
+    } else {
+      // Over another word (sorting within bank or dropping from grid onto a bank tile)
+      const overWord = over.id;
+      
+      if (sourceCoord) {
+        handleMove(sourceCoord, null, word);
+      }
+
+      if (word !== overWord) {
+        setDisplayOrder(prev => {
+          const oldIndex = prev.indexOf(word);
+          const newIndex = prev.indexOf(overWord);
+          return arrayMove(prev, oldIndex, newIndex);
+        });
+      }
     }
   };
 
@@ -82,10 +120,15 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={closestCenter}
+      onDragStart={e => setActiveId(e.active.id)} 
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 relative touch-pan-y">
         {/* Puzzle Metadata Header */}
-        <div className="w-full max-w-md mb-6 text-center relative select-none">
+        <div className="w-full max-w-md mb-4 text-center relative select-none">
           <div className="flex justify-end gap-3 mb-2">
             <button
               onClick={onSkip}
@@ -130,12 +173,12 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
             )}
           </div>
         </div>
-        <div className="w-full relative px-0 mb-4">
+        <div className="w-full relative px-0 mb-1">
           {/* Visual cues for horizontal scrolling */}
           <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
           <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
 
-          <div className="overflow-x-auto pb-6 custom-scrollbar text-center select-none">
+          <div className="overflow-x-auto pb-2 custom-scrollbar text-center select-none">
             <div className="inline-block min-w-max mx-auto">
               <section className="grid gap-0 border-t-2 border-l-2 border-black">
                 {puzzle.layout.map((row, r) => (
@@ -168,9 +211,11 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
         </div>
 
         <div className="select-none w-full flex flex-col items-center">
-          <WordBank>
-            {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
-          </WordBank>
+          <SortableContext items={bankWords} strategy={rectSortingStrategy}>
+            <WordBank>
+              {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
+            </WordBank>
+          </SortableContext>
         </div>
 
         <div className="w-full max-w-xs flex flex-col gap-3 mb-8">

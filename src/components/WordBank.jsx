@@ -7,7 +7,7 @@ export const WordBank = ({ children }) => {
     <footer
       ref={setNodeRef}
       id="word-bank"
-      className="flex flex-wrap justify-center gap-2 max-w-md p-6 bg-white rounded-3xl border mb-10 min-h-[100px] w-full"
+      className="flex flex-wrap justify-center items-start content-start gap-1 max-w-[425px] min-w-[265px] w-fit p-2 bg-white rounded-xl border mb-4 min-h-[40px] transition-all duration-300"
     >
       {children}
     </footer>
