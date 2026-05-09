@@ -9,6 +9,7 @@ import { getPuzzle, recordPuzzleSkip, getPuzzleProgress, getRecommendedPuzzle, g
 import { logger } from './utils/logger';
 import logo from './assets/logo.svg';
 import Avatar from "boring-avatars";
+import { useScrollDirection } from './hooks/useScrollDirection';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
@@ -19,6 +20,7 @@ function App() {
   const [authorId, setAuthorId] = useState(null);
   const [progress, setProgress] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const scrollDirection = useScrollDirection();
   
   const refreshUnreadCount = React.useCallback(async () => {
     if (user && !user.is_anonymous) {
@@ -252,7 +254,7 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       {/* Header / Global Nav */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-3 flex items-center">
+      <nav className={`fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 px-3 flex items-center transition-transform duration-300 ${scrollDirection === 'down' ? '-translate-y-full' : 'translate-y-0'}`}>
         {/* Left Section: Logo */}
         <div className="flex-1 flex justify-start">
           <div className="flex items-center gap-2 cursor-pointer" onClick={handleNext}>

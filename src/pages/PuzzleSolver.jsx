@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
 import { WordTile } from '../components/WordTile';
 import { recordPuzzleEngagement } from '../lib/puzzleService';
@@ -18,7 +19,25 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [tapHint, setTapHint] = useState({ show: false, x: 0, y: 0 });
+  const [pulse, setPulse] = useState(null);
+  const [isPulseVisible, setIsPulseVisible] = useState(false);
+  const infoRef = React.useRef(null);
+  const lastHintsLength = React.useRef(hints.length);
+  const lastHistoryLength = React.useRef(history.length);
   const hintTimeoutRef = React.useRef(null);
+
+  const allWords = React.useMemo(() => {
+    return puzzle.word_order?.length > 0
+      ? puzzle.word_order
+      : [...new Set(puzzle.categories.flatMap(cat => cat.words))];
+  }, [puzzle]);
+
+  const [displayOrder, setDisplayOrder] = useState(allWords);
+
+  // Reset displayOrder when puzzle changes
+  React.useEffect(() => {
+    setDisplayOrder(allWords);
+  }, [allWords]);
 
   // Show success modal when puzzle is solved
   React.useEffect(() => {
@@ -26,6 +45,33 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
       setShowSuccess(true);
     }
   }, [state.solved]);
+
+  // Off-screen indicator logic
+  React.useEffect(() => {
+    const hintsChanged = hints.length > lastHintsLength.current;
+    const historyChanged = history.length > lastHistoryLength.current;
+
+    if (hintsChanged || historyChanged) {
+      const type = hintsChanged ? 'hint' : 'history';
+
+      // Check if the info container is off-screen
+      if (infoRef.current) {
+        const rect = infoRef.current.getBoundingClientRect();
+        // If the top of the container is mostly below the fold
+        if (rect.top > window.innerHeight - 100) {
+          setPulse({ type, id: Date.now() });
+          setIsPulseVisible(true);
+          // Start fade out after 2 seconds
+          setTimeout(() => setIsPulseVisible(false), 2000);
+          // Remove from DOM after fade out completes
+          setTimeout(() => setPulse(null), 3000);
+        }
+      }
+    }
+
+    lastHintsLength.current = hints.length;
+    lastHistoryLength.current = history.length;
+  }, [hints.length, history.length]);
 
   // Robust Safety Net: Ensure play is recorded whenever we have a user and puzzle
   React.useEffect(() => {
@@ -48,11 +94,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 5 } })
   );
 
-  const allWords = puzzle.word_order?.length > 0
-    ? puzzle.word_order
-    : [...new Set(puzzle.categories.flatMap(cat => cat.words))];
-
-  const bankWords = allWords.filter(w => !Object.values(grid).includes(w));
+  const bankWords = displayOrder.filter(w => !Object.values(grid).includes(w));
   const isGridFull = Object.values(grid).filter(Boolean).length === allWords.length;
 
   const handleDragEnd = ({ active, over }) => {
@@ -60,11 +102,39 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     const word = active.id;
     const sourceCoord = Object.keys(grid).find(k => grid[k] === word);
 
-    if (!over || over.id === 'word-bank') {
-      handleMove(sourceCoord, null, word);
+    if (!over) {
+      if (sourceCoord) handleMove(sourceCoord, null, word);
+      return;
+    }
+
+    if (over.id === 'word-bank') {
+      // Drop to an open location or past the end in the bank
+      if (sourceCoord) {
+        handleMove(sourceCoord, null, word);
+      }
+      // Move to the end of the bank
+      setDisplayOrder(prev => {
+        const filtered = prev.filter(w => w !== word);
+        return [...filtered, word];
+      });
     } else if (over.id.startsWith('cell-')) {
       const targetCoord = over.id.replace('cell-', '');
       handleMove(sourceCoord, targetCoord, word);
+    } else {
+      // Over another word (sorting within bank or dropping from grid onto a bank tile)
+      const overWord = over.id;
+
+      if (sourceCoord) {
+        handleMove(sourceCoord, null, word);
+      }
+
+      if (word !== overWord) {
+        setDisplayOrder(prev => {
+          const oldIndex = prev.indexOf(word);
+          const newIndex = prev.indexOf(overWord);
+          return arrayMove(prev, oldIndex, newIndex);
+        });
+      }
     }
   };
 
@@ -82,10 +152,15 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={e => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={e => setActiveId(e.active.id)}
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 relative touch-pan-y">
         {/* Puzzle Metadata Header */}
-        <div className="w-full max-w-md mb-6 text-center relative select-none">
+        <div className="w-full max-w-md mb-4 text-center relative select-none">
           <div className="flex justify-end gap-3 mb-2">
             <button
               onClick={onSkip}
@@ -130,12 +205,12 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
             )}
           </div>
         </div>
-        <div className="w-full relative px-0 mb-4">
+        <div className="w-full relative px-0 mb-1">
           {/* Visual cues for horizontal scrolling */}
           <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
           <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
 
-          <div className="overflow-x-auto pb-6 custom-scrollbar text-center select-none">
+          <div className="overflow-x-auto pb-2 custom-scrollbar text-center select-none">
             <div className="inline-block min-w-max mx-auto">
               <section className="grid gap-0 border-t-2 border-l-2 border-black">
                 {puzzle.layout.map((row, r) => (
@@ -168,9 +243,11 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
         </div>
 
         <div className="select-none w-full flex flex-col items-center">
-          <WordBank>
-            {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
-          </WordBank>
+          <SortableContext items={bankWords} strategy={rectSortingStrategy}>
+            <WordBank>
+              {bankWords.map(w => <DraggableTile key={w} id={w} label={w} />)}
+            </WordBank>
+          </SortableContext>
         </div>
 
         <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
@@ -192,7 +269,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
           </div>
         </div>
 
-        <section className="w-full max-w-md flex flex-col gap-3">
+        <section ref={infoRef} className="w-full max-w-md flex flex-col gap-3">
           {hints.length > 0 && (
             <div className="p-4 rounded-2xl bg-indigo-50 border-l-4 border-indigo-500 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
               <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-2">Hints Revealed</span>
@@ -262,6 +339,26 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
             <div className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-2xl shadow-2xl relative whitespace-pre-wrap w-max max-w-[180px] text-center">
               {tapHint.text}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-slate-900 rotate-45" />
+            </div>
+          </div>
+        )}
+        {/* Off-screen Info Pulse Indicator */}
+        {pulse && (
+          <div
+            className={`fixed bottom-0 left-0 right-0 h-32 pointer-events-none z-50 transition-all duration-1000 ease-in-out ${isPulseVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              } ${pulse.type === 'hint'
+                ? 'bg-gradient-to-t from-indigo-500/40 via-indigo-500/10 to-transparent'
+                : 'bg-gradient-to-t from-red-500/40 via-red-500/10 to-transparent'
+              }`}
+          >
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+              <div className={`px-4 py-2 rounded-full border shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md transition-transform duration-500 ${isPulseVisible ? 'scale-100' : 'scale-90'
+                } ${pulse.type === 'hint'
+                  ? 'bg-indigo-600/90 text-white border-indigo-400/50'
+                  : 'bg-red-600/90 text-white border-red-400/50'
+                }`}>
+                New {pulse.type === 'hint' ? 'Hint' : 'Note'} Below
+              </div>
             </div>
           </div>
         )}
