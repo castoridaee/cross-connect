@@ -56,8 +56,8 @@ export function PuzzleCard({
   const diffScore = rawDiff != null ? Math.min(100, Math.max(0, Math.round(rawDiff * 30))) : null;
   let diffBadge = null;
   if (diffScore != null) {
-    if (diffScore < 30) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
-    else if (diffScore < 70) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
+    if (diffScore < 20) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
+    else if (diffScore < 40) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
     else diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
   }
 
@@ -100,9 +100,8 @@ export function PuzzleCard({
                           onLike(puzzle.id);
                         }
                       }}
-                      className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all active:scale-95 hover:text-slate-700 cursor-pointer ${
-                        likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all active:scale-95 hover:text-slate-700 cursor-pointer ${likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
+                        }`}
                       title={likeStatus?.[puzzle.id] ? "Unlike" : "Like"}
                     >
                       <Heart
@@ -125,9 +124,8 @@ export function PuzzleCard({
                             setTimeout(() => setShowLikeWarning(false), 2000);
                           }
                         }}
-                        className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${
-                          isPuzzleOwner ? 'opacity-70 bg-slate-100 text-slate-500 cursor-default' : 'bg-slate-50 text-slate-400 cursor-pointer hover:bg-slate-100'
-                        }`}
+                        className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${isPuzzleOwner ? 'opacity-70 bg-slate-100 text-slate-500 cursor-default' : 'bg-slate-50 text-slate-400 cursor-pointer hover:bg-slate-100'
+                          }`}
                         title={isPuzzleOwner ? "You cannot like your own puzzle" : ""}
                       >
                         <Heart
