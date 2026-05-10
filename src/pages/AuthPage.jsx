@@ -58,7 +58,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
 
           <div className="relative z-10">
             <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail size={40} className="animate-bounce" />
+              <Mail size={40} />
             </div>
 
             <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight">Check Your Inbox</h2>
@@ -131,7 +131,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                 <input
                   type="email"
                   name="email"
-                  autoComplete="email"
+                  autoComplete={mode === 'signup' ? 'email' : 'username'}
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
