@@ -37,7 +37,7 @@ BEGIN
 
     -- 2. Handling Logged In User
     SELECT skill_score, difficulty_preference INTO v_skill, v_pref FROM public.profiles WHERE id = p_user_id;
-    v_target_difficulty := COALESCE(v_skill, 1.0) + (COALESCE(v_pref, 0) * 0.3);
+    v_target_difficulty := COALESCE(v_skill, 0.1) + (COALESCE(v_pref, 0) * 0.3);
 
     -- Regular Recommendation Logic
     RETURN QUERY 

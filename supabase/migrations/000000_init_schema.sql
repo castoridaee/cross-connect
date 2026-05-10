@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     nickname TEXT UNIQUE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE,
     locale TEXT DEFAULT 'en-US',
-    skill_score FLOAT8 DEFAULT 1.0,
+    skill_score FLOAT8 DEFAULT 0.1,
     difficulty_preference INTEGER DEFAULT 0,
     author_reputation FLOAT8 DEFAULT 50.0,
     CONSTRAINT nickname_length CHECK (char_length(nickname) >= 3 AND char_length(nickname) <= 30),
@@ -272,7 +272,7 @@ BEGIN
             GREATEST(0.5, 1.0 - (GREATEST(COALESCE(attempts, 1) - 1, 0) * 0.1)) AS solve_performance
         FROM recent_solves
     )
-    SELECT COALESCE(AVG(solve_performance), 1.0) INTO v_new_skill FROM performance_scores;
+    SELECT COALESCE(AVG(solve_performance), 0.1) INTO v_new_skill FROM performance_scores;
 
     UPDATE public.profiles SET skill_score = v_new_skill WHERE id = p_user_id;
 END;
@@ -470,7 +470,7 @@ BEGIN
     END IF;
 
     SELECT skill_score, difficulty_preference INTO v_skill, v_pref FROM public.profiles WHERE id = p_user_id;
-    v_target_difficulty := COALESCE(v_skill, 1.0) + (COALESCE(v_pref, 0) * 0.3);
+    v_target_difficulty := COALESCE(v_skill, 0.1) + (COALESCE(v_pref, 0) * 0.3);
 
     -- 0. Priority: Starter Puzzle for brand new users
     -- If the user has NO solved or skipped progress, try to serve the tutorial/starter puzzle
