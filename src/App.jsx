@@ -346,14 +346,7 @@ function App() {
                   ? {
                       ...progress,
                       status: 'solved',
-                      grid_state: puzzle.layout.reduce((acc, row, r) => {
-                        row.forEach((active, c) => {
-                          if (active) {
-                            acc[`${r}-${c}`] = puzzle.word_order[Object.keys(acc).length];
-                          }
-                        });
-                        return acc;
-                      }, {})
+                      grid_state: puzzle.grid_data || {}
                     }
                   : progress
               }
