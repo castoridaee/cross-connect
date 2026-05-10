@@ -112,6 +112,8 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                   <input
                     type="text"
+                    name="username"
+                    autoComplete="username"
                     required
                     value={username}
                     onChange={e => setUsername(e.target.value)}
@@ -128,6 +130,8 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -143,6 +147,8 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input
                   type="password"
+                  name="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
