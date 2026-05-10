@@ -483,6 +483,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
                         )}
                         <input
                           id="comment-input"
+                          aria-label="Add a comment"
                           type="text"
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}

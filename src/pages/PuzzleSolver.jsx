@@ -8,7 +8,6 @@ import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
 import { SuccessModal } from '../components/SuccessModal';
-import { logger } from '../utils/logger';
 import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import { useAuth } from '../context/AuthContext';

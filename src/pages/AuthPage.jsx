@@ -107,10 +107,11 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Username</label>
+                <label htmlFor="username" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Username</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                   <input
+                    id="username"
                     type="text"
                     name="username"
                     autoComplete="username"
@@ -125,10 +126,11 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email</label>
+              <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   autoComplete={mode === 'signup' ? 'email' : 'username'}
@@ -142,10 +144,11 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Password</label>
+              <label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input
+                  id="password"
                   type="password"
                   name="password"
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
