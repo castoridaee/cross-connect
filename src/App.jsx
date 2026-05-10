@@ -12,7 +12,7 @@ import Avatar from "boring-avatars";
 import { useScrollDirection } from './hooks/useScrollDirection';
 
 function App() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, ensureUser } = useAuth();
   const [puzzle, setPuzzle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('solve'); // 'solve', 'create', 'auth', 'author'
@@ -199,8 +199,16 @@ function App() {
   }
 
   const handleSkip = async () => {
-    if (!puzzle || !user) {
-      console.warn("Skip failed: No puzzle or user", { puzzle, user });
+    let currentUser = user;
+    
+    if (!currentUser) {
+      setLoading(true);
+      currentUser = await ensureUser?.();
+    }
+
+    if (!puzzle || !currentUser) {
+      console.warn("Skip failed: No puzzle or user", { puzzle, currentUser });
+      setLoading(false);
       return;
     }
 
@@ -211,8 +219,8 @@ function App() {
     }
 
     setLoading(true);
-    logger.log("Recording skip for puzzle:", puzzle.id, "user:", user.id);
-    const { error } = await recordPuzzleSkip(user.id, puzzle.id);
+    logger.log("Recording skip for puzzle:", puzzle.id, "user:", currentUser.id);
+    const { error } = await recordPuzzleSkip(currentUser.id, puzzle.id);
     if (error) {
       console.error("Failed to record skip in DB:", error);
     } else {

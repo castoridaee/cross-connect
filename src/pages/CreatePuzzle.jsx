@@ -13,7 +13,7 @@ import { PuzzleGridEditor } from '../components/PuzzleGridEditor';
 import { PuzzleCategoryEditor } from '../components/PuzzleCategoryEditor';
 
 export default function CreatePuzzle({ onComplete, initialData, onRequireAuth }) {
-  const { user } = useAuth();
+  const { user, ensureUser } = useAuth();
   const [step, setStep] = useState(initialData?.step || 1);
   const [title, setTitle] = useState(initialData?.title || '');
   const [rows, setRows] = useState(initialData?.rows || initialData?.layout?.length || 4);
@@ -45,6 +45,16 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
     setStatusMsg,
     onComplete
   });
+
+  // Lazy sign-in for creators
+  useEffect(() => {
+    if (!user) {
+      const hasContent = title.trim().length > 0 || Object.keys(grid).length > 0;
+      if (hasContent) {
+        ensureUser?.();
+      }
+    }
+  }, [title, grid, user, ensureUser]);
 
 
   const sensors = useSensors(useSensor(PointerSensor, {

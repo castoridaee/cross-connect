@@ -42,6 +42,7 @@ export function PuzzleCard({
   onLike
 }) {
   const [showCopied, setShowCopied] = React.useState(false);
+  const [showLikeWarning, setShowLikeWarning] = React.useState(false);
   const isAuthor = !!onActionClick || tab === 'unpublished';
   const isPuzzleOwner = currentUser?.id === puzzle.created_by;
   const hasPopulatedStats = puzzle.solve_count > 0;
@@ -86,25 +87,69 @@ export function PuzzleCard({
           {/* Top Right: Unified Like Button */}
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             {puzzle.is_published && (
-              <button
-                onClick={(e) => {
-                  if (!isPuzzleOwner && onLike) {
-                    e.stopPropagation();
-                    onLike(puzzle.id);
-                  }
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${!isPuzzleOwner ? 'active:scale-95 hover:text-slate-700 cursor-pointer' : 'cursor-default opacity-70'
-                  } ${likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
-                  }`}
-                title={isPuzzleOwner ? "You cannot like your own puzzle" : likeStatus?.[puzzle.id] ? "Unlike" : "Like"}
-              >
-                <Heart
-                  size={18}
-                  fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'}
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                />
-                <span className="text-base sm:text-lg font-black">{puzzle.likes_count || 0}</span>
-              </button>
+              (() => {
+                const isSolved = solveStatus?.[puzzle.id] === 'solved';
+                const canLike = isSolved && !isPuzzleOwner;
+
+                if (canLike) {
+                  return (
+                    <button
+                      onClick={(e) => {
+                        if (onLike) {
+                          e.stopPropagation();
+                          onLike(puzzle.id);
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all active:scale-95 hover:text-slate-700 cursor-pointer ${
+                        likeStatus?.[puzzle.id] ? 'bg-pink-50 text-pink-500' : 'bg-slate-100 text-slate-500'
+                      }`}
+                      title={likeStatus?.[puzzle.id] ? "Unlike" : "Like"}
+                    >
+                      <Heart
+                        size={18}
+                        fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'}
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <span className="text-base sm:text-lg font-black">{puzzle.likes_count || 0}</span>
+                    </button>
+                  );
+                } else {
+                  // Read-only badge for unsolved puzzles or owners
+                  return (
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isPuzzleOwner) {
+                            setShowLikeWarning(true);
+                            setTimeout(() => setShowLikeWarning(false), 2000);
+                          }
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-all ${
+                          isPuzzleOwner ? 'opacity-70 bg-slate-100 text-slate-500 cursor-default' : 'bg-slate-50 text-slate-400 cursor-pointer hover:bg-slate-100'
+                        }`}
+                        title={isPuzzleOwner ? "You cannot like your own puzzle" : ""}
+                      >
+                        <Heart
+                          size={18}
+                          fill={likeStatus?.[puzzle.id] ? 'currentColor' : 'none'}
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                        />
+                        <span className="text-base sm:text-lg font-black">{puzzle.likes_count || 0}</span>
+                      </button>
+
+                      {showLikeWarning && (
+                        <div className="absolute z-50 pointer-events-none -top-2 right-1/2 translate-x-1/2 -translate-y-full animate-in fade-in zoom-in duration-300">
+                          <div className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-2xl shadow-2xl relative whitespace-pre-wrap w-max max-w-[180px] text-center">
+                            Solve puzzle to like
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-slate-900 rotate-45" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              })()
             )}
             {solveStatus && solveStatus[puzzle.id] === 'skipped' && (
               <div className="bg-slate-50 text-slate-400 p-2 rounded-xl border border-slate-100 shadow-sm" title="Skipped">

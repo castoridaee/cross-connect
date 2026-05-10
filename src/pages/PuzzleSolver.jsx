@@ -3,7 +3,7 @@ import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverla
 import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
 import { WordTile } from '../components/WordTile';
-import { recordPuzzleEngagement } from '../lib/puzzleService';
+import { recordPuzzleEngagement, recordPuzzleShare } from '../lib/puzzleService';
 import { GridDroppable } from '../components/GridDroppable';
 import { DraggableTile } from '../components/DraggableTile';
 import { WordBank } from '../components/WordBank';
@@ -11,10 +11,12 @@ import { SuccessModal } from '../components/SuccessModal';
 import { logger } from '../utils/logger';
 import { Plus, Share2, Check, SkipForward } from 'lucide-react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
+import { useAuth } from '../context/AuthContext';
 import Avatar from "boring-avatars";
 
 export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, initialProgress, onNext, onMentionsRead, onAuthRequested }) {
-  const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress);
+  const { ensureUser } = useAuth();
+  const { grid, history, hints, state, isFlashing, isLiked, handleMove, onCheck, onHint, onToggleLike } = usePuzzleGame(puzzle, user, initialProgress, ensureUser);
   const [activeId, setActiveId] = useState(null);
   const [showCopied, setShowCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -70,22 +72,24 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     }
 
     lastHintsLength.current = hints.length;
-    lastHistoryLength.current = history.length;
+      lastHistoryLength.current = history.length;
   }, [hints.length, history.length]);
 
-  // Robust Safety Net: Ensure play is recorded whenever we have a user and puzzle
-  React.useEffect(() => {
-    if (user && puzzle) {
-      logger.log(`[PuzzleSolver] Safety Net: Recording play for ${puzzle.id}...`);
-      import('../lib/puzzleService').then(m => m.recordPuzzlePlay(user.id, puzzle.id));
-    }
-  }, [user, user?.id, puzzle, puzzle?.id]);
+  // Robust Safety Net removed: We now only record play when a move is actually made.
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    let currentUser = user;
+    if (!currentUser) {
+      currentUser = await ensureUser?.();
+    }
+
     const text = generateShareText(puzzle);
-    copyToClipboard(text, () => {
+    copyToClipboard(text, async () => {
       setShowCopied(true);
       setTimeout(() => setShowCopied(false), 2000);
+      if (currentUser) {
+        await recordPuzzleShare(currentUser.id, puzzle.id);
+      }
     });
   };
 
