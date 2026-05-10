@@ -10,6 +10,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [isSignedUp, setIsSignedUp] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -33,17 +34,57 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
           }
           throw signUpError;
         }
+
+        // Show success state to remind them to check email/spam
+        setIsSignedUp(true);
       } else {
         const { error: signInError } = await signIn(email, password);
         if (signInError) throw signInError;
+        onComplete?.();
       }
-      onComplete?.();
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (isSignedUp) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 sm:p-6">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 relative overflow-hidden text-center">
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-50" />
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-50 rounded-full blur-3xl opacity-50" />
+
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail size={40} className="animate-bounce" />
+            </div>
+
+            <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight">Check Your Inbox</h2>
+            <p className="text-slate-600 font-bold mb-6 leading-relaxed">
+              We've sent a verification link to <span className="text-indigo-600">{email}</span>. Please click it to activate your account.
+            </p>
+
+            <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-5 mb-8">
+              <p className="text-amber-800 text-[10px] font-black uppercase tracking-[0.2em] leading-loose">
+                ⚠️ Don't see the email?<br />
+                Be sure to check your <span className="bg-amber-200 px-1">Spam or Junk</span> folder!
+              </p>
+            </div>
+
+            <button
+              onClick={() => onComplete?.()}
+              className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black tracking-widest hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2 uppercase shadow-xl shadow-indigo-100"
+            >
+              Back to App
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 sm:p-6">

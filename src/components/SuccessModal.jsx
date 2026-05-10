@@ -2,7 +2,7 @@ import { Trophy, Heart, Share2, Check, User, X, MessageSquare, List, Send, Filte
 import React, { useState, useRef, useEffect } from 'react';
 import { generateShareText, copyToClipboard } from '../utils/shareUtils';
 import { useAuth } from '../context/AuthContext';
-import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markSpecificMentionsRead } from '../lib/puzzleService';
+import { getComments, addComment, toggleCommentLike, getCommentLikes, getPuzzleUnreadMentions, markSpecificMentionsRead, getCommentCount } from '../lib/puzzleService';
 import { CommentItem } from './CommentItem';
 
 export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onAdmire, onNext, onAuthorClick, onShareTrack, onLikeTrack, initialIsLiked = false, onMentionsRead, onAuthRequested }) => {
@@ -142,6 +142,15 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
       setLoadingComments(false);
     }
   }, [puzzle?.id, commentSort, currentPage, user]);
+  
+  // Fetch initial comment count on mount so tab shows count even before switching
+  useEffect(() => {
+    if (puzzle?.id) {
+      getCommentCount(puzzle.id).then(({ count, error }) => {
+        if (!error && count !== null) setTotalComments(count);
+      });
+    }
+  }, [puzzle?.id]);
 
   // Fetch comments
   useEffect(() => {
@@ -299,7 +308,7 @@ export const SuccessModal = ({ puzzle, attempts, hintsUsed, categories = [], onA
             onClick={() => handleTabChange('comments')}
             className={`text-xs sm:text-sm font-black uppercase tracking-widest transition-colors py-1 relative ${activeTab === 'comments' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            Comments
+            Comments {totalComments > 0 && `(${totalComments})`}
             {unreadMentionCommentIds.size > 0 && (
               <span className="absolute top-0 right-0 -mr-3 -mt-1 bg-red-500 w-2 h-2 rounded-full border border-white" />
             )}

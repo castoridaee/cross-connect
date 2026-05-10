@@ -350,18 +350,17 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
         {pulse && (
           <div
             className={`fixed bottom-0 left-0 right-0 h-32 pointer-events-none z-50 transition-all duration-1000 ease-in-out ${isPulseVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              } ${pulse.type === 'hint'
-                ? 'bg-gradient-to-t from-indigo-500/40 via-indigo-500/10 to-transparent'
-                : 'bg-gradient-to-t from-red-500/40 via-red-500/10 to-transparent'
               }`}
           >
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-              <div className={`px-4 py-2 rounded-full border shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md transition-transform duration-500 ${isPulseVisible ? 'scale-100' : 'scale-90'
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+              <div className={`px-5 py-3 rounded-2xl shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-transform duration-500 relative ${isPulseVisible ? 'scale-100' : 'scale-90'
                 } ${pulse.type === 'hint'
-                  ? 'bg-indigo-600/90 text-white border-indigo-400/50'
-                  : 'bg-red-600/90 text-white border-red-400/50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-red-600 text-white'
                 }`}>
                 New {pulse.type === 'hint' ? 'Hint' : 'Note'} Below
+                {/* Carrot */}
+                <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 rotate-45 ${pulse.type === 'hint' ? 'bg-indigo-600' : 'bg-red-600'}`} />
               </div>
             </div>
           </div>

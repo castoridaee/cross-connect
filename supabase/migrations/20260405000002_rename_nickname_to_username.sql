@@ -14,6 +14,7 @@ BEGIN
     -- Update the check constraint if it still exists with the old name
     -- (Supabase might have auto-renamed it, but we'll be explicit)
     ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS nickname_length;
+    ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS username_length;
     ALTER TABLE public.profiles ADD CONSTRAINT username_length CHECK (char_length(username) >= 3 AND char_length(username) <= 30);
     
     -- Ensure no spaces at the database level too (optional bonus)
