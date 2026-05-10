@@ -10,7 +10,7 @@ import { CommentItem } from '../components/CommentItem';
 import Avatar from "boring-avatars";
 
 export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onBack, onNavigateToPuzzle, onMentionsRead }) {
-  const { signOut, refreshUser } = useAuth();
+  const { signOut, refreshUser, ensureUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCopied, setShowCopied] = useState(false);
@@ -188,7 +188,12 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   };
 
   const handleToggleCommentLike = async (commentId) => {
-    if (!currentUser) return;
+    let userToUse = currentUser;
+    if (!userToUse) {
+      userToUse = await ensureUser?.();
+    }
+    if (!userToUse) return;
+
     const isCurrentlyLiked = likedCommentIds.has(commentId);
     const newLikedSet = new Set(likedCommentIds);
     if (isCurrentlyLiked) newLikedSet.delete(commentId);
@@ -209,7 +214,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     }
 
     try {
-      await toggleCommentLike(commentId, currentUser.id);
+      await toggleCommentLike(commentId, userToUse.id);
     } catch (err) {
       console.error("Error liking comment:", err);
       setLikedCommentIds(likedCommentIds);
@@ -217,10 +222,14 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
   };
 
   const handleTogglePuzzleLike = async (puzzleId) => {
-    if (!currentUser) return;
+    let userToUse = currentUser;
+    if (!userToUse) {
+      userToUse = await ensureUser?.();
+    }
+    if (!userToUse) return;
 
     const targetPuzzle = items.find(p => p.id === puzzleId);
-    if (targetPuzzle && targetPuzzle.created_by === currentUser.id) return;
+    if (targetPuzzle && targetPuzzle.created_by === userToUse.id) return;
 
     const isLiking = !targetPuzzle?.user_progress?.is_liked;
 
@@ -237,7 +246,7 @@ export default function AuthorProfile({ authorId, currentUser, onEditPuzzle, onB
     }));
 
     try {
-      const { error } = await togglePuzzleLike(puzzleId, currentUser.id);
+      const { error } = await togglePuzzleLike(puzzleId, userToUse.id);
       if (error) throw error;
     } catch (err) {
       console.error("Error toggling puzzle like:", err);

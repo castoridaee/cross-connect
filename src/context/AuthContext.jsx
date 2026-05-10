@@ -34,16 +34,9 @@ export function AuthProvider({ children }) {
             setSession(currentSession);
             setUser(currentSession.user);
           }
-        } else {
-          // 2. Only sign in anonymously if no session exists
-          const { data, error: anonError } = await supabase.auth.signInAnonymously();
-          if (anonError) throw anonError;
-
-          if (mountedRef.current && data) {
-            setSession(data.session);
-            setUser(data.user);
-          }
         }
+        // 2. NO automatic anonymous sign-in here. 
+        // We wait for user interaction to call ensureUser().
       } catch (err) {
         console.error("Auth Initialization Error:", err.message);
       } finally {
@@ -58,14 +51,9 @@ export function AuthProvider({ children }) {
       if (!mountedRef.current) return;
 
       if (event === 'SIGNED_OUT' && !newSession) {
-        setLoading(true);
-        // Instantly replace the dead session with a fresh anonymous one
-        const { data } = await supabase.auth.signInAnonymously();
-        if (mountedRef.current && data) {
-          setSession(data.session);
-          setUser(data.user);
-        }
-        if (mountedRef.current) setLoading(false);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
       } else {
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -83,6 +71,24 @@ export function AuthProvider({ children }) {
     session,
     user,
     loading,
+    ensureUser: async () => {
+      // 1. If we already have a user, just return it
+      if (user) return user;
+
+      // 2. Otherwise, sign in anonymously
+      try {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error) throw error;
+        if (mountedRef.current && data) {
+          setSession(data.session);
+          setUser(data.user);
+          return data.user;
+        }
+      } catch (err) {
+        console.error("Failed to ensure user (anon login):", err);
+      }
+      return null;
+    },
     signIn: async (email, password) => {
       // Capture the old guest ID before the session gets swapped out
       const oldGuestId = session?.user?.is_anonymous ? session.user.id : null;

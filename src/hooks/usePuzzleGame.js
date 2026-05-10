@@ -4,7 +4,7 @@ import { recordPuzzleSolve, savePuzzleProgress, togglePuzzleLike } from '../lib/
 import { getPuzzleStructure } from '../utils/layoutParser';
 import { logger } from '../utils/logger';
 
-export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
+export const usePuzzleGame = (puzzle, user, initialProgress = null, ensureUser) => {
   // 1. Initialize state from saved progress if available
   const [grid, setGrid] = useState(initialProgress?.grid_state || {});
   const [history, setHistory] = useState(initialProgress?.guess_history || []);
@@ -164,6 +164,10 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   const handleMove = useCallback((sourceCoord, targetCoord, word) => {
     if (state.solved) return;
 
+    if (targetCoord) {
+      ensureUser?.();
+    }
+
     setGrid(prev => {
       const next = { ...prev };
       if (!targetCoord) {
@@ -175,10 +179,13 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
       return next;
     });
     setState(s => ({ ...s, moves: s.moves + 1, errors: [] }));
-  }, [state.solved]);
+  }, [state.solved, ensureUser]);
 
-  const onHint = useCallback(() => {
+  const onHint = useCallback(async () => {
     if (state.solved || hints.length >= puzzle.categories.length * 2) return;
+
+    // Ensure we have a user for saving progress
+    await ensureUser?.();
 
     // Use physical grouping to find ACTUALLY correctly placed categories
     const { allGroups } = getPuzzleStructure(puzzle.layout);
@@ -225,14 +232,21 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null) => {
   }, [grid, hints, puzzle, state.solved]);
 
   const onToggleLike = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await togglePuzzleLike(puzzle.id, user.id);
+    let currentUser = user;
+    if (!currentUser) {
+      currentUser = await ensureUser?.();
+    }
+    if (!currentUser) return;
+
+    const { data, error } = await togglePuzzleLike(puzzle.id, currentUser.id);
     if (!error) {
       setIsLiked(data);
     }
-  }, [user, puzzle.id]);
+  }, [user, puzzle.id, ensureUser]);
 
   const onCheck = useCallback(async () => {
+    // Ensure we have a user for saving progress
+    await ensureUser?.();
     // Check if any active layout cells are empty
     const isEmptyAny = puzzle.layout.some((row, r) => 
       row.some((active, c) => active && !grid[`${r}-${c}`])
