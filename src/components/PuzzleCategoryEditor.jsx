@@ -50,6 +50,8 @@ export function PuzzleCategoryEditor({
                 ))}
               </div>
               <input
+                id={`cat-desc-${idx}`}
+                name={`cat-desc-${idx}`}
                 placeholder="Description"
                 className="bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold pb-0.5 transition-colors"
                 value={cat.description}
@@ -67,6 +69,8 @@ export function PuzzleCategoryEditor({
           <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Post a Comment</p>
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3">
             <input
+              id="initial-comment"
+              name="initial-comment"
               type="text"
               value={initialComment}
               onChange={e => setInitialComment(e.target.value)}

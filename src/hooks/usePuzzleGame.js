@@ -229,7 +229,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null, ensureUser) 
 
     const randomIndex = selectionSource[Math.floor(Math.random() * selectionSource.length)];
     setHints(prev => [...prev, { index: randomIndex, level }]);
-  }, [grid, hints, puzzle, state.solved]);
+  }, [grid, hints, puzzle, state.solved, ensureUser]);
 
   const onToggleLike = useCallback(async () => {
     let currentUser = user;
@@ -279,7 +279,7 @@ export const usePuzzleGame = (puzzle, user, initialProgress = null, ensureUser) 
       }
       setState(s => ({ ...s, attempts: currentAttempt, errors: result.errors }));
     }
-  }, [grid, puzzle, state, user, hints, history]);
+  }, [grid, puzzle, state, user, hints, history, ensureUser]);
 
   return {
     grid,

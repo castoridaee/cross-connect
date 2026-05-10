@@ -41,6 +41,8 @@ export function PuzzleGridEditor({
       <div className="flex flex-col gap-1">
         {/* <label className="text-xs font-black uppercase tracking-widest text-slate-400">Puzzle Title</label> */}
         <input
+          id="puzzle-title"
+          name="puzzle-title"
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Enter puzzle title"
