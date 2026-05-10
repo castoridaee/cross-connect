@@ -639,6 +639,14 @@ export async function getComments(puzzleId, sortBy = 'newest', page = 1, pageSiz
   return { data, error, count };
 }
 
+export async function getCommentCount(puzzleId) {
+  const { count, error } = await supabase
+    .from('comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('puzzle_id', puzzleId);
+  return { count, error };
+}
+
 export async function getPaginatedProfilePuzzles({ userId, visitorId, type, page = 1, pageSize = 10, sortBy = 'newest' }) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
