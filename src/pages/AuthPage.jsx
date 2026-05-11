@@ -114,7 +114,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                     id="username"
                     type="text"
                     name="username"
-                    autoComplete="username"
+                    autoComplete="nickname"
                     required
                     value={username}
                     onChange={e => setUsername(e.target.value)}
@@ -133,7 +133,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
                   id="email"
                   type="email"
                   name="email"
-                  autoComplete={mode === 'signup' ? 'email' : 'username'}
+                  autoComplete="username"
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
