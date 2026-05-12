@@ -39,7 +39,7 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
     // Note that individual word count check elsewhere still doesn't work here.
     // for example, 🏳️‍🌈🏳️‍🌈🏳️‍🌈 gives "INDIVIDUAL WORDS CANNOT EXCEED 12 LETTERS!"
     // I will leave this as is since it's such a rare case. And also those
-    // ZJW emojis are sometimes visually wide and really shouldn't be 12
+    // ZWJ emojis are sometimes visually wide and really shouldn't be 12
     // characters long.
 
     // A. Scale UP for very short words/single letters/emojis
