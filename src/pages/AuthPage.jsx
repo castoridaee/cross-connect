@@ -68,7 +68,7 @@ export default function AuthPage({ onComplete, onCancel, initialMode = 'login' }
 
             <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-5 mb-8">
               <p className="text-amber-800 text-[10px] font-black uppercase tracking-[0.2em] leading-loose">
-                ⚠️ Don't see the email?<br />
+                Don't see the email?<br />
                 Be sure to check your <span className="bg-amber-200 px-1">Spam or Junk</span> folder!
               </p>
             </div>

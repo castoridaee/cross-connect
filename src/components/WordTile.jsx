@@ -18,29 +18,55 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
   };
 
   const getDynamicFontSize = () => {
-    // potentially use @chenglou/pretext or something similar if issues come up.
-    // but NPM reports 2 high vulnerabilities currently, stick with heuristics for now
-    
+    // potentially use @chenglou/pretext or something similar if issues come up
+    // but for simplicity stick with heuristic for now
+
     if (!label || size !== 'md') return null;
+    if (!label.trim()) return null;
 
+    const trimmed = label.trim();
+
+    // Accurate visual character count (handles complex ZWJ emojis, skin tones, etc.)
+    let len = [...trimmed].length;
+    if (typeof Intl.Segmenter !== 'undefined') {
+      try {
+        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+        len = [...segmenter.segment(trimmed)].length;
+      } catch (e) {
+        // Fallback to spread if segmenter fails
+      }
+    }
+    // Note that individual word count check elsewhere still doesn't work here.
+    // for example, 🏳️‍🌈🏳️‍🌈🏳️‍🌈 gives "INDIVIDUAL WORDS CANNOT EXCEED 12 LETTERS!"
+    // I will leave this as is since it's such a rare case. And also those
+    // ZWJ emojis are sometimes visually wide and really shouldn't be 12
+    // characters long.
+
+    // A. Scale UP for very short words/single letters/emojis
+    if (len === 1) return '40px';
+    if (len === 2) return '20px';
+    if (len === 3) return '12px';
+
+    // B. Scale DOWN for long words/phrases
     let fontSize = 11; // Default md font size
+    const rawLen = trimmed.length;
 
-    // 1. Calculate size based on longest word
-    const parts = label.split(/\s+/);
+    // Calculate size based on longest word
+    const parts = trimmed.split(/\s+/);
     const maxLen = Math.max(...parts.map(p => p.length));
     if (maxLen >= 12) fontSize = 7;
     else if (maxLen >= 11) fontSize = 8;
     else if (maxLen >= 9) fontSize = 9;
     else if (maxLen >= 8) fontSize = 10;
 
-    // 2. Calculate size based on overall phrase length
-    if (label.length > 44) {
+    // C. Calculate size based on overall phrase length
+    if (rawLen > 44) {
       fontSize = Math.min(fontSize, 9);
-    } else if (label.length > 32) {
+    } else if (rawLen > 32) {
       fontSize = Math.min(fontSize, 10);
     }
 
-    return fontSize < 11 ? `${fontSize}px` : null;
+    return fontSize !== 11 ? `${fontSize}px` : null;
   };
 
   const dynamicFontSize = getDynamicFontSize();
