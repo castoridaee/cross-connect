@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { usePuzzleGame } from '../hooks/usePuzzleGame';
+import { useCustomAutoScroll } from '../hooks/useCustomAutoScroll';
 import { WordTile } from '../components/WordTile';
 import { recordPuzzleEngagement, recordPuzzleShare } from '../lib/puzzleService';
 import { GridDroppable } from '../components/GridDroppable';
@@ -26,6 +27,9 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
   const lastHintsLength = React.useRef(hints.length);
   const lastHistoryLength = React.useRef(history.length);
   const hintTimeoutRef = React.useRef(null);
+  const gameAreaRef = React.useRef(null);
+  
+  useCustomAutoScroll(activeId, gameAreaRef);
 
   const allWords = React.useMemo(() => {
     return puzzle.word_order?.length > 0
@@ -71,7 +75,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     }
 
     lastHintsLength.current = hints.length;
-      lastHistoryLength.current = history.length;
+    lastHistoryLength.current = history.length;
   }, [hints.length, history.length]);
 
   // Robust Safety Net removed: We now only record play when a move is actually made.
@@ -158,8 +162,18 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={e => setActiveId(e.active.id)}
-      onDragEnd={handleDragEnd}
+      onDragStart={e => {
+        document.body.classList.add('is-dragging');
+        setActiveId(e.active.id);
+      }}
+      onDragEnd={e => {
+        document.body.classList.remove('is-dragging');
+        handleDragEnd(e);
+      }}
+      onDragCancel={() => {
+        document.body.classList.remove('is-dragging');
+      }}
+      autoScroll={false}
     >
       <div className="flex flex-col items-center min-h-screen bg-slate-50 px-2 pb-6 pt-0 relative touch-pan-y">
         {/* Puzzle Metadata Header */}
@@ -208,7 +222,9 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
             )}
           </div>
         </div>
-        <div className="w-full relative px-0 mb-1">
+
+        <div ref={gameAreaRef} className="w-full flex flex-col items-center">
+          <div className="w-full relative px-0 mb-1">
           {/* Visual cues for horizontal scrolling */}
           <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
           <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none opacity-50" />
@@ -252,6 +268,7 @@ export default function PuzzleSolver({ puzzle, user, onAuthorClick, onSkip, init
             </WordBank>
           </SortableContext>
         </div>
+      </div>
 
         <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
           <div className="grid grid-cols-2 gap-3">

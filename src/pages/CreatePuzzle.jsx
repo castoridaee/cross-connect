@@ -11,6 +11,7 @@ import { EditorDraggableTile } from '../components/EditorDraggableTile';
 import { usePuzzleDraft } from '../hooks/usePuzzleDraft';
 import { PuzzleGridEditor } from '../components/PuzzleGridEditor';
 import { PuzzleCategoryEditor } from '../components/PuzzleCategoryEditor';
+import { useCustomAutoScroll } from '../hooks/useCustomAutoScroll';
 
 export default function CreatePuzzle({ onComplete, initialData, onRequireAuth }) {
   const { user, ensureUser } = useAuth();
@@ -45,6 +46,9 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
     setStatusMsg,
     onComplete
   });
+
+  const gameAreaRef = React.useRef(null);
+  useCustomAutoScroll(activeDrag ? activeDrag.word : null, gameAreaRef);
 
   // Lazy sign-in for creators
   useEffect(() => {
@@ -423,8 +427,23 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
         />
       )}
 
-      <DndContext sensors={sensors} onDragStart={e => setActiveDrag(e.active.data.current)} onDragEnd={handleDragEnd}>
-        {step === 1 ? (
+      <DndContext 
+        sensors={sensors} 
+        onDragStart={e => {
+          document.body.classList.add('is-dragging');
+          setActiveDrag(e.active.data.current);
+        }} 
+        onDragEnd={e => {
+          document.body.classList.remove('is-dragging');
+          handleDragEnd(e);
+        }}
+        onDragCancel={() => {
+          document.body.classList.remove('is-dragging');
+        }}
+        autoScroll={false}
+      >
+        <div ref={gameAreaRef} className="w-full">
+          {step === 1 ? (
           <PuzzleGridEditor
             title={title}
             setTitle={setTitle}
@@ -446,6 +465,7 @@ export default function CreatePuzzle({ onComplete, initialData, onRequireAuth })
             setInitialComment={setInitialComment}
           />
         )}
+        </div>
         <DragOverlay>
           {activeDrag && (
             <div className="scale-105">
