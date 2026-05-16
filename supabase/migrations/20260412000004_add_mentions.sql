@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS public.comment_mentions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Explicit Grants for Data API
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.comment_mentions TO authenticated;
+GRANT ALL ON public.comment_mentions TO service_role;
+
 -- Indexes for speedy queries
 CREATE INDEX IF NOT EXISTS comment_mentions_user_idx ON public.comment_mentions(mentioned_user_id);
 CREATE INDEX IF NOT EXISTS comment_mentions_puzzle_idx ON public.comment_mentions(puzzle_id);

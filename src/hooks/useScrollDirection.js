@@ -6,6 +6,15 @@ export function useScrollDirection() {
 
   useEffect(() => {
     const handleScroll = () => {
+      // If a drag is actively happening, and the screen scrolls, forcefully hide the header to maximize space
+      if (document.body.classList.contains('is-dragging')) {
+        setPrevOffset(window.pageYOffset);
+        if (scrollDirection !== 'down') {
+          setScrollDirection('down');
+        }
+        return;
+      }
+      
       const currentOffset = window.pageYOffset;
       const direction = currentOffset > prevOffset ? 'down' : 'up';
       

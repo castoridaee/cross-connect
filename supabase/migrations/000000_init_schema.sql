@@ -101,9 +101,17 @@ CREATE TABLE IF NOT EXISTS public.user_progress (
 -- 2. ROW LEVEL SECURITY (RLS)
 -- ==========================================
 
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.puzzles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_progress ENABLE ROW LEVEL SECURITY;
+
+-- Explicit Grants for Data API
+GRANT SELECT ON public.profiles TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.profiles TO authenticated;
+GRANT SELECT ON public.puzzles TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.puzzles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_progress TO authenticated;
+GRANT ALL ON public.profiles TO service_role;
+GRANT ALL ON public.puzzles TO service_role;
+GRANT ALL ON public.user_progress TO service_role;
 
 -- Profiles Policies
 CREATE POLICY "Public profiles are viewable by everyone."

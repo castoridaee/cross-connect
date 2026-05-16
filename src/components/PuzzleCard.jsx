@@ -56,9 +56,9 @@ export function PuzzleCard({
   const diffScore = rawDiff != null ? Math.min(100, Math.max(0, Math.round(rawDiff * 30))) : null;
   let diffBadge = null;
   if (diffScore != null) {
-    if (diffScore < 20) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
-    else if (diffScore < 40) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
-    else if (diffScore < 60) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
+    if (diffScore < 10) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
+    else if (diffScore < 25) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
+    else if (diffScore < 40) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
     else diffBadge = { label: 'Extreme', color: 'bg-black text-white' };
   }
 
