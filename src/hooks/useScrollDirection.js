@@ -6,9 +6,12 @@ export function useScrollDirection() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Ignore scroll events while a drag is actively happening to prevent header pop-ups
+      // If a drag is actively happening, and the screen scrolls, forcefully hide the header to maximize space
       if (document.body.classList.contains('is-dragging')) {
-        setPrevOffset(window.pageYOffset); // Keep offset synced so it doesn't jump after drag
+        setPrevOffset(window.pageYOffset);
+        if (scrollDirection !== 'down') {
+          setScrollDirection('down');
+        }
         return;
       }
       

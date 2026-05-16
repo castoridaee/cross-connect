@@ -34,14 +34,14 @@ export function useCustomAutoScroll(activeId, boundsRef) {
         const maxSpeed = 15;
         const y = pointerY.current;
         const rect = boundsRef.current.getBoundingClientRect();
-        
-        // Target 70px from top to account for the sticky header
+
+        // Target 0px from top to completely hide the title area
         if (y < threshold) {
-          if (rect.top < 70) {
+          if (rect.top < 0) {
             const speed = Math.max(1, maxSpeed * (1 - y / threshold));
             window.scrollBy(0, -speed);
           }
-        } 
+        }
         else if (y > window.innerHeight - threshold) {
           if (rect.bottom > window.innerHeight) {
             const dist = y - (window.innerHeight - threshold);
