@@ -24,6 +24,14 @@ CREATE INDEX IF NOT EXISTS idx_comments_created_at ON public.comments(created_at
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comment_likes ENABLE ROW LEVEL SECURITY;
 
+-- Explicit Grants for Data API
+GRANT SELECT ON public.comments TO anon, authenticated;
+GRANT INSERT, DELETE ON public.comments TO authenticated;
+GRANT SELECT ON public.comment_likes TO anon, authenticated;
+GRANT INSERT, DELETE ON public.comment_likes TO authenticated;
+GRANT ALL ON public.comments TO service_role;
+GRANT ALL ON public.comment_likes TO service_role;
+
 -- RLS Policies for comments
 CREATE POLICY "Anyone can view comments" ON public.comments
     FOR SELECT USING (true);
