@@ -43,9 +43,14 @@ export const WordTile = ({ label, variant = 'default', size = 'md', inGrid = fal
     // characters long.
 
     // A. Scale UP for very short words/single letters/emojis
-    if (len === 1) return '40px';
-    if (len === 2) return '20px';
-    if (len === 3) return '12px';
+    // ONLY do this if the string is purely composed of emojis (no normal letters/numbers)
+    const isOnlyEmoji = /^[\p{Emoji}\s\u200D\uFE0F]+$/u.test(trimmed) && !/[0-9#*]/.test(trimmed);
+    
+    if (isOnlyEmoji) {
+      if (len === 1) return '36px';
+      if (len === 2) return '18px';
+      if (len === 3) return '12px';
+    }
 
     // B. Scale DOWN for long words/phrases
     let fontSize = 11; // Default md font size
