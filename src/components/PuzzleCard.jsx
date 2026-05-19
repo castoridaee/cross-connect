@@ -58,7 +58,7 @@ export function PuzzleCard({
   if (diffScore != null) {
     if (diffScore < 10) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
     else if (diffScore < 25) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
-    else if (diffScore < 26) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
+    else if (diffScore < 40) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
     else diffBadge = { label: 'Extreme', color: 'bg-black text-yellow-300' };
   }
 
