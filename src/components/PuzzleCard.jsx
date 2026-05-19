@@ -57,9 +57,9 @@ export function PuzzleCard({
   let diffBadge = null;
   if (diffScore != null) {
     if (diffScore < 10) diffBadge = { label: 'Easy', color: 'bg-green-50 text-green-700' };
-    else if (diffScore < 15) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
-    else if (diffScore < 20) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
-    else diffBadge = { label: 'Extreme', color: 'bg-black text-white' };
+    else if (diffScore < 25) diffBadge = { label: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
+    else if (diffScore < 26) diffBadge = { label: 'Hard', color: 'bg-red-50 text-red-700' };
+    else diffBadge = { label: 'Extreme', color: 'bg-black text-yellow-300' };
   }
 
   // Time formatting (unused currently)
@@ -172,7 +172,7 @@ export function PuzzleCard({
                 <>
                   <div className="w-1 h-1 bg-slate-200 rounded-full" />
                   <StatTooltip label={`Difficulty: ${Math.round(puzzle.difficulty_score * 30)} / 100`}>
-                    <div className={`text-[10px] sm:text-xs font-black uppercase tracking-tight cursor-help ${diffBadge.color.replace('bg-', 'text-').replace('-50', '-700')}`}>
+                    <div className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border border-current/10 cursor-help ${diffBadge.color}`}>
                       {diffBadge.label}
                     </div>
                   </StatTooltip>
